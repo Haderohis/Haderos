@@ -19,6 +19,36 @@
     overflow: hidden;
   }
 
+  /* Masque l'icône calendrier native sur les inputs date */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    display: none;
+  }
+
+  input[type="date"] {
+    color: #211738;
+  }
+
+  input[type="date"]::-webkit-datetime-edit {
+    color: #211738;
+  }
+
+  input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+    color: #211738;
+  }
+
+  input[type="date"]::-webkit-datetime-edit-text,
+  input[type="date"]::-webkit-datetime-edit-day-field,
+  input[type="date"]::-webkit-datetime-edit-month-field,
+  input[type="date"]::-webkit-datetime-edit-year-field {
+    color: #a49ffe;
+  }
+
+  input[type="date"]:not([value=""])::-webkit-datetime-edit-day-field,
+  input[type="date"]:not([value=""])::-webkit-datetime-edit-month-field,
+  input[type="date"]:not([value=""])::-webkit-datetime-edit-year-field {
+    color: #211738;
+  }
+
   /* Touch targets minimum 44px (WCAG 2.5.5) */
   button,
   a,

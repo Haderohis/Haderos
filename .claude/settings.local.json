@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create *)",
+      "PowerShell(node --version)",
+      "PowerShell(npm --version)",
+      "mcp__010f20d6-dd20-4981-ae08-db2ceda3ca98__get_design_context"
+    ]
+  }
+}

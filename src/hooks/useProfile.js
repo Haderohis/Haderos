@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { useAuth } from './useAuth'
 
-export function useProfile() {
-  const { user } = useAuth()
+export function useProfile(user) {
   const [profile, setProfile] = useState(null)
 
   useEffect(() => {

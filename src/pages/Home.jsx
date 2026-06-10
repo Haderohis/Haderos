@@ -1,13 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useProfile } from '../hooks/useProfile'
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const { user, signOut } = useAuth()
-  const profile = useProfile()
+  const { user, signOut, loading } = useAuth()
+  const profile = useProfile(user)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (!loading && !user) navigate('/login')
+  }, [user, loading])
 
   const handleSignOut = async () => {
     await signOut()

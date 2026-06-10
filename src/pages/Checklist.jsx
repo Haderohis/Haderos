@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useProfile } from '../hooks/useProfile'
 import { useAuth } from '../hooks/useAuth'
@@ -9,8 +9,12 @@ export default function Checklist() {
   const [showModal, setShowModal] = useState(false)
   const [newTask, setNewTask] = useState('')
   const navigate = useNavigate()
-  const { user } = useAuth()
-  const profile = useProfile()
+  const { user, loading } = useAuth()
+  const profile = useProfile(user)
+
+  useEffect(() => {
+    if (!loading && !user) navigate('/login')
+  }, [user, loading])
 
   const firstName = profile?.first_name ?? ''
   const lastName = profile?.last_name ?? ''

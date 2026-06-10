@@ -20,6 +20,22 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 
 const EMPTY_FORM = { label: '', group: '', dueDate: '', tags: [] }
+const TAG_TYPES = [
+  { value: 'personne', color: 'bg-[#e0f2fe] text-[#0369a1]', icon: (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2"/>
+      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  )},
+  { value: 'contexte', color: 'bg-[#6c63ff]/10 text-[#6c63ff]', icon: (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/>
+      <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  )},
+]
+const tagColor = (type) => TAG_TYPES.find(t => t.value === type)?.color ?? TAG_TYPES[1].color
+const tagIcon = (type) => TAG_TYPES.find(t => t.value === type)?.icon ?? null
 
 export default function Checklist() {
   const [tasks, setTasks] = useState([])
@@ -67,23 +83,29 @@ export default function Checklist() {
     ? `${firstName[0]}${lastName[0]}`.toUpperCase()
     : displayName?.slice(0, 2).toUpperCase() ?? '??'
 
-  const allTags = [...new Set(tasks.flatMap(t => t.tags ?? []))]
+  const [tagType, setTagType] = useState('contexte')
+  const allTags = tasks.flatMap(t => t.tags ?? []).filter((t, i, arr) =>
+    arr.findIndex(x => x.label === t.label && x.type === t.type) === i
+  )
   const allGroups = [...new Set(tasks.map(t => t.group_name).filter(Boolean))]
   const tagSuggestions = tagInput.length > 0
-    ? allTags.filter(t => t.toLowerCase().startsWith(tagInput.toLowerCase()) && !form.tags.includes(t))
+    ? allTags.filter(t =>
+        t.label.toLowerCase().startsWith(tagInput.toLowerCase()) &&
+        !form.tags.some(ft => ft.label === t.label && ft.type === t.type)
+      )
     : []
   const groupSuggestions = allGroups.filter(g =>
     g.toLowerCase().includes(groupInput.toLowerCase())
   )
 
-  const addTag = (tag) => {
-    const trimmed = tag.trim()
-    if (!trimmed || form.tags.includes(trimmed)) return
-    setForm(f => ({ ...f, tags: [...f.tags, trimmed] }))
+  const addTag = (label, type = tagType) => {
+    const trimmed = label.trim()
+    if (!trimmed || form.tags.some(t => t.label === trimmed && t.type === type)) return
+    setForm(f => ({ ...f, tags: [...f.tags, { label: trimmed, type }] }))
     setTagInput('')
   }
 
-  const removeTag = (tag) => setForm(f => ({ ...f, tags: f.tags.filter(t => t !== tag) }))
+  const removeTag = (index) => setForm(f => ({ ...f, tags: f.tags.filter((_, i) => i !== index) }))
 
   const openModal = () => {
     setForm(EMPTY_FORM)
@@ -108,8 +130,8 @@ export default function Checklist() {
       setError('Le nom de la tâche est obligatoire.')
       return
     }
-    const finalTags = tagInput.trim() && !form.tags.includes(tagInput.trim())
-      ? [...form.tags, tagInput.trim()]
+    const finalTags = tagInput.trim() && !form.tags.some(t => t.label === tagInput.trim() && t.type === tagType)
+      ? [...form.tags, { label: tagInput.trim(), type: tagType }]
       : form.tags
     setSaving(true)
 
@@ -194,7 +216,11 @@ export default function Checklist() {
           <span className={`text-[14px] text-[#211738] ${task.done ? 'line-through text-[#736694]' : ''}`}>{task.label}</span>
           <div className="flex flex-wrap items-center gap-1 mt-1">
             {task.due_date && <span className="text-[11px] text-[#736694]">📅 {new Date(task.due_date).toLocaleDateString('fr-FR')}</span>}
-            {(task.tags ?? []).map(tag => <span key={tag} className="text-[11px] text-[#6c63ff] bg-[#6c63ff]/10 px-2 py-0.5 rounded-full">{tag}</span>)}
+            {(task.tags ?? []).map((tag, i) => (
+              <span key={i} className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full ${tagColor(tag.type)}`}>
+                {tagIcon(tag.type)}{tag.label}
+              </span>
+            ))}
           </div>
         </div>
         <button onClick={() => deleteTask(task.id)} className="min-w-[44px] min-h-[44px] flex items-center justify-center shrink-0">
@@ -341,13 +367,15 @@ export default function Checklist() {
             </div>
 
             {/* Tags */}
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-2">
               <label className="text-[12px] font-medium text-[#736694]">Tags</label>
+              {/* Champ avec chips + sélecteur de type intégré */}
               <div className="relative bg-[#f2edfa] rounded-[10px] min-h-12 px-3 py-2 flex flex-wrap gap-2 items-center">
-                {form.tags.map(tag => (
-                  <span key={tag} className="flex items-center gap-1 bg-[#6c63ff]/15 text-[#6c63ff] text-[12px] font-medium px-2 py-1 rounded-full shrink-0">
-                    {tag}
-                    <button onPointerDown={e => { e.preventDefault(); removeTag(tag) }} className="leading-none text-[#6c63ff] min-w-0 min-h-0 w-4 h-4">&times;</button>
+                {form.tags.map((tag, i) => (
+                  <span key={i} className={`flex items-center gap-1 text-[12px] font-medium px-2 py-1 rounded-full shrink-0 ${tagColor(tag.type)}`}>
+                    {tagIcon(tag.type)}
+                    {tag.label}
+                    <button onPointerDown={e => { e.preventDefault(); removeTag(i) }} className="leading-none min-w-0 min-h-0 w-4 h-4">&times;</button>
                   </span>
                 ))}
                 <input
@@ -360,18 +388,34 @@ export default function Checklist() {
                       addTag(tagInput)
                     }
                     if (e.key === 'Backspace' && !tagInput && form.tags.length > 0) {
-                      removeTag(form.tags[form.tags.length - 1])
+                      removeTag(form.tags.length - 1)
                     }
                   }}
                   placeholder={form.tags.length === 0 ? 'Ajouter un tag...' : ''}
-                  className="bg-transparent text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe] min-w-[120px] flex-1"
+                  className="bg-transparent text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe] min-w-[80px] flex-1"
                 />
+                {/* Sélecteur de type intégré */}
+                <div className="flex gap-1 shrink-0">
+                  {TAG_TYPES.map(t => (
+                    <button
+                      key={t.value}
+                      onPointerDown={e => { e.preventDefault(); setTagType(t.value) }}
+                      className={`w-7 h-7 rounded-[6px] flex items-center justify-center transition-colors ${
+                        tagType === t.value ? t.color : 'text-[#a49ffe]'
+                      }`}
+                      title={t.value}
+                    >
+                      {t.icon}
+                    </button>
+                  ))}
+                </div>
                 {tagSuggestions.length > 0 && (
                   <ul className="absolute left-0 right-0 top-full mt-1 bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-[#f2edfa]">
-                    {tagSuggestions.map(s => (
-                      <li key={s}>
-                        <button className="w-full text-left px-4 py-3 text-[13px] text-[#211738] hover:bg-[#f2edfa]" onClick={() => addTag(s)}>
-                          {s}
+                    {tagSuggestions.map((s, i) => (
+                      <li key={i}>
+                        <button className={`w-full text-left px-4 py-3 text-[13px] hover:bg-[#f2edfa] flex items-center gap-2`} onClick={() => addTag(s.label, s.type)}>
+                          <span className={`text-[11px] px-2 py-0.5 rounded-full ${tagColor(s.type)}`}>{s.type}</span>
+                          {s.label}
                         </button>
                       </li>
                     ))}

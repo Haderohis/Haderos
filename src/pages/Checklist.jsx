@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useProfile } from '../hooks/useProfile'
+import { useAuth } from '../hooks/useAuth'
 
 export default function Checklist() {
   const [tasks, setTasks] = useState([])
@@ -7,6 +9,15 @@ export default function Checklist() {
   const [showModal, setShowModal] = useState(false)
   const [newTask, setNewTask] = useState('')
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const profile = useProfile()
+
+  const firstName = profile?.first_name ?? ''
+  const lastName = profile?.last_name ?? ''
+  const displayName = profile?.display_name ?? user?.email ?? ''
+  const initials = firstName && lastName
+    ? `${firstName[0]}${lastName[0]}`.toUpperCase()
+    : displayName?.slice(0, 2).toUpperCase() ?? '??'
 
   const addTask = () => {
     const trimmed = newTask.trim()
@@ -145,11 +156,11 @@ export default function Checklist() {
         <div className="absolute inset-0 bg-white/72 border-r border-white/85 backdrop-blur-md flex flex-col">
           <div className="flex items-center gap-4 px-6 pt-16 pb-5">
             <div className="w-[52px] h-[52px] rounded-[26px] bg-[#6c63ff] flex items-center justify-center shrink-0">
-              <span className="text-white text-[20px] font-bold">FP</span>
+              <span className="text-white text-[20px] font-bold">{initials}</span>
             </div>
             <div>
-              <p className="text-[15px] font-bold text-[#211738] leading-tight">Florian Pernes</p>
-              <p className="text-[12px] text-[#736694] leading-tight">Haderos</p>
+              <p className="text-[15px] font-bold text-[#211738] leading-tight">{firstName} {lastName}</p>
+              <p className="text-[12px] text-[#736694] leading-tight">{displayName}</p>
             </div>
           </div>
           <div className="mx-6 h-px bg-[rgba(153,153,166,0.25)]" />

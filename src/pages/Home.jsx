@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useProfile } from '../hooks/useProfile'
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false)
   const { user, signOut } = useAuth()
+  const profile = useProfile()
   const navigate = useNavigate()
 
   const handleSignOut = async () => {
@@ -12,12 +14,12 @@ export default function Home() {
     navigate('/login')
   }
 
-  const initials = user?.user_metadata?.full_name
-    ? user.user_metadata.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-    : user?.email?.slice(0, 2).toUpperCase() ?? 'FP'
-
-  const displayName = user?.user_metadata?.full_name ?? user?.email ?? 'Florian Pernes'
-  const orgName = user?.user_metadata?.organization ?? 'Haderos'
+  const firstName = profile?.first_name ?? ''
+  const lastName = profile?.last_name ?? ''
+  const displayName = profile?.display_name ?? user?.email ?? ''
+  const initials = firstName && lastName
+    ? `${firstName[0]}${lastName[0]}`.toUpperCase()
+    : displayName?.slice(0, 2).toUpperCase() ?? '??'
 
   return (
     <div className="relative w-full h-dvh overflow-hidden bg-[#f6f4f9]">
@@ -79,8 +81,8 @@ export default function Home() {
               <span className="text-white text-[20px] font-bold">{initials}</span>
             </div>
             <div>
-              <p className="text-[15px] font-bold text-[#211738] leading-tight">{displayName}</p>
-              <p className="text-[12px] text-[#736694] leading-tight">{orgName}</p>
+              <p className="text-[15px] font-bold text-[#211738] leading-tight">{firstName} {lastName}</p>
+              <p className="text-[12px] text-[#736694] leading-tight">{displayName}</p>
             </div>
           </div>
 

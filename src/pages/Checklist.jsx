@@ -25,7 +25,7 @@ export default function Checklist() {
   }
 
   return (
-    <div className="relative w-full min-h-screen overflow-hidden bg-[#f6f4f9]">
+    <div className="relative w-full h-dvh overflow-hidden bg-[#f6f4f9]">
 
       {/* Blobs décoratifs */}
       <div className="absolute -left-16 -top-4 w-72 h-72 rounded-full bg-[#c4b5fd] opacity-30 blur-3xl pointer-events-none" />
@@ -50,7 +50,7 @@ export default function Checklist() {
       </header>
 
       {/* Contenu */}
-      <main className="absolute top-[110px] left-4 right-4 bottom-4 flex flex-col gap-3">
+      <main className="absolute top-[110px] left-4 right-4 bottom-4 flex flex-col gap-3 overflow-hidden">
 
         {/* Stat / liste vide */}
         {tasks.length === 0 && (
@@ -62,7 +62,7 @@ export default function Checklist() {
 
         {/* Liste des tâches */}
         {tasks.length > 0 && (
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col gap-2 overflow-y-auto flex-1">
             {tasks.map(task => (
               <li
                 key={task.id}

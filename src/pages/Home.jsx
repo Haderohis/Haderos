@@ -20,7 +20,7 @@ export default function Home() {
   const orgName = user?.user_metadata?.organization ?? 'Haderos'
 
   return (
-    <div className="relative w-full min-h-screen overflow-hidden bg-[#f6f4f9]">
+    <div className="relative w-full h-dvh overflow-hidden bg-[#f6f4f9]">
 
       {/* Blobs décoratifs */}
       <div className="absolute -left-16 -top-4 w-72 h-72 rounded-full bg-[#c4b5fd] opacity-30 blur-3xl pointer-events-none" />

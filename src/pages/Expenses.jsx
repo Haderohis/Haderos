@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
@@ -27,11 +27,13 @@ function statusLabel(expense) {
 function NewExpenseModal({ currentUserId, onClose, onSaved }) {
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
+  const [expenseDate, setExpenseDate] = useState('')
   const [payerIsMe, setPayerIsMe] = useState(true)
   const [otherUserId, setOtherUserId] = useState('')
   const [users, setUsers] = useState([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+  const dateRef = useRef(null)
 
   useEffect(() => {
     supabase
@@ -48,7 +50,7 @@ function NewExpenseModal({ currentUserId, onClose, onSaved }) {
     p.first_name && p.last_name ? `${p.first_name} ${p.last_name}` : p.display_name ?? p.id
 
   const handleSave = async () => {
-    if (!amount || !description || !otherUserId) return
+    if (!amount || !description || !otherUserId) { setError('Remplis tous les champs obligatoires.'); return }
     setSaving(true)
     setError(null)
     const payerId = payerIsMe ? currentUserId : otherUserId
@@ -59,6 +61,7 @@ function NewExpenseModal({ currentUserId, onClose, onSaved }) {
       debtor_id: debtorId,
       amount: parseFloat(amount),
       description,
+      expense_date: expenseDate || null,
     })
     setSaving(false)
     if (err) { setError(err.message); return }
@@ -67,69 +70,85 @@ function NewExpenseModal({ currentUserId, onClose, onSaved }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
-      <div className="absolute inset-0 bg-[rgba(33,23,56,0.35)]" onClick={onClose} />
-      <div className="relative w-full max-w-lg bg-white rounded-t-[24px] p-6 pb-10 flex flex-col gap-5">
-        <div className="w-10 h-1 bg-[#e2ddf0] rounded-full mx-auto -mt-1" />
-        <h2 className="text-[17px] font-bold text-[#211738]">Nouvelle dépense</h2>
+    <div className="absolute inset-0 z-50 flex items-end justify-center bg-[rgba(33,23,56,0.3)]" onClick={onClose}>
+      <div className="w-full bg-white/95 backdrop-blur-md rounded-t-[20px] p-6 flex flex-col gap-4 max-h-[85dvh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <p className="text-[17px] font-semibold text-[#211738]">Nouvelle dépense</p>
 
-        <div className="flex flex-col gap-3">
-          <div>
-            <label className="text-[12px] font-semibold text-[#736694] uppercase tracking-wide">Montant (€)</label>
+        <div className="flex flex-col gap-1">
+          <label className="text-[12px] font-medium text-[#736694]">Description <span className="text-[#6c63ff]">*</span></label>
+          <input
+            autoFocus
+            type="text"
+            value={description}
+            onChange={e => { setDescription(e.target.value); setError(null) }}
+            placeholder="Ex : Resto, courses…"
+            className="bg-[#f2edfa] rounded-[10px] h-12 px-4 text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe]"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[12px] font-medium text-[#736694]">Montant (€) <span className="text-[#6c63ff]">*</span></label>
+          <input
+            type="number"
+            inputMode="decimal"
+            value={amount}
+            onChange={e => { setAmount(e.target.value); setError(null) }}
+            placeholder="0.00"
+            className="bg-[#f2edfa] rounded-[10px] h-12 px-4 text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe]"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[12px] font-medium text-[#736694]">Date</label>
+          <div className="relative bg-[#f2edfa] rounded-[10px] h-12 flex items-center px-4">
             <input
-              type="number"
-              inputMode="decimal"
-              placeholder="0.00"
-              value={amount}
-              onChange={e => setAmount(e.target.value)}
-              className="mt-1 w-full h-[46px] px-4 rounded-[12px] border border-[#e2ddf0] text-[15px] text-[#211738] focus:outline-none focus:border-[#6c63ff]"
+              ref={dateRef}
+              type="date"
+              value={expenseDate}
+              onChange={e => setExpenseDate(e.target.value)}
+              className="flex-1 bg-transparent text-[14px] text-[#211738] outline-none cursor-pointer [color-scheme:light]"
             />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="shrink-0 cursor-pointer"
+              onPointerDown={e => { e.preventDefault(); dateRef.current?.showPicker() }}>
+              <rect x="3" y="4" width="18" height="18" rx="2" stroke="#736694" strokeWidth="2" />
+              <path d="M16 2v4M8 2v4M3 10h18" stroke="#736694" strokeWidth="2" strokeLinecap="round" />
+            </svg>
           </div>
+        </div>
 
-          <div>
-            <label className="text-[12px] font-semibold text-[#736694] uppercase tracking-wide">Description</label>
-            <input
-              type="text"
-              placeholder="Ex : Resto, courses…"
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              className="mt-1 w-full h-[46px] px-4 rounded-[12px] border border-[#e2ddf0] text-[15px] text-[#211738] focus:outline-none focus:border-[#6c63ff]"
-            />
-          </div>
-
-          <div>
-            <label className="text-[12px] font-semibold text-[#736694] uppercase tracking-wide">Autre personne</label>
+        <div className="flex flex-col gap-1">
+          <label className="text-[12px] font-medium text-[#736694]">Autre personne <span className="text-[#6c63ff]">*</span></label>
+          <div className="relative bg-[#f2edfa] rounded-[10px] h-12 flex items-center px-4">
             <select
               value={otherUserId}
               onChange={e => setOtherUserId(e.target.value)}
-              className="mt-1 w-full h-[46px] px-4 rounded-[12px] border border-[#e2ddf0] text-[15px] text-[#211738] focus:outline-none focus:border-[#6c63ff] bg-white"
+              className="flex-1 bg-transparent text-[14px] text-[#211738] outline-none appearance-none cursor-pointer"
             >
               {users.map(u => (
                 <option key={u.id} value={u.id}>{profileName(u)}</option>
               ))}
             </select>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="shrink-0 pointer-events-none">
+              <path d="M6 9l6 6 6-6" stroke="#736694" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </div>
+        </div>
 
-          <div>
-            <label className="text-[12px] font-semibold text-[#736694] uppercase tracking-wide">Qui a payé ?</label>
-            <div className="mt-1 flex rounded-[12px] border border-[#e2ddf0] overflow-hidden">
-              <button
-                onClick={() => setPayerIsMe(true)}
-                className={`flex-1 h-[42px] text-[13px] font-semibold transition-colors ${
-                  payerIsMe ? 'bg-[#6c63ff] text-white' : 'bg-white text-[#736694]'
-                }`}
-              >
-                Moi
-              </button>
-              <button
-                onClick={() => setPayerIsMe(false)}
-                className={`flex-1 h-[42px] text-[13px] font-semibold transition-colors ${
-                  !payerIsMe ? 'bg-[#6c63ff] text-white' : 'bg-white text-[#736694]'
-                }`}
-              >
-                L'autre
-              </button>
-            </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[12px] font-medium text-[#736694]">Qui a payé ?</label>
+          <div className="flex bg-[#f2edfa] rounded-[10px] h-12 p-1 gap-1">
+            <button
+              onClick={() => setPayerIsMe(true)}
+              className={`flex-1 rounded-[8px] text-[13px] font-semibold transition-colors ${payerIsMe ? 'bg-[#6c63ff] text-white' : 'text-[#736694]'}`}
+            >
+              Moi
+            </button>
+            <button
+              onClick={() => setPayerIsMe(false)}
+              className={`flex-1 rounded-[8px] text-[13px] font-semibold transition-colors ${!payerIsMe ? 'bg-[#6c63ff] text-white' : 'text-[#736694]'}`}
+            >
+              L'autre
+            </button>
           </div>
         </div>
 
@@ -137,10 +156,10 @@ function NewExpenseModal({ currentUserId, onClose, onSaved }) {
 
         <button
           onClick={handleSave}
-          disabled={saving || !amount || !description || !otherUserId}
-          className="w-full h-[50px] bg-[#6c63ff] rounded-[14px] text-white font-bold text-[15px] disabled:opacity-40"
+          disabled={saving}
+          className="bg-[#6c63ff] rounded-[12px] h-12 text-[14px] font-semibold text-white disabled:opacity-60"
         >
-          {saving ? 'Enregistrement…' : 'Enregistrer'}
+          {saving ? 'Enregistrement…' : 'Ajouter'}
         </button>
       </div>
     </div>

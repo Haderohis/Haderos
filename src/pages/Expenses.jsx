@@ -357,19 +357,19 @@ function ExpenseCard({ expense, profiles, onOpen, onEdit, onDelete }) {
       )}
 
       {/* Header */}
-      <div className="flex items-center gap-3 p-4 pb-3">
+      <div className="flex items-start gap-2 p-4 pb-3">
         <button onClick={onOpen} className="flex-1 min-w-0 text-left">
           <p className="text-[14px] font-semibold text-[#211738] truncate">{expense.description}</p>
           <p className="text-[12px] text-[#736694] mt-0.5">Payé par {profileName(expense.payer_id)}</p>
         </button>
-        <div className="flex flex-col items-end gap-1 shrink-0">
-          <span className="text-[15px] font-bold text-[#211738]">{fmt(expense.amount)}</span>
-          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-            style={{ color: status.color, background: status.bg }}>
-            {status.label}
-          </span>
-        </div>
-        <button onClick={() => setDotMenuOpen(o => !o)} className="shrink-0 w-8 h-8 flex items-center justify-center">
+        {expense.tags?.length > 0 && (
+          <div className="flex flex-wrap justify-end gap-1 shrink-0 max-w-[45%]">
+            {expense.tags.map(t => (
+              <span key={t} className="text-[11px] font-semibold text-[#6c63ff] bg-[#6c63ff]/10 px-2 py-0.5 rounded-full">{t}</span>
+            ))}
+          </div>
+        )}
+        <button onClick={() => setDotMenuOpen(o => !o)} className="shrink-0 w-8 h-8 flex items-center justify-center -mr-1">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="#736694">
             <circle cx="12" cy="5" r="1.5" />
             <circle cx="12" cy="12" r="1.5" />
@@ -378,19 +378,10 @@ function ExpenseCard({ expense, profiles, onOpen, onEdit, onDelete }) {
         </button>
       </div>
 
-      {/* Tags */}
-      {expense.tags?.length > 0 && (
-        <div className="mx-4 mb-2 flex flex-wrap gap-1">
-          {expense.tags.map(t => (
-            <span key={t} className="text-[11px] font-semibold text-[#6c63ff] bg-[#6c63ff]/10 px-2 py-0.5 rounded-full">{t}</span>
-          ))}
-        </div>
-      )}
-
       {/* Barre de progression */}
       <div className="mx-4 mb-3 flex flex-col gap-1">
         <div className="flex justify-between items-center">
-          <span className="text-[11px] text-[#736694]">{isDone ? 'Remboursé' : `${fmt(paid)} remboursé`}</span>
+          <span className="text-[11px] font-semibold" style={{ color: barColor }}>{fmt(paid)} / {fmt(expense.amount)}</span>
           <span className="text-[11px] font-semibold" style={{ color: barColor }}>{pct}%</span>
         </div>
         <div className="h-[4px] rounded-full bg-[#f0ebfa] overflow-hidden">

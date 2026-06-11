@@ -268,7 +268,11 @@ function ExpenseCard({ expense, currentUserId, profiles, onReimburse, onEdit, on
                 <div key={r.id} className="flex justify-between items-center">
                   <div>
                     <p className="text-[13px] text-[#211738]">{profileName(r.reimbursed_by)}</p>
-                    {r.note && <p className="text-[11px] text-[#736694]">{r.note}</p>}
+                    {r.reimbursement_date && (
+                      <p className="text-[11px] text-[#736694]">
+                        {new Date(r.reimbursement_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>
+                    )}
                   </div>
                   <span className="text-[13px] font-semibold text-[#22c55e]">+{fmt(r.amount)}</span>
                 </div>

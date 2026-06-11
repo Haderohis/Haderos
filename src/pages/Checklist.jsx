@@ -254,21 +254,22 @@ export default function Checklist() {
         )}
         {/* Checkbox — toujours cliquable */}
         <button onClick={() => toggleTask(task.id, task.done)}
-          className={`w-[22px] h-[22px] rounded-[4px] border-2 flex items-center justify-center shrink-0 ${task.done ? 'border-[#736694] bg-[#736694]' : 'border-[#6c63ff]'}`}>
+          style={{ minWidth: 0, minHeight: 0, width: 18, height: 18 }}
+          className={`rounded-[3px] border-2 flex items-center justify-center shrink-0 ${task.done ? 'border-[#736694] bg-[#736694]' : 'border-[#6c63ff]'}`}>
           {task.done && (
-            <svg width="11" height="11" viewBox="0 0 10 10" fill="none">
-              <path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+              <path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           )}
         </button>
         {/* Texte + tags (flex-1) — désactivé si terminé */}
-        <div className={`flex flex-col gap-[4px] min-w-0 flex-1 ${task.done ? 'pointer-events-none' : 'cursor-pointer'}`}
+        <div className={`flex flex-col gap-[3px] min-w-0 flex-1 ${task.done ? 'pointer-events-none' : 'cursor-pointer'}`}
           onClick={() => !task.done && openEdit(task)}>
           <span className={`text-[12px] font-bold leading-tight ${task.done ? 'line-through text-[#9992a8]' : 'text-black'}`}>{task.label}</span>
           {hasTags && (
-            <div className="flex flex-wrap items-center gap-1">
+            <div className="flex flex-wrap items-center gap-[3px]">
               {(task.tags ?? []).map((tag, i) => (
-                <span key={i} className={`flex items-center gap-[5px] text-[8px] px-[5px] py-[3px] rounded-full ${task.done ? 'bg-[#e8e5f0] text-[#9992a8]' : tagColor(tag.type)}`}>
+                <span key={i} className={`flex items-center gap-[4px] text-[8px] px-[4px] py-[1px] rounded-full ${task.done ? 'bg-[#e8e5f0] text-[#9992a8]' : tagColor(tag.type)}`}>
                   {tagIcon(tag.type)}{tag.label}
                 </span>
               ))}

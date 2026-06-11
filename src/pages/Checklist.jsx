@@ -800,7 +800,7 @@ export default function Checklist() {
               <p className="text-[11px] text-[#a49ffe]">Entrée ou virgule pour valider, Retour arrière pour supprimer</p>
             </div>
 
-            <button onClick={addTask} disabled={saving}
+            <button onClick={addTask} disabled={saving || !form.label.trim()}
               className="bg-[#6c63ff] rounded-[12px] h-12 text-[14px] font-semibold text-white disabled:opacity-60">
               {saving ? 'Enregistrement...' : editingId ? 'Modifier' : 'Ajouter'}
             </button>

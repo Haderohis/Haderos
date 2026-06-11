@@ -112,11 +112,16 @@ function NewExpenseModal({ currentUserId, onClose, onSaved, initialExpense }) {
   )
 }
 
-// ─── Modal remboursement ─────────────────────────────────────────────────────
+// ─── Modal détail dépense + remboursement ────────────────────────────────────
 
-function ReimburseModal({ expense, currentUserId, profiles, onClose, onSaved }) {
+function ExpenseDetailModal({ expense, currentUserId, profiles, onClose, onSaved }) {
   const remaining = remainingAmount(expense)
   const otherId = expense.payer_id === currentUserId ? expense.debtor_id : expense.payer_id
+  const isDone = remaining === 0
+  const paid = Number(expense.amount) - remaining
+  const pct = expense.amount > 0 ? Math.round((paid / Number(expense.amount)) * 100) : 0
+  const barColor = isDone ? '#22c55e' : pct > 0 ? '#f59e0b' : '#6c63ff'
+  const status = statusLabel(expense)
 
   const profileName = (id) => {
     const p = profiles[id]
@@ -124,11 +129,23 @@ function ReimburseModal({ expense, currentUserId, profiles, onClose, onSaved }) 
     return p.first_name && p.last_name ? `${p.first_name} ${p.last_name}` : p.display_name ?? id
   }
 
-  const [amount, setAmount] = useState(remaining.toFixed(2))
+  const fmtDate = (d) => d
+    ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+    : null
+
+  const sorted = [...(expense.reimbursements ?? [])].sort((a, b) => {
+    const da = a.reimbursement_date ?? a.created_at
+    const db = b.reimbursement_date ?? b.created_at
+    return new Date(db) - new Date(da)
+  })
+
+  const [amount, setAmount] = useState(remaining > 0 ? remaining.toFixed(2) : '')
   const [reimbDate, setReimbDate] = useState('')
   const [reimbBy, setReimbBy] = useState('me')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+
+  const canSave = amount && parseFloat(amount) > 0 && parseFloat(amount) <= remaining
 
   const handleSave = async () => {
     const val = parseFloat(amount)
@@ -147,51 +164,100 @@ function ReimburseModal({ expense, currentUserId, profiles, onClose, onSaved }) 
     onClose()
   }
 
-  const canSave = amount && parseFloat(amount) > 0 && parseFloat(amount) <= remaining
-
   return (
     <BottomSheet onClose={onClose}>
-      <p className="text-[17px] font-semibold text-[#211738]">Rembourser</p>
-      <p className="text-[13px] text-[#736694] -mt-2">
-        Reste à rembourser : <strong className="text-[#211738]">{fmt(remaining)}</strong>
-      </p>
-      <SegmentedControl
-        label="Qui rembourse ?"
-        value={reimbBy}
-        onChange={setReimbBy}
-        options={[{ value: 'me', label: 'Moi' }, { value: 'other', label: profileName(otherId) }]}
-      />
-      <TextField label="Montant (€)" required type="number" inputMode="decimal" value={amount}
-        onChange={e => setAmount(e.target.value)} placeholder="0.00" />
-      <DateField label="Date" value={reimbDate} onChange={e => setReimbDate(e.target.value)} />
-      {error && <p className="text-[12px] text-red-500">{error}</p>}
-      <SubmitButton onClick={handleSave} disabled={!canSave || saving}>
-        {saving ? 'Enregistrement…' : 'Valider le remboursement'}
-      </SubmitButton>
+      {/* En-tête dépense */}
+      <div className="flex justify-between items-start gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="text-[17px] font-semibold text-[#211738] leading-tight">{expense.description}</p>
+          <p className="text-[12px] text-[#736694] mt-0.5">Payé par {profileName(expense.payer_id)}</p>
+        </div>
+        <div className="text-right shrink-0">
+          <p className="text-[17px] font-bold text-[#211738]">{fmt(expense.amount)}</p>
+          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+            style={{ color: status.color, background: status.bg }}>{status.label}</span>
+        </div>
+      </div>
+
+      {/* Barre de progression */}
+      <div className="flex flex-col gap-1 -mt-1">
+        <div className="flex justify-between items-center">
+          <span className="text-[11px] text-[#736694]">{isDone ? 'Remboursé intégralement' : `${fmt(paid)} remboursé`}</span>
+          <span className="text-[11px] font-semibold" style={{ color: barColor }}>{pct}%</span>
+        </div>
+        <div className="h-[4px] rounded-full bg-[#f0ebfa] overflow-hidden">
+          <div className="h-full rounded-full transition-all duration-500"
+            style={{ width: `${pct}%`, background: barColor }} />
+        </div>
+      </div>
+
+      {/* Frise chronologique */}
+      {sorted.length > 0 && (
+        <div className="flex flex-col">
+          <p className="text-[11px] font-semibold text-[#736694] uppercase tracking-wide mb-3">Historique</p>
+          {sorted.map((r, i) => (
+            <div key={r.id} className="flex gap-3">
+              <div className="flex flex-col items-center pt-1">
+                <div className="w-[8px] h-[8px] rounded-full bg-[#22c55e] shrink-0" />
+                {i < sorted.length - 1 && <div className="w-px flex-1 bg-[#e8e0f5] my-1 min-h-[12px]" />}
+              </div>
+              <div className="flex-1 flex justify-between items-center pb-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-[13px] font-medium text-[#211738] truncate">{profileName(r.reimbursed_by)}</span>
+                  {fmtDate(r.reimbursement_date) && (
+                    <span className="text-[11px] text-[#a49ffe] shrink-0">{fmtDate(r.reimbursement_date)}</span>
+                  )}
+                </div>
+                <span className="text-[13px] font-semibold text-[#22c55e] shrink-0 ml-2">+{fmt(r.amount)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Formulaire remboursement */}
+      {!isDone && (
+        <>
+          {sorted.length > 0 && <div className="h-px bg-[#f0ebfa] -mt-2" />}
+          <p className="text-[14px] font-semibold text-[#211738]">
+            Ajouter un remboursement
+            <span className="text-[12px] font-normal text-[#736694] ml-2">Reste : {fmt(remaining)}</span>
+          </p>
+          <SegmentedControl
+            label="Qui rembourse ?"
+            value={reimbBy}
+            onChange={setReimbBy}
+            options={[{ value: 'me', label: 'Moi' }, { value: 'other', label: profileName(otherId) }]}
+          />
+          <TextField label="Montant (€)" required type="number" inputMode="decimal" value={amount}
+            onChange={e => setAmount(e.target.value)} placeholder="0.00" />
+          <DateField label="Date" value={reimbDate} onChange={e => setReimbDate(e.target.value)} />
+          {error && <p className="text-[12px] text-red-500">{error}</p>}
+          <SubmitButton onClick={handleSave} disabled={!canSave || saving}>
+            {saving ? 'Enregistrement…' : 'Valider le remboursement'}
+          </SubmitButton>
+        </>
+      )}
     </BottomSheet>
   )
 }
 
 // ─── Carte dépense ───────────────────────────────────────────────────────────
 
-function ExpenseCard({ expense, currentUserId, profiles, onReimburse, onEdit, onDelete }) {
-  const [open, setOpen] = useState(false)
+function ExpenseCard({ expense, profiles, onOpen, onEdit, onDelete }) {
   const [dotMenuOpen, setDotMenuOpen] = useState(false)
   const status = statusLabel(expense)
   const remaining = remainingAmount(expense)
+  const isDone = remaining === 0
+  const paid = Number(expense.amount) - remaining
+  const pct = expense.amount > 0 ? Math.round((paid / Number(expense.amount)) * 100) : 0
+  const barColor = isDone ? '#22c55e' : pct > 0 ? '#f59e0b' : '#6c63ff'
 
   const profileName = (id) => {
     const p = profiles[id]
     if (!p) return id
     return p.first_name && p.last_name ? `${p.first_name} ${p.last_name}` : p.display_name ?? id
   }
-
-  const payerName = profileName(expense.payer_id)
-  const canReimburse = remaining > 0
-  const isDone = remaining === 0
-  const paid = Number(expense.amount) - remaining
-  const pct = expense.amount > 0 ? Math.round((paid / Number(expense.amount)) * 100) : 0
-  const barColor = isDone ? '#22c55e' : pct > 0 ? '#f59e0b' : '#6c63ff'
 
   return (
     <div className={`bg-white/70 border border-white/85 backdrop-blur-sm rounded-[16px] relative transition-all ${isDone ? 'opacity-50 grayscale' : ''}`}>
@@ -219,23 +285,18 @@ function ExpenseCard({ expense, currentUserId, profiles, onReimburse, onEdit, on
 
       {/* Header */}
       <div className="flex items-center gap-3 p-4 pb-3">
-        <button onClick={() => setOpen(o => !o)} className="flex-1 min-w-0 text-left">
+        <button onClick={onOpen} className="flex-1 min-w-0 text-left">
           <p className="text-[14px] font-semibold text-[#211738] truncate">{expense.description}</p>
-          <p className="text-[12px] text-[#736694] mt-0.5">Payé par {payerName}</p>
+          <p className="text-[12px] text-[#736694] mt-0.5">Payé par {profileName(expense.payer_id)}</p>
         </button>
         <div className="flex flex-col items-end gap-1 shrink-0">
           <span className="text-[15px] font-bold text-[#211738]">{fmt(expense.amount)}</span>
-          <span
-            className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-            style={{ color: status.color, background: status.bg }}
-          >
+          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+            style={{ color: status.color, background: status.bg }}>
             {status.label}
           </span>
         </div>
-        <button
-          onClick={() => setDotMenuOpen(o => !o)}
-          className="shrink-0 w-8 h-8 flex items-center justify-center"
-        >
+        <button onClick={() => setDotMenuOpen(o => !o)} className="shrink-0 w-8 h-8 flex items-center justify-center">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="#736694">
             <circle cx="12" cy="5" r="1.5" />
             <circle cx="12" cy="12" r="1.5" />
@@ -251,52 +312,10 @@ function ExpenseCard({ expense, currentUserId, profiles, onReimburse, onEdit, on
           <span className="text-[11px] font-semibold" style={{ color: barColor }}>{pct}%</span>
         </div>
         <div className="h-[4px] rounded-full bg-[#f0ebfa] overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${pct}%`, background: barColor }}
-          />
+          <div className="h-full rounded-full transition-all duration-500"
+            style={{ width: `${pct}%`, background: barColor }} />
         </div>
       </div>
-
-      {open && (
-        <div className="px-4 pb-4 flex flex-col gap-3 border-t border-[#f0ebfa] rounded-b-[16px] overflow-hidden">
-          {/* Remboursements */}
-          {expense.reimbursements?.length > 0 && (
-            <div className="flex flex-col gap-2 pt-3">
-              <p className="text-[11px] font-semibold text-[#736694] uppercase tracking-wide">Remboursements</p>
-              {expense.reimbursements.map(r => (
-                <div key={r.id} className="flex justify-between items-center">
-                  <div>
-                    <p className="text-[13px] text-[#211738]">{profileName(r.reimbursed_by)}</p>
-                    {r.reimbursement_date && (
-                      <p className="text-[11px] text-[#736694]">
-                        {new Date(r.reimbursement_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </p>
-                    )}
-                  </div>
-                  <span className="text-[13px] font-semibold text-[#22c55e]">+{fmt(r.amount)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {remaining > 0 && (
-            <div className="flex justify-between items-center pt-1">
-              <span className="text-[12px] text-[#736694]">Reste</span>
-              <span className="text-[13px] font-bold text-[#f59e0b]">{fmt(remaining)}</span>
-            </div>
-          )}
-
-          {canReimburse && (
-            <button
-              onClick={() => onReimburse(expense)}
-              className="w-full h-[42px] bg-[#6c63ff] rounded-[12px] text-white text-[13px] font-bold mt-1"
-            >
-              Rembourser
-            </button>
-          )}
-        </div>
-      )}
     </div>
   )
 }
@@ -314,7 +333,7 @@ export default function Expenses() {
   const [editingExpense, setEditingExpense] = useState(null)
   const [deletingExpense, setDeletingExpense] = useState(null)
   const [deleting, setDeleting] = useState(false)
-  const [reimbursing, setReimbursing] = useState(null)
+  const [detailExpense, setDetailExpense] = useState(null)
   const [loading, setLoading] = useState(true)
 
   const { user } = useAuth()
@@ -492,9 +511,8 @@ export default function Expenses() {
             <ExpenseCard
               key={e.id}
               expense={e}
-              currentUserId={user.id}
               profiles={profiles}
-              onReimburse={setReimbursing}
+              onOpen={() => setDetailExpense(e)}
               onEdit={setEditingExpense}
               onDelete={setDeletingExpense}
             />
@@ -556,13 +574,13 @@ export default function Expenses() {
           </button>
         </BottomSheet>
       )}
-      {reimbursing && (
-        <ReimburseModal
-          expense={reimbursing}
+      {detailExpense && (
+        <ExpenseDetailModal
+          expense={detailExpense}
           currentUserId={user.id}
           profiles={profiles}
-          onClose={() => setReimbursing(null)}
-          onSaved={fetchExpenses}
+          onClose={() => setDetailExpense(null)}
+          onSaved={() => { fetchExpenses(); setDetailExpense(null) }}
         />
       )}
     </div>

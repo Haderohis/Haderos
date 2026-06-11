@@ -35,7 +35,7 @@ export default function Home() {
       <div className="absolute left-40 top-[460px] w-64 h-64 rounded-full bg-[#fed7aa] opacity-25 blur-3xl pointer-events-none" />
 
       {/* TopBar glassmorphism */}
-      <header className="absolute top-0 left-0 right-0 h-[94px] bg-white/55 border-b border-white/80 backdrop-blur-md z-20 flex items-end justify-between px-4 pb-4">
+      <header className="absolute top-0 left-0 right-0 h-[76px] bg-white/55 border-b border-white/80 backdrop-blur-md z-20 flex items-center justify-between px-4">
         <button
           onClick={() => setMenuOpen(true)}
           className="flex flex-col gap-[5px] p-2 min-w-[44px] min-h-[44px] justify-center"
@@ -45,13 +45,13 @@ export default function Home() {
           <span className="block w-[22px] h-[2.5px] rounded-sm bg-[rgba(33,23,56,0.75)]" />
           <span className="block w-[22px] h-[2.5px] rounded-sm bg-[rgba(33,23,56,0.75)]" />
         </button>
-        <h1 className="absolute left-1/2 -translate-x-1/2 bottom-4 text-[17px] font-semibold text-[#211738]">
+        <h1 className="absolute left-1/2 -translate-x-1/2 text-[17px] font-semibold text-[#211738]">
           Toolbox
         </h1>
       </header>
 
       {/* Carte centrale */}
-      <main className="absolute top-[110px] left-4 right-4 bottom-4 bg-white/55 border border-white/85 backdrop-blur-md rounded-[20px] flex flex-col items-center justify-center gap-2">
+      <main className="absolute top-[92px] left-4 right-4 bottom-4 bg-white/55 border border-white/85 backdrop-blur-md rounded-[20px] flex flex-col items-center justify-center gap-2">
         <p className="text-[22px] font-bold text-[rgba(33,23,56,0.9)]">Bonne journée</p>
         <p className="text-[13px] text-[#736694] text-center leading-snug">
           Ouvre le menu pour accéder<br />à tes outils
@@ -122,7 +122,21 @@ export default function Home() {
                   <path d="M7 12l3 3 7-7" stroke="#736694" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
-              <span className="text-[14px] text-[rgba(115,102,148,0.85)] flex-1 text-left">Checklist</span>
+              <span className="text-[14px] text-[rgba(115,102,148,0.85)] flex-1 text-left">Worklist</span>
+            </Link>
+
+            {/* Dépenses */}
+            <Link
+              to="/expenses"
+              className="flex items-center gap-3 w-full h-[52px] px-3 rounded-[12px]"
+            >
+              <div className="w-7 h-7 bg-[#f2edfa] rounded-[8px] flex items-center justify-center shrink-0">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="9" stroke="#736694" strokeWidth="2" />
+                  <path d="M12 7v1m0 8v1M9.5 9.5C9.5 8.67 10.17 8 11 8h2a1.5 1.5 0 010 3h-2a1.5 1.5 0 000 3h2c.83 0 1.5-.67 1.5-1.5" stroke="#736694" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </div>
+              <span className="text-[14px] text-[rgba(115,102,148,0.85)] flex-1 text-left">Dépenses</span>
             </Link>
           </div>
 
@@ -142,7 +156,7 @@ export default function Home() {
               </svg>
               <span className="text-[12px] font-semibold text-[#736694]">Se déconnecter</span>
             </button>
-            <p className="text-center text-[11px] text-[rgba(115,102,148,0.35)] mt-3">Oparty v0.1</p>
+            <p className="text-center text-[11px] text-[rgba(115,102,148,0.35)] mt-3">HadeTools v0.1</p>
           </div>
         </div>
       </nav>

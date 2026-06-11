@@ -403,17 +403,17 @@ export default function Checklist() {
       <div className="absolute left-40 top-[461px] w-64 h-64 rounded-full bg-[#fed7aa] opacity-25 blur-3xl pointer-events-none"/>
 
       {/* TopBar */}
-      <header className="absolute top-0 left-0 right-0 h-[94px] bg-white/55 border-b border-white/80 backdrop-blur-md z-20 flex items-end justify-between px-4 pb-4">
+      <header className="absolute top-0 left-0 right-0 h-[76px] bg-white/55 border-b border-white/80 backdrop-blur-md z-20 flex items-center justify-between px-4">
         <button onClick={() => setMenuOpen(true)} className="flex flex-col gap-[5px] p-2 min-w-[44px] min-h-[44px] justify-center">
           <span className="block w-[22px] h-[2.5px] rounded-sm bg-[rgba(33,23,56,0.75)]"/>
           <span className="block w-[22px] h-[2.5px] rounded-sm bg-[rgba(33,23,56,0.75)]"/>
           <span className="block w-[22px] h-[2.5px] rounded-sm bg-[rgba(33,23,56,0.75)]"/>
         </button>
-        <h1 className="absolute left-1/2 -translate-x-1/2 bottom-4 text-[17px] font-semibold text-[#211738]">Worklist</h1>
+        <h1 className="absolute left-1/2 -translate-x-1/2 text-[17px] font-semibold text-[#211738]">Worklist</h1>
       </header>
 
       {/* Barre recherche + jour */}
-      <div className="absolute top-[94px] left-0 right-0 z-10 bg-white/55 backdrop-blur-md border-b border-white/80">
+      <div className="absolute top-[76px] left-0 right-0 z-10 bg-white/55 backdrop-blur-md border-b border-white/80">
 
         {/* Barre recherche + filtres */}
         <div className="px-4 pt-4 flex gap-2">
@@ -543,7 +543,7 @@ export default function Checklist() {
         </div>
 
         {/* Navigation jour */}
-        <div className="flex items-center justify-between px-4 mt-2 mb-4 h-11">
+        <div className="flex items-center justify-between px-4 mt-2 mb-2 h-11">
           <button onClick={prevDay} disabled={!hasPrev}
             className={`min-w-[44px] min-h-[44px] flex items-center justify-center ${!hasPrev ? 'opacity-20' : ''}`}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -568,11 +568,11 @@ export default function Checklist() {
       </div>
 
       {/* Contenu */}
-      <main className={`absolute left-4 right-4 overflow-hidden flex flex-col top-[222px] ${isToday ? 'bottom-[76px]' : 'bottom-4'}`}>
+      <main className={`absolute left-4 right-4 overflow-hidden flex flex-col top-[204px] ${isToday ? 'bottom-[76px]' : 'bottom-4'}`}>
         <div className="flex flex-col gap-3 overflow-y-auto flex-1">
 
           {!hasTasks && (
-            <div className="bg-white/60 border border-[#c0befe]/50 rounded-[12px] h-16 flex flex-col items-center justify-center mt-2">
+            <div className="bg-white/60 border border-[#c0befe]/50 rounded-[12px] h-16 flex flex-col items-center justify-center mt-8">
               <p className="text-[22px] font-bold text-[#6c63ff] leading-tight">Aucune tâche</p>
               <p className="text-[11px] text-[#a49ffe]">pour le moment</p>
             </div>
@@ -853,6 +853,15 @@ export default function Checklist() {
               <span className="text-[14px] font-semibold text-[#6c63ff] flex-1 text-left">Worklist</span>
               <span className="w-2 h-2 rounded-full bg-[#6c63ff]"/>
             </button>
+            <button onClick={() => navigate('/expenses')} className="flex items-center gap-3 w-full h-[52px] px-3 rounded-[12px]">
+              <div className="w-7 h-7 bg-[#f2edfa] rounded-[8px] flex items-center justify-center shrink-0">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="9" stroke="#736694" strokeWidth="2"/>
+                  <path d="M12 7v1m0 8v1M9.5 9.5C9.5 8.67 10.17 8 11 8h2a1.5 1.5 0 010 3h-2a1.5 1.5 0 000 3h2c.83 0 1.5-.67 1.5-1.5" stroke="#736694" strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
+              </div>
+              <span className="text-[14px] text-[rgba(115,102,148,0.85)] flex-1 text-left">Dépenses</span>
+            </button>
           </div>
           <div className="flex-1"/>
           <div className="px-4 pb-10">
@@ -865,7 +874,7 @@ export default function Checklist() {
               </svg>
               <span className="text-[12px] font-semibold text-[#736694]">Se déconnecter</span>
             </button>
-            <p className="text-center text-[11px] text-[rgba(115,102,148,0.35)] mt-3">Oparty v0.1</p>
+            <p className="text-center text-[11px] text-[rgba(115,102,148,0.35)] mt-3">HadeTools v0.1</p>
           </div>
         </div>
       </nav>

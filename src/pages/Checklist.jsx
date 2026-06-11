@@ -284,9 +284,17 @@ export default function Checklist() {
           )}
         </div>
         {/* Date */}
-        {task.due_date && (
+        {(task.due_date || (task.done && task.completed_at && search)) && (
           <div className="flex justify-center shrink-0">
-            {overdue && !task.done ? (
+            {task.done && task.completed_at && search ? (
+              <div className="flex items-center gap-[6px]">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="4" width="18" height="18" rx="2" stroke="#9992a8" strokeWidth="2"/>
+                  <path d="M16 2v4M8 2v4M3 10h18" stroke="#9992a8" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+                <span className="text-[12px] whitespace-nowrap text-[#9992a8]">{formatDueDate(task.completed_at)}</span>
+              </div>
+            ) : overdue && !task.done ? (
               <div className="bg-[rgba(254,228,229,0.6)] border border-[rgba(153,153,166,0.2)] rounded-full px-2 py-1 flex items-center gap-[6px]">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                   <rect x="3" y="4" width="18" height="18" rx="2" stroke="#b91c1c" strokeWidth="2"/>
@@ -294,7 +302,7 @@ export default function Checklist() {
                 </svg>
                 <span className="text-[12px] text-[#b91c1c]">{formatDueDate(task.due_date)}</span>
               </div>
-            ) : (
+            ) : task.due_date ? (
               <div className="flex items-center gap-[6px]">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                   <rect x="3" y="4" width="18" height="18" rx="2" stroke={task.done ? '#9992a8' : '#736694'} strokeWidth="2"/>
@@ -302,7 +310,7 @@ export default function Checklist() {
                 </svg>
                 <span className={`text-[12px] whitespace-nowrap ${task.done ? 'text-[#9992a8]' : 'text-black'}`}>{formatDueDate(task.due_date)}</span>
               </div>
-            )}
+            ) : null}
           </div>
         )}
         {/* Supprimer — désactivé si terminé */}

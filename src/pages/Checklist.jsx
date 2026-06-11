@@ -236,7 +236,8 @@ export default function Checklist() {
   }
 
   // ── Composant tâche ─────────────────────────────────────────
-  const TaskItem = ({ task, overdue = false, sortable = false }) => {
+  const TaskItem = ({ task, overdue: overdueProp = false, sortable = false }) => {
+    const overdue = overdueProp || (!task.done && task.due_date && new Date(task.due_date + 'T00:00:00') < todayDate)
     const sortableProps = sortable ? useSortable({ id: task.id }) : null
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = sortableProps ?? {}
     const hasTags = (task.tags ?? []).length > 0

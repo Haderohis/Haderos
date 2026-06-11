@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import Drawer from '../components/Drawer'
+import BottomSheet from '../components/BottomSheet'
+import { TextField, DateField, SubmitButton } from '../components/FormFields'
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors,
 } from '@dnd-kit/core'
@@ -636,176 +638,152 @@ export default function Checklist() {
 
       {/* Modal confirmation suppression */}
       {deleteConfirm && (
-        <div className="absolute inset-0 z-50 flex items-end justify-center bg-[rgba(33,23,56,0.3)]" onClick={() => setDeleteConfirm(null)}>
-          <div className="w-full bg-white/95 backdrop-blur-md rounded-t-[20px] p-6 flex flex-col gap-4" onClick={e => e.stopPropagation()}>
-            <p className="text-[17px] font-semibold text-[#211738]">Supprimer la tâche ?</p>
-            <p className="text-[13px] text-[#736694] -mt-2">« {deleteConfirm.label} »</p>
-            <div className="flex gap-3">
-              <button onClick={() => setDeleteConfirm(null)}
-                className="flex-1 h-12 rounded-[12px] border border-[#736694]/30 text-[14px] font-semibold text-[#736694]">
-                Annuler
-              </button>
-              <button onClick={async () => { await deleteTask(deleteConfirm.id); setDeleteConfirm(null) }}
-                className="flex-1 h-12 rounded-[12px] bg-red-500 text-[14px] font-semibold text-white">
-                Supprimer
-              </button>
-            </div>
+        <BottomSheet onClose={() => setDeleteConfirm(null)}>
+          <p className="text-[17px] font-semibold text-[#211738]">Supprimer la tâche ?</p>
+          <p className="text-[13px] text-[#736694] -mt-2">« {deleteConfirm.label} »</p>
+          <div className="flex gap-3">
+            <button onClick={() => setDeleteConfirm(null)}
+              className="flex-1 h-12 rounded-[12px] border border-[#736694]/30 text-[14px] font-semibold text-[#736694]">
+              Annuler
+            </button>
+            <button onClick={async () => { await deleteTask(deleteConfirm.id); setDeleteConfirm(null) }}
+              className="flex-1 h-12 rounded-[12px] bg-red-500 text-[14px] font-semibold text-white">
+              Supprimer
+            </button>
           </div>
-        </div>
+        </BottomSheet>
       )}
 
       {/* Modal Figma */}
       {figmaModal && (
-        <div className="absolute inset-0 z-50 flex items-end justify-center bg-[rgba(33,23,56,0.3)]" onClick={() => setFigmaModal(null)}>
-          <div className="w-full bg-white/95 backdrop-blur-md rounded-t-[20px] p-6 flex flex-col gap-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-2">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M5 5.5A3.5 3.5 0 018.5 2H12v7H8.5A3.5 3.5 0 015 5.5z" stroke="#a259ff" strokeWidth="1.5"/>
-                <path d="M12 2h3.5a3.5 3.5 0 010 7H12V2z" stroke="#a259ff" strokeWidth="1.5"/>
-                <path d="M12 12.5a3.5 3.5 0 117 0 3.5 3.5 0 01-7 0z" stroke="#a259ff" strokeWidth="1.5"/>
-                <path d="M5 12.5A3.5 3.5 0 018.5 9H12v7H8.5A3.5 3.5 0 015 12.5z" stroke="#a259ff" strokeWidth="1.5"/>
-                <path d="M5 19.5A3.5 3.5 0 018.5 16H12v3.5a3.5 3.5 0 01-7 0z" stroke="#a259ff" strokeWidth="1.5"/>
-              </svg>
-              <p className="text-[17px] font-semibold text-[#211738]">Lien Figma</p>
-            </div>
-            <p className="text-[13px] text-[#736694] -mt-2">{figmaModal.label}</p>
+        <BottomSheet onClose={() => setFigmaModal(null)}>
+          <div className="flex items-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M5 5.5A3.5 3.5 0 018.5 2H12v7H8.5A3.5 3.5 0 015 5.5z" stroke="#a259ff" strokeWidth="1.5"/>
+              <path d="M12 2h3.5a3.5 3.5 0 010 7H12V2z" stroke="#a259ff" strokeWidth="1.5"/>
+              <path d="M12 12.5a3.5 3.5 0 117 0 3.5 3.5 0 01-7 0z" stroke="#a259ff" strokeWidth="1.5"/>
+              <path d="M5 12.5A3.5 3.5 0 018.5 9H12v7H8.5A3.5 3.5 0 015 12.5z" stroke="#a259ff" strokeWidth="1.5"/>
+              <path d="M5 19.5A3.5 3.5 0 018.5 16H12v3.5a3.5 3.5 0 01-7 0z" stroke="#a259ff" strokeWidth="1.5"/>
+            </svg>
+            <p className="text-[17px] font-semibold text-[#211738]">Lien Figma</p>
+          </div>
+          <p className="text-[13px] text-[#736694] -mt-2">{figmaModal.label}</p>
+          <div className="relative bg-[#f2edfa] rounded-[10px] h-12 flex items-center px-4 gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="shrink-0">
+              <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <input autoFocus type="url" value={figmaUrl}
+              onChange={e => setFigmaUrl(e.target.value)}
+              placeholder="https://figma.com/..."
+              className="flex-1 bg-transparent text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe]"/>
+            {figmaUrl && <button onClick={() => setFigmaUrl('')} style={{ minWidth: 0, minHeight: 0 }} className="text-[#a49ffe] text-lg leading-none">&times;</button>}
+          </div>
+          <SubmitButton onClick={saveFigmaUrl} disabled={saving}>
+            {saving ? 'Enregistrement...' : 'Enregistrer'}
+          </SubmitButton>
+        </BottomSheet>
+      )}
+
+      {/* Modal */}
+      {showModal && (
+        <BottomSheet onClose={() => setShowModal(false)}>
+          <p className="text-[17px] font-semibold text-[#211738]">{editingId ? 'Modifier la tâche' : 'Nouvelle tâche'}</p>
+
+          <TextField label="Nom" required autoFocus value={form.label} error={error}
+            onChange={e => { setForm(f => ({ ...f, label: e.target.value })); setError('') }}
+            placeholder="Nom de la tâche..." />
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[12px] font-medium text-[#736694]">Lien Jira</label>
             <div className="relative bg-[#f2edfa] rounded-[10px] h-12 flex items-center px-4 gap-2">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="shrink-0">
                 <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              <input autoFocus type="url" value={figmaUrl}
-                onChange={e => setFigmaUrl(e.target.value)}
-                placeholder="https://figma.com/..."
+              <input type="url" value={form.jiraUrl}
+                onChange={e => setForm(f => ({ ...f, jiraUrl: e.target.value }))}
+                placeholder="https://..."
                 className="flex-1 bg-transparent text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe]"/>
-              {figmaUrl && <button onClick={() => setFigmaUrl('')} style={{ minWidth: 0, minHeight: 0 }} className="text-[#a49ffe] text-lg leading-none">&times;</button>}
             </div>
-            <button onClick={saveFigmaUrl} disabled={saving}
-              className="bg-[#6c63ff] rounded-[12px] h-12 text-[14px] font-semibold text-white disabled:opacity-60">
-              {saving ? 'Enregistrement...' : 'Enregistrer'}
-            </button>
           </div>
-        </div>
-      )}
 
-      {/* Modal */}
-      {showModal && (
-        <div className="absolute inset-0 z-50 flex items-end justify-center bg-[rgba(33,23,56,0.3)]" onClick={() => setShowModal(false)}>
-          <div className="w-full bg-white/95 backdrop-blur-md rounded-t-[20px] p-6 flex flex-col gap-4 max-h-[85dvh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <p className="text-[17px] font-semibold text-[#211738]">{editingId ? 'Modifier la tâche' : 'Nouvelle tâche'}</p>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[12px] font-medium text-[#736694]">Nom <span className="text-[#6c63ff]">*</span></label>
-              <input autoFocus type="text" value={form.label}
-                onChange={e => { setForm(f => ({ ...f, label: e.target.value })); setError('') }}
-                placeholder="Nom de la tâche..."
-                className={`bg-[#f2edfa] rounded-[10px] h-12 px-4 text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe] ${error ? 'ring-2 ring-red-400' : ''}`}/>
-              {error && <p className="text-[12px] text-red-500">{error}</p>}
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[12px] font-medium text-[#736694]">Lien Jira</label>
-              <div className="relative bg-[#f2edfa] rounded-[10px] h-12 flex items-center px-4 gap-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="shrink-0">
-                  <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <input type="url" value={form.jiraUrl}
-                  onChange={e => setForm(f => ({ ...f, jiraUrl: e.target.value }))}
-                  placeholder="https://..."
-                  className="flex-1 bg-transparent text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe]"/>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1" ref={groupRef}>
-              <label className="text-[12px] font-medium text-[#736694]">Groupe</label>
-              <div className="relative">
-                <input type="text" value={groupInput}
-                  onChange={e => { setGroupInput(e.target.value); setForm(f => ({ ...f, group: e.target.value })); setGroupOpen(true) }}
-                  onFocus={() => setGroupOpen(true)}
-                  placeholder="Sélectionne ou crée un groupe..."
-                  className="bg-[#f2edfa] rounded-[10px] h-12 px-4 text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe] w-full"/>
-                {groupOpen && (groupSuggestions.length > 0 || (groupInput.trim() && !allGroups.includes(groupInput.trim()))) && (
-                  <ul className="absolute left-0 right-0 top-[52px] bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-[#f2edfa]">
-                    {groupSuggestions.map(g => (
-                      <li key={g}>
-                        <button className="w-full text-left px-4 py-3 text-[13px] text-[#211738] hover:bg-[#f2edfa]"
-                          onClick={() => { setForm(f => ({ ...f, group: g })); setGroupInput(g); setGroupOpen(false) }}>{g}</button>
-                      </li>
-                    ))}
-                    {groupInput.trim() && !allGroups.includes(groupInput.trim()) && (
-                      <li>
-                        <button className="w-full text-left px-4 py-3 text-[13px] text-[#6c63ff] font-medium hover:bg-[#f2edfa]"
-                          onClick={() => { setForm(f => ({ ...f, group: groupInput.trim() })); setGroupOpen(false) }}>
-                          + Créer "{groupInput.trim()}"
-                        </button>
-                      </li>
-                    )}
-                  </ul>
-                )}
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[12px] font-medium text-[#736694]">Date d'échéance</label>
-              <div className="relative bg-[#f2edfa] rounded-[10px] h-12 flex items-center px-4">
-                <input ref={dateRef} type="date" value={form.dueDate}
-                  onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
-                  className="flex-1 bg-transparent text-[14px] text-[#211738] outline-none cursor-pointer [color-scheme:light]"/>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="shrink-0 cursor-pointer pointer-events-auto"
-                  onPointerDown={e => { e.preventDefault(); dateRef.current?.showPicker() }}>
-                  <rect x="3" y="4" width="18" height="18" rx="2" stroke="#736694" strokeWidth="2"/>
-                  <path d="M16 2v4M8 2v4M3 10h18" stroke="#736694" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-[12px] font-medium text-[#736694]">Tags</label>
-              <div className="relative bg-[#f2edfa] rounded-[10px] min-h-12 px-3 py-2 flex flex-wrap gap-2 items-center">
-                {form.tags.map((tag, i) => (
-                  <span key={i} className={`flex items-center gap-1 text-[12px] font-medium px-2 py-1 rounded-full shrink-0 ${tagColor(tag.type)}`}>
-                    {tagIcon(tag.type)}{tag.label}
-                    <button onPointerDown={e => { e.preventDefault(); removeTag(i) }} className="leading-none min-w-0 min-h-0 w-4 h-4">&times;</button>
-                  </span>
-                ))}
-                <input type="text" value={tagInput} onChange={e => setTagInput(e.target.value)}
-                  onKeyDown={e => {
-                    if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) { e.preventDefault(); addTag(tagInput) }
-                    if (e.key === 'Backspace' && !tagInput && form.tags.length > 0) removeTag(form.tags.length - 1)
-                  }}
-                  placeholder={form.tags.length === 0 ? 'Ajouter un tag...' : ''}
-                  className="bg-transparent text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe] min-w-[80px] flex-1"/>
-                <div className="flex gap-1 shrink-0">
-                  {TAG_TYPES.map(t => (
-                    <button key={t.value} onPointerDown={e => { e.preventDefault(); setTagType(t.value) }}
-                      className={`w-7 h-7 rounded-[6px] flex items-center justify-center transition-colors ${tagType === t.value ? t.color : 'text-[#a49ffe]'}`}
-                      title={t.value}>{t.icon}</button>
+          <div className="flex flex-col gap-1" ref={groupRef}>
+            <label className="text-[12px] font-medium text-[#736694]">Groupe</label>
+            <div className="relative">
+              <input type="text" value={groupInput}
+                onChange={e => { setGroupInput(e.target.value); setForm(f => ({ ...f, group: e.target.value })); setGroupOpen(true) }}
+                onFocus={() => setGroupOpen(true)}
+                placeholder="Sélectionne ou crée un groupe..."
+                className="bg-[#f2edfa] rounded-[10px] h-12 px-4 text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe] w-full"/>
+              {groupOpen && (groupSuggestions.length > 0 || (groupInput.trim() && !allGroups.includes(groupInput.trim()))) && (
+                <ul className="absolute left-0 right-0 top-[52px] bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-[#f2edfa]">
+                  {groupSuggestions.map(g => (
+                    <li key={g}>
+                      <button className="w-full text-left px-4 py-3 text-[13px] text-[#211738] hover:bg-[#f2edfa]"
+                        onClick={() => { setForm(f => ({ ...f, group: g })); setGroupInput(g); setGroupOpen(false) }}>{g}</button>
+                    </li>
                   ))}
-                </div>
-                {tagSuggestions.length > 0 && (
-                  <ul className="absolute left-0 right-0 top-full mt-1 bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-[#f2edfa]">
-                    {tagSuggestions.map((s, i) => (
-                      <li key={i}>
-                        <button className="w-full text-left px-4 py-3 text-[13px] hover:bg-[#f2edfa] flex items-center gap-2"
-                          onClick={() => addTag(s.label, s.type)}>
-                          <span className={`text-[11px] px-2 py-0.5 rounded-full ${tagColor(s.type)}`}>{s.type}</span>
-                          {s.label}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-              <p className="text-[11px] text-[#a49ffe]">Entrée ou virgule pour valider, Retour arrière pour supprimer</p>
+                  {groupInput.trim() && !allGroups.includes(groupInput.trim()) && (
+                    <li>
+                      <button className="w-full text-left px-4 py-3 text-[13px] text-[#6c63ff] font-medium hover:bg-[#f2edfa]"
+                        onClick={() => { setForm(f => ({ ...f, group: groupInput.trim() })); setGroupOpen(false) }}>
+                        + Créer "{groupInput.trim()}"
+                      </button>
+                    </li>
+                  )}
+                </ul>
+              )}
             </div>
-
-            <button onClick={addTask} disabled={saving || !form.label.trim()}
-              className="bg-[#6c63ff] rounded-[12px] h-12 text-[14px] font-semibold text-white disabled:opacity-60">
-              {saving ? 'Enregistrement...' : editingId ? 'Modifier' : 'Ajouter'}
-            </button>
           </div>
-        </div>
+
+          <DateField label="Date d'échéance" value={form.dueDate}
+            onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} />
+
+          <div className="flex flex-col gap-2">
+            <label className="text-[12px] font-medium text-[#736694]">Tags</label>
+            <div className="relative bg-[#f2edfa] rounded-[10px] min-h-12 px-3 py-2 flex flex-wrap gap-2 items-center">
+              {form.tags.map((tag, i) => (
+                <span key={i} className={`flex items-center gap-1 text-[12px] font-medium px-2 py-1 rounded-full shrink-0 ${tagColor(tag.type)}`}>
+                  {tagIcon(tag.type)}{tag.label}
+                  <button onPointerDown={e => { e.preventDefault(); removeTag(i) }} className="leading-none min-w-0 min-h-0 w-4 h-4">&times;</button>
+                </span>
+              ))}
+              <input type="text" value={tagInput} onChange={e => setTagInput(e.target.value)}
+                onKeyDown={e => {
+                  if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) { e.preventDefault(); addTag(tagInput) }
+                  if (e.key === 'Backspace' && !tagInput && form.tags.length > 0) removeTag(form.tags.length - 1)
+                }}
+                placeholder={form.tags.length === 0 ? 'Ajouter un tag...' : ''}
+                className="bg-transparent text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe] min-w-[80px] flex-1"/>
+              <div className="flex gap-1 shrink-0">
+                {TAG_TYPES.map(t => (
+                  <button key={t.value} onPointerDown={e => { e.preventDefault(); setTagType(t.value) }}
+                    className={`w-7 h-7 rounded-[6px] flex items-center justify-center transition-colors ${tagType === t.value ? t.color : 'text-[#a49ffe]'}`}
+                    title={t.value}>{t.icon}</button>
+                ))}
+              </div>
+              {tagSuggestions.length > 0 && (
+                <ul className="absolute left-0 right-0 top-full mt-1 bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-[#f2edfa]">
+                  {tagSuggestions.map((s, i) => (
+                    <li key={i}>
+                      <button className="w-full text-left px-4 py-3 text-[13px] hover:bg-[#f2edfa] flex items-center gap-2"
+                        onClick={() => addTag(s.label, s.type)}>
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full ${tagColor(s.type)}`}>{s.type}</span>
+                        {s.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <p className="text-[11px] text-[#a49ffe]">Entrée ou virgule pour valider, Retour arrière pour supprimer</p>
+          </div>
+
+          <SubmitButton onClick={addTask} disabled={saving || !form.label.trim()}>
+            {saving ? 'Enregistrement...' : editingId ? 'Modifier' : 'Ajouter'}
+          </SubmitButton>
+        </BottomSheet>
       )}
 
       <Drawer open={menuOpen} onClose={() => setMenuOpen(false)} />

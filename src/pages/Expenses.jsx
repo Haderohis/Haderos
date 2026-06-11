@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import Drawer from '../components/Drawer'
+import BottomSheet from '../components/BottomSheet'
+import { TextField, DateField, SelectField, SegmentedControl, SubmitButton } from '../components/FormFields'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -28,12 +30,13 @@ function NewExpenseModal({ currentUserId, onClose, onSaved }) {
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
   const [expenseDate, setExpenseDate] = useState('')
-  const [payerIsMe, setPayerIsMe] = useState(true)
+  const [payer, setPayer] = useState('me')
   const [otherUserId, setOtherUserId] = useState('')
   const [users, setUsers] = useState([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
-  const dateRef = useRef(null)
+
+  const canSave = description.trim() && amount && otherUserId
 
   useEffect(() => {
     supabase
@@ -50,11 +53,11 @@ function NewExpenseModal({ currentUserId, onClose, onSaved }) {
     p.first_name && p.last_name ? `${p.first_name} ${p.last_name}` : p.display_name ?? p.id
 
   const handleSave = async () => {
-    if (!amount || !description || !otherUserId) { setError('Remplis tous les champs obligatoires.'); return }
+    if (!canSave) return
     setSaving(true)
     setError(null)
-    const payerId = payerIsMe ? currentUserId : otherUserId
-    const debtorId = payerIsMe ? otherUserId : currentUserId
+    const payerId = payer === 'me' ? currentUserId : otherUserId
+    const debtorId = payer === 'me' ? otherUserId : currentUserId
     const { error: err } = await supabase.from('expenses').insert({
       created_by: currentUserId,
       payer_id: payerId,
@@ -70,99 +73,27 @@ function NewExpenseModal({ currentUserId, onClose, onSaved }) {
   }
 
   return (
-    <div className="absolute inset-0 z-50 flex items-end justify-center bg-[rgba(33,23,56,0.3)]" onClick={onClose}>
-      <div className="w-full bg-white/95 backdrop-blur-md rounded-t-[20px] p-6 flex flex-col gap-4 max-h-[85dvh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <p className="text-[17px] font-semibold text-[#211738]">Nouvelle dépense</p>
-
-        <div className="flex flex-col gap-1">
-          <label className="text-[12px] font-medium text-[#736694]">Description <span className="text-[#6c63ff]">*</span></label>
-          <input
-            autoFocus
-            type="text"
-            value={description}
-            onChange={e => { setDescription(e.target.value); setError(null) }}
-            placeholder="Ex : Resto, courses…"
-            className="bg-[#f2edfa] rounded-[10px] h-12 px-4 text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe]"
-          />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label className="text-[12px] font-medium text-[#736694]">Montant (€) <span className="text-[#6c63ff]">*</span></label>
-          <input
-            type="number"
-            inputMode="decimal"
-            value={amount}
-            onChange={e => { setAmount(e.target.value); setError(null) }}
-            placeholder="0.00"
-            className="bg-[#f2edfa] rounded-[10px] h-12 px-4 text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe]"
-          />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label className="text-[12px] font-medium text-[#736694]">Date</label>
-          <div className="relative bg-[#f2edfa] rounded-[10px] h-12 flex items-center px-4">
-            <input
-              ref={dateRef}
-              type="date"
-              value={expenseDate}
-              onChange={e => setExpenseDate(e.target.value)}
-              className="flex-1 bg-transparent text-[14px] text-[#211738] outline-none cursor-pointer [color-scheme:light]"
-            />
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="shrink-0 cursor-pointer"
-              onPointerDown={e => { e.preventDefault(); dateRef.current?.showPicker() }}>
-              <rect x="3" y="4" width="18" height="18" rx="2" stroke="#736694" strokeWidth="2" />
-              <path d="M16 2v4M8 2v4M3 10h18" stroke="#736694" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label className="text-[12px] font-medium text-[#736694]">Autre personne <span className="text-[#6c63ff]">*</span></label>
-          <div className="relative bg-[#f2edfa] rounded-[10px] h-12 flex items-center px-4">
-            <select
-              value={otherUserId}
-              onChange={e => setOtherUserId(e.target.value)}
-              className="flex-1 bg-transparent text-[14px] text-[#211738] outline-none appearance-none cursor-pointer"
-            >
-              {users.map(u => (
-                <option key={u.id} value={u.id}>{profileName(u)}</option>
-              ))}
-            </select>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="shrink-0 pointer-events-none">
-              <path d="M6 9l6 6 6-6" stroke="#736694" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label className="text-[12px] font-medium text-[#736694]">Qui a payé ?</label>
-          <div className="flex bg-[#f2edfa] rounded-[10px] h-12 p-1 gap-1">
-            <button
-              onClick={() => setPayerIsMe(true)}
-              className={`flex-1 rounded-[8px] text-[13px] font-semibold transition-colors ${payerIsMe ? 'bg-[#6c63ff] text-white' : 'text-[#736694]'}`}
-            >
-              Moi
-            </button>
-            <button
-              onClick={() => setPayerIsMe(false)}
-              className={`flex-1 rounded-[8px] text-[13px] font-semibold transition-colors ${!payerIsMe ? 'bg-[#6c63ff] text-white' : 'text-[#736694]'}`}
-            >
-              L'autre
-            </button>
-          </div>
-        </div>
-
-        {error && <p className="text-[12px] text-red-500">{error}</p>}
-
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="bg-[#6c63ff] rounded-[12px] h-12 text-[14px] font-semibold text-white disabled:opacity-60"
-        >
-          {saving ? 'Enregistrement…' : 'Ajouter'}
-        </button>
-      </div>
-    </div>
+    <BottomSheet onClose={onClose}>
+      <p className="text-[17px] font-semibold text-[#211738]">Nouvelle dépense</p>
+      <TextField label="Description" required autoFocus value={description}
+        onChange={e => setDescription(e.target.value)} placeholder="Ex : Resto, courses…" />
+      <TextField label="Montant (€)" required type="number" inputMode="decimal" value={amount}
+        onChange={e => setAmount(e.target.value)} placeholder="0.00" />
+      <DateField label="Date" value={expenseDate} onChange={e => setExpenseDate(e.target.value)} />
+      <SelectField label="Autre personne" required value={otherUserId} onChange={e => setOtherUserId(e.target.value)}>
+        {users.map(u => <option key={u.id} value={u.id}>{profileName(u)}</option>)}
+      </SelectField>
+      <SegmentedControl
+        label="Qui a payé ?"
+        value={payer}
+        onChange={setPayer}
+        options={[{ value: 'me', label: 'Moi' }, { value: 'other', label: "L'autre" }]}
+      />
+      {error && <p className="text-[12px] text-red-500">{error}</p>}
+      <SubmitButton onClick={handleSave} disabled={!canSave || saving}>
+        {saving ? 'Enregistrement…' : 'Ajouter'}
+      </SubmitButton>
+    </BottomSheet>
   )
 }
 
@@ -192,50 +123,23 @@ function ReimburseModal({ expense, currentUserId, onClose, onSaved }) {
     onClose()
   }
 
+  const canSave = amount && parseFloat(amount) > 0 && parseFloat(amount) <= remaining
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
-      <div className="absolute inset-0 bg-[rgba(33,23,56,0.35)]" onClick={onClose} />
-      <div className="relative w-full max-w-lg bg-white rounded-t-[24px] p-6 pb-10 flex flex-col gap-5">
-        <div className="w-10 h-1 bg-[#e2ddf0] rounded-full mx-auto -mt-1" />
-        <h2 className="text-[17px] font-bold text-[#211738]">Rembourser</h2>
-        <p className="text-[13px] text-[#736694] -mt-3">
-          Reste à rembourser : <strong className="text-[#211738]">{fmt(remaining)}</strong>
-        </p>
-
-        <div className="flex flex-col gap-3">
-          <div>
-            <label className="text-[12px] font-semibold text-[#736694] uppercase tracking-wide">Montant (€)</label>
-            <input
-              type="number"
-              inputMode="decimal"
-              value={amount}
-              onChange={e => setAmount(e.target.value)}
-              className="mt-1 w-full h-[46px] px-4 rounded-[12px] border border-[#e2ddf0] text-[15px] text-[#211738] focus:outline-none focus:border-[#6c63ff]"
-            />
-          </div>
-          <div>
-            <label className="text-[12px] font-semibold text-[#736694] uppercase tracking-wide">Note (optionnel)</label>
-            <input
-              type="text"
-              placeholder="Ex : Virement du 10 juin"
-              value={note}
-              onChange={e => setNote(e.target.value)}
-              className="mt-1 w-full h-[46px] px-4 rounded-[12px] border border-[#e2ddf0] text-[15px] text-[#211738] focus:outline-none focus:border-[#6c63ff]"
-            />
-          </div>
-        </div>
-
-        {error && <p className="text-[12px] text-red-500">{error}</p>}
-
-        <button
-          onClick={handleSave}
-          disabled={saving || !amount || parseFloat(amount) <= 0}
-          className="w-full h-[50px] bg-[#6c63ff] rounded-[14px] text-white font-bold text-[15px] disabled:opacity-40"
-        >
-          {saving ? 'Enregistrement…' : 'Valider le remboursement'}
-        </button>
-      </div>
-    </div>
+    <BottomSheet onClose={onClose}>
+      <p className="text-[17px] font-semibold text-[#211738]">Rembourser</p>
+      <p className="text-[13px] text-[#736694] -mt-2">
+        Reste à rembourser : <strong className="text-[#211738]">{fmt(remaining)}</strong>
+      </p>
+      <TextField label="Montant (€)" required type="number" inputMode="decimal" value={amount}
+        onChange={e => setAmount(e.target.value)} placeholder="0.00" />
+      <TextField label="Note" value={note} onChange={e => setNote(e.target.value)}
+        placeholder="Ex : Virement du 10 juin" />
+      {error && <p className="text-[12px] text-red-500">{error}</p>}
+      <SubmitButton onClick={handleSave} disabled={!canSave || saving}>
+        {saving ? 'Enregistrement…' : 'Valider le remboursement'}
+      </SubmitButton>
+    </BottomSheet>
   )
 }
 

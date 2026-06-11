@@ -2,11 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
-import Drawer from '../components/Drawer'
 import BottomSheet from '../components/BottomSheet'
 import { TextField, DateField, SubmitButton } from '../components/FormFields'
-import NotificationBell from '../components/NotificationBell'
-import { useNotifications } from '../hooks/useNotifications'
+import AppHeader from '../components/AppHeader'
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors,
 } from '@dnd-kit/core'
@@ -41,7 +39,7 @@ const todayStr = () => toDateStr(new Date())
 
 export default function Checklist() {
   const [tasks, setTasks]       = useState([])
-  const [menuOpen, setMenuOpen] = useState(false)
+
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm]         = useState(EMPTY_FORM)
@@ -72,7 +70,7 @@ export default function Checklist() {
   const dateRef   = useRef(null)
   const navigate = useNavigate()
   const { user, loading } = useAuth()
-  const { notifications, unreadCount, markAllRead } = useNotifications(user?.id)
+
 
   useEffect(() => { if (!loading && !user) navigate('/login') }, [user, loading])
 
@@ -399,18 +397,7 @@ export default function Checklist() {
       <div className="absolute -left-8 top-52 w-60 h-60 rounded-full bg-[#bbf7d0] opacity-20 blur-3xl pointer-events-none"/>
       <div className="absolute left-40 top-[461px] w-64 h-64 rounded-full bg-[#fed7aa] opacity-25 blur-3xl pointer-events-none"/>
 
-      {/* TopBar */}
-      <header className="absolute top-0 left-0 right-0 h-[76px] bg-white/55 border-b border-white/80 backdrop-blur-md z-20 flex items-center justify-between px-4">
-        <button onClick={() => setMenuOpen(true)} className="flex flex-col gap-[5px] p-2 min-w-[44px] min-h-[44px] justify-center">
-          <span className="block w-[22px] h-[2.5px] rounded-sm bg-[rgba(33,23,56,0.75)]"/>
-          <span className="block w-[22px] h-[2.5px] rounded-sm bg-[rgba(33,23,56,0.75)]"/>
-          <span className="block w-[22px] h-[2.5px] rounded-sm bg-[rgba(33,23,56,0.75)]"/>
-        </button>
-        <h1 className="absolute left-1/2 -translate-x-1/2 text-[17px] font-semibold text-[#211738]">Worklist</h1>
-        <div className="ml-auto">
-          <NotificationBell notifications={notifications} unreadCount={unreadCount} onOpen={markAllRead} />
-        </div>
-      </header>
+      <AppHeader title="Worklist" />
 
       {/* Barre recherche + jour */}
       <div className="absolute top-[76px] left-0 right-0 z-10 bg-white/55 backdrop-blur-md border-b border-white/80">
@@ -792,7 +779,6 @@ export default function Checklist() {
         </BottomSheet>
       )}
 
-      <Drawer open={menuOpen} onClose={() => setMenuOpen(false)} />
     </div>
   )
 }

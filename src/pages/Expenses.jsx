@@ -2,11 +2,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
-import Drawer from '../components/Drawer'
 import BottomSheet from '../components/BottomSheet'
 import { FieldLabel, TextField, DateField, SelectField, SegmentedControl, SubmitButton } from '../components/FormFields'
-import NotificationBell from '../components/NotificationBell'
-import { useNotifications } from '../hooks/useNotifications'
+import AppHeader from '../components/AppHeader'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -425,7 +423,7 @@ function ExpenseCard({ expense, profiles, onOpen, onEdit, onDelete }) {
 // ─── Page principale ─────────────────────────────────────────────────────────
 
 export default function Expenses() {
-  const [menuOpen, setMenuOpen] = useState(false)
+
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState(null) // null | 'owed' | 'due' | 'done'
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false)
@@ -443,7 +441,7 @@ export default function Expenses() {
   const { user } = useAuth()
   const { loading: authLoading } = useAuth()
   const navigate = useNavigate()
-  const { notifications, unreadCount, markAllRead } = useNotifications(user?.id)
+
 
   const fetchExpenses = useCallback(async () => {
     if (!user) return
@@ -507,22 +505,7 @@ export default function Expenses() {
       <div className="absolute -left-8 top-52 w-60 h-60 rounded-full bg-[#bbf7d0] opacity-20 blur-3xl pointer-events-none" />
       <div className="absolute left-40 top-[460px] w-64 h-64 rounded-full bg-[#fed7aa] opacity-25 blur-3xl pointer-events-none" />
 
-      {/* TopBar */}
-      <header className="absolute top-0 left-0 right-0 h-[76px] bg-white/55 border-b border-white/80 backdrop-blur-md z-20 flex items-center px-4">
-        <button
-          onClick={() => setMenuOpen(true)}
-          className="flex flex-col gap-[5px] p-2 min-w-[44px] min-h-[44px] justify-center"
-          aria-label="Ouvrir le menu"
-        >
-          <span className="block w-[22px] h-[2.5px] rounded-sm bg-[rgba(33,23,56,0.75)]" />
-          <span className="block w-[22px] h-[2.5px] rounded-sm bg-[rgba(33,23,56,0.75)]" />
-          <span className="block w-[22px] h-[2.5px] rounded-sm bg-[rgba(33,23,56,0.75)]" />
-        </button>
-        <h1 className="absolute left-1/2 -translate-x-1/2 text-[17px] font-semibold text-[#211738]">Dépenses</h1>
-        <div className="ml-auto">
-          <NotificationBell notifications={notifications} unreadCount={unreadCount} onOpen={markAllRead} />
-        </div>
-      </header>
+      <AppHeader title="Dépenses" />
 
       {/* Barre recherche */}
       <div className="absolute top-[76px] left-0 right-0 h-[66px] bg-white/55 border-b border-white/80 backdrop-blur-md z-10 flex items-center px-[14px] gap-2">
@@ -695,8 +678,6 @@ export default function Expenses() {
       >
         Nouvelle dépense
       </button>
-
-      <Drawer open={menuOpen} onClose={() => setMenuOpen(false)} />
 
       {/* Modals */}
       {showNew && (

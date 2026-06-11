@@ -40,3 +40,5 @@ jobs:
           exclude: |
             **/.git*
             **/.git*/**
+          include: |
+            **/.htaccess

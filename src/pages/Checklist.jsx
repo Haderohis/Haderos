@@ -11,7 +11,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-const EMPTY_FORM = { label: '', group: '', dueDate: '', tags: [] }
+const EMPTY_FORM = { label: '', group: '', dueDate: '', tags: [], jiraUrl: '' }
 const TAG_TYPES = [
   { value: 'personne', color: 'bg-[#e0f2fe] text-[#1c78ab]', icon: (
     <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
@@ -176,7 +176,7 @@ export default function Checklist() {
     setForm(EMPTY_FORM); setTagInput(''); setGroupInput(''); setError(''); setEditingId(null); setShowModal(true)
   }
   const openEdit = (task) => {
-    setForm({ label: task.label, group: task.group_name ?? '', dueDate: task.due_date ?? '', tags: task.tags ?? [] })
+    setForm({ label: task.label, group: task.group_name ?? '', dueDate: task.due_date ?? '', tags: task.tags ?? [], jiraUrl: task.jira_url ?? '' })
     setGroupInput(task.group_name ?? ''); setTagInput(''); setError(''); setEditingId(task.id); setShowModal(true)
   }
 
@@ -188,7 +188,7 @@ export default function Checklist() {
     setSaving(true)
     if (editingId) {
       const { data, error: err } = await supabase.from('tasks').update({
-        label: form.label.trim(), group_name: form.group || null, due_date: form.dueDate || null, tags: finalTags,
+        label: form.label.trim(), group_name: form.group || null, due_date: form.dueDate || null, tags: finalTags, jira_url: form.jiraUrl || null,
       }).eq('id', editingId).select().single()
       setSaving(false)
       if (err) { setError('Erreur lors de la sauvegarde.'); return }
@@ -196,7 +196,7 @@ export default function Checklist() {
     } else {
       const { data, error: err } = await supabase.from('tasks').insert({
         user_id: user.id, label: form.label.trim(), group_name: form.group || null,
-        due_date: form.dueDate || null, tags: finalTags, done: false,
+        due_date: form.dueDate || null, tags: finalTags, done: false, jira_url: form.jiraUrl || null,
       }).select().single()
       setSaving(false)
       if (err) { setError('Erreur lors de la sauvegarde.'); return }
@@ -272,7 +272,19 @@ export default function Checklist() {
         {/* Texte + tags (flex-1) — désactivé si terminé */}
         <div className={`flex flex-col gap-[3px] min-w-0 flex-1 ${task.done ? 'pointer-events-none' : 'cursor-pointer'}`}
           onClick={() => !task.done && openEdit(task)}>
-          <span className={`text-[12px] font-bold leading-tight ${task.done ? 'line-through text-[#9992a8]' : 'text-black'}`}>{task.label}</span>
+          <span className={`text-[12px] font-bold leading-tight flex items-center gap-1 ${task.done ? 'line-through text-[#9992a8]' : 'text-black'}`}>
+            {task.jira_url && (
+              <a href={task.jira_url} target="_blank" rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                className="shrink-0" style={{ minWidth: 0, minHeight: 0 }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                  <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke={task.done ? '#9992a8' : '#6c63ff'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke={task.done ? '#9992a8' : '#6c63ff'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </a>
+            )}
+            {task.label}
+          </span>
           {hasTags && (
             <div className="flex flex-wrap items-center gap-[3px]">
               {(task.tags ?? []).map((tag, i) => (
@@ -614,6 +626,20 @@ export default function Checklist() {
                 placeholder="Nom de la tâche..."
                 className={`bg-[#f2edfa] rounded-[10px] h-12 px-4 text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe] ${error ? 'ring-2 ring-red-400' : ''}`}/>
               {error && <p className="text-[12px] text-red-500">{error}</p>}
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[12px] font-medium text-[#736694]">Lien Jira</label>
+              <div className="relative bg-[#f2edfa] rounded-[10px] h-12 flex items-center px-4 gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="shrink-0">
+                  <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <input type="url" value={form.jiraUrl}
+                  onChange={e => setForm(f => ({ ...f, jiraUrl: e.target.value }))}
+                  placeholder="https://..."
+                  className="flex-1 bg-transparent text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe]"/>
+              </div>
             </div>
 
             <div className="flex flex-col gap-1" ref={groupRef}>

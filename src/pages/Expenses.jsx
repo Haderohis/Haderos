@@ -114,10 +114,19 @@ function NewExpenseModal({ currentUserId, onClose, onSaved, initialExpense }) {
 
 // ─── Modal remboursement ─────────────────────────────────────────────────────
 
-function ReimburseModal({ expense, currentUserId, onClose, onSaved }) {
+function ReimburseModal({ expense, currentUserId, profiles, onClose, onSaved }) {
   const remaining = remainingAmount(expense)
+  const otherId = expense.payer_id === currentUserId ? expense.debtor_id : expense.payer_id
+
+  const profileName = (id) => {
+    const p = profiles[id]
+    if (!p) return id
+    return p.first_name && p.last_name ? `${p.first_name} ${p.last_name}` : p.display_name ?? id
+  }
+
   const [amount, setAmount] = useState(remaining.toFixed(2))
   const [reimbDate, setReimbDate] = useState('')
+  const [reimbBy, setReimbBy] = useState('me')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
 
@@ -128,7 +137,7 @@ function ReimburseModal({ expense, currentUserId, onClose, onSaved }) {
     setError(null)
     const { error: err } = await supabase.from('reimbursements').insert({
       expense_id: expense.id,
-      reimbursed_by: currentUserId,
+      reimbursed_by: reimbBy === 'me' ? currentUserId : otherId,
       amount: val,
       reimbursement_date: reimbDate || null,
     })
@@ -146,6 +155,12 @@ function ReimburseModal({ expense, currentUserId, onClose, onSaved }) {
       <p className="text-[13px] text-[#736694] -mt-2">
         Reste à rembourser : <strong className="text-[#211738]">{fmt(remaining)}</strong>
       </p>
+      <SegmentedControl
+        label="Qui rembourse ?"
+        value={reimbBy}
+        onChange={setReimbBy}
+        options={[{ value: 'me', label: 'Moi' }, { value: 'other', label: profileName(otherId) }]}
+      />
       <TextField label="Montant (€)" required type="number" inputMode="decimal" value={amount}
         onChange={e => setAmount(e.target.value)} placeholder="0.00" />
       <DateField label="Date" value={reimbDate} onChange={e => setReimbDate(e.target.value)} />
@@ -541,6 +556,7 @@ export default function Expenses() {
         <ReimburseModal
           expense={reimbursing}
           currentUserId={user.id}
+          profiles={profiles}
           onClose={() => setReimbursing(null)}
           onSaved={fetchExpenses}
         />

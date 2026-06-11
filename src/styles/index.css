@@ -10,13 +10,10 @@
 
   body {
     @apply bg-white text-gray-900 antialiased;
-    overflow: hidden;
-    height: 100dvh;
   }
 
   #root {
     height: 100dvh;
-    overflow: hidden;
   }
 
   /* Masque l'icône calendrier native sur les inputs date */

@@ -403,11 +403,10 @@ export default function Checklist() {
             {search.length > 0 && (() => {
               const q = search.toLowerCase()
               const taskSuggestions = [...new Set(tasks.map(t => t.label).filter(l => l.toLowerCase().includes(q) && l.toLowerCase() !== q))]
-              const tagSuggestions = allTags.filter(t => t.label.toLowerCase().includes(q))
-              if (!taskSuggestions.length && !tagSuggestions.length) return null
+              if (!taskSuggestions.length) return null
               return (
                 <ul className="absolute left-0 right-0 top-[50px] bg-white/95 backdrop-blur-md rounded-[10px] shadow-lg z-30 overflow-hidden border border-[#f2edfa]">
-                  {taskSuggestions.slice(0, 4).map((label, i) => (
+                  {taskSuggestions.slice(0, 5).map((label, i) => (
                     <li key={i}>
                       <button className="w-full text-left px-4 py-3 text-[13px] text-[#211738] hover:bg-[#f2edfa] flex items-center gap-2"
                         style={{ minWidth: 0, minHeight: 0 }}
@@ -417,17 +416,6 @@ export default function Checklist() {
                           <path d="M21 21l-4.35-4.35" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round"/>
                         </svg>
                         {label}
-                      </button>
-                    </li>
-                  ))}
-                  {tagSuggestions.slice(0, 3).map((tag, i) => (
-                    <li key={'t'+i}>
-                      <button className="w-full text-left px-4 py-3 text-[13px] hover:bg-[#f2edfa] flex items-center gap-2"
-                        style={{ minWidth: 0, minHeight: 0 }}
-                        onClick={() => setSearch(tag.label)}>
-                        <span className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full ${tagColor(tag.type)}`}>
-                          {tagIcon(tag.type)}{tag.label}
-                        </span>
                       </button>
                     </li>
                   ))}

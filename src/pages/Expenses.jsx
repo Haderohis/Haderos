@@ -114,7 +114,7 @@ function NewExpenseModal({ currentUserId, onClose, onSaved, initialExpense }) {
 
 // ─── Modal détail dépense + remboursement ────────────────────────────────────
 
-function ExpenseDetailModal({ expense, currentUserId, profiles, onClose, onSaved }) {
+function ExpenseDetailModal({ expense, currentUserId, profiles, onClose, onSaved, onRefresh }) {
   const remaining = remainingAmount(expense)
   const otherId = expense.payer_id === currentUserId ? expense.debtor_id : expense.payer_id
   const isDone = remaining === 0
@@ -144,6 +144,14 @@ function ExpenseDetailModal({ expense, currentUserId, profiles, onClose, onSaved
   const [reimbBy, setReimbBy] = useState('me')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+  const [deletingReimbId, setDeletingReimbId] = useState(null)
+
+  const handleDeleteReimb = async (id) => {
+    setDeletingReimbId(id)
+    await supabase.from('reimbursements').delete().eq('id', id)
+    setDeletingReimbId(null)
+    onRefresh()
+  }
 
   const canSave = amount && parseFloat(amount) > 0 && parseFloat(amount) <= remaining
 
@@ -201,14 +209,23 @@ function ExpenseDetailModal({ expense, currentUserId, profiles, onClose, onSaved
                 <div className="w-[8px] h-[8px] rounded-full bg-[#22c55e] shrink-0" />
                 {i < sorted.length - 1 && <div className="w-px flex-1 bg-[#e8e0f5] my-1 min-h-[12px]" />}
               </div>
-              <div className="flex-1 flex justify-between items-center pb-3">
-                <div className="flex items-center gap-2 min-w-0">
+              <div className="flex-1 flex justify-between items-center pb-3 gap-2">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
                   <span className="text-[13px] font-medium text-[#211738] truncate">{profileName(r.reimbursed_by)}</span>
                   {fmtDate(r.reimbursement_date) && (
                     <span className="text-[11px] text-[#a49ffe] shrink-0">{fmtDate(r.reimbursement_date)}</span>
                   )}
                 </div>
-                <span className="text-[13px] font-semibold text-[#22c55e] shrink-0 ml-2">+{fmt(r.amount)}</span>
+                <span className="text-[13px] font-semibold text-[#22c55e] shrink-0">+{fmt(r.amount)}</span>
+                <button
+                  onClick={() => handleDeleteReimb(r.id)}
+                  disabled={deletingReimbId === r.id}
+                  className="shrink-0 w-6 h-6 flex items-center justify-center opacity-40 active:opacity-100 disabled:opacity-20"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                  </svg>
+                </button>
               </div>
             </div>
           ))}
@@ -350,6 +367,7 @@ export default function Expenses() {
       .order('created_at', { ascending: false })
     setExpenses(data ?? [])
     setLoading(false)
+    setDetailExpense(prev => prev ? (data ?? []).find(e => e.id === prev.id) ?? prev : null)
 
     const ids = new Set()
     ;(data ?? []).forEach(e => {
@@ -581,6 +599,7 @@ export default function Expenses() {
           profiles={profiles}
           onClose={() => setDetailExpense(null)}
           onSaved={() => { fetchExpenses(); setDetailExpense(null) }}
+          onRefresh={fetchExpenses}
         />
       )}
     </div>

@@ -26,13 +26,11 @@ function statusLabel(expense) {
 
 // ─── Saisie de tags ──────────────────────────────────────────────────────────
 
-function TagInput({ tags, onChange, suggestions = [] }) {
-  const [input, setInput] = useState('')
-
+function TagInput({ tags, onChange, input, onInputChange, suggestions = [] }) {
   const add = (raw) => {
     const t = raw.trim().toLowerCase()
     if (t && !tags.includes(t)) onChange([...tags, t])
-    setInput('')
+    onInputChange('')
   }
 
   const remove = (t) => onChange(tags.filter(x => x !== t))
@@ -58,9 +56,8 @@ function TagInput({ tags, onChange, suggestions = [] }) {
         ))}
         <input
           value={input}
-          onChange={e => setInput(e.target.value)}
+          onChange={e => onInputChange(e.target.value)}
           onKeyDown={handleKey}
-          onBlur={() => input.trim() && add(input)}
           placeholder={tags.length === 0 ? 'Ajouter un tag…' : ''}
           className="flex-1 min-w-[80px] bg-transparent text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe]"
         />
@@ -102,6 +99,7 @@ function NewExpenseModal({ currentUserId, onClose, onSaved, initialExpense, allT
   const [otherUserId, setOtherUserId] = useState(initOther)
   const [users, setUsers] = useState([])
   const [tags, setTags] = useState(initialExpense?.tags ?? [])
+  const [tagInput, setTagInput] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
 
@@ -133,7 +131,9 @@ function NewExpenseModal({ currentUserId, onClose, onSaved, initialExpense, allT
       amount: parseFloat(amount),
       description,
       expense_date: expenseDate || null,
-      tags,
+      tags: tagInput.trim()
+        ? [...new Set([...tags, tagInput.trim().toLowerCase()])]
+        : tags,
     }
     const { error: err } = isEdit
       ? await supabase.from('expenses').update(payload).eq('id', initialExpense.id)
@@ -161,7 +161,7 @@ function NewExpenseModal({ currentUserId, onClose, onSaved, initialExpense, allT
         onChange={setPayer}
         options={[{ value: 'me', label: 'Moi' }, { value: 'other', label: "L'autre" }]}
       />
-      <TagInput tags={tags} onChange={setTags} suggestions={allTags ?? []} />
+      <TagInput tags={tags} onChange={setTags} input={tagInput} onInputChange={setTagInput} suggestions={allTags ?? []} />
       {error && <p className="text-[12px] text-red-500">{error}</p>}
       <SubmitButton onClick={handleSave} disabled={!canSave || saving}>
         {saving ? 'Enregistrement…' : isEdit ? 'Enregistrer' : 'Ajouter'}

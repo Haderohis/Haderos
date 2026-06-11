@@ -147,7 +147,9 @@ export default function Checklist() {
     return true
   })
 
-  const regularTasks  = applyFilters(visibleTasks.filter(t => !overdueIds.has(t.id)))
+  // Quand une recherche est active, chercher dans toutes les tâches (pas seulement le jour courant)
+  const searchBase = search ? tasks : visibleTasks.filter(t => !overdueIds.has(t.id))
+  const regularTasks    = applyFilters(searchBase)
   const filteredOverdue = applyFilters(overdueTasks)
 
   // ── Tags form ───────────────────────────────────────────────
@@ -390,10 +392,12 @@ export default function Checklist() {
                 <circle cx="11" cy="11" r="8" stroke="#ada7fd" strokeWidth="2"/>
                 <path d="M21 21l-4.35-4.35" stroke="#ada7fd" strokeWidth="2" strokeLinecap="round"/>
               </svg>
-              <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+              <input type="text" value={search}
+                onChange={e => setSearch(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Escape') setSearch('') }}
                 placeholder="Rechercher"
                 className="bg-transparent text-[14px] font-semibold text-[#211738] outline-none placeholder:text-[#ada7fd] flex-1"/>
-              {search && <button onClick={() => setSearch('')} style={{ minWidth: 0, minHeight: 0 }} className="text-[#a49ffe] leading-none">&times;</button>}
+              {search && <button onClick={() => setSearch('')} style={{ minWidth: 0, minHeight: 0 }} className="text-[#a49ffe] leading-none text-lg">&times;</button>}
             </div>
             {/* Autocomplete suggestions */}
             {search.length > 0 && (() => {
@@ -407,7 +411,7 @@ export default function Checklist() {
                     <li key={i}>
                       <button className="w-full text-left px-4 py-3 text-[13px] text-[#211738] hover:bg-[#f2edfa] flex items-center gap-2"
                         style={{ minWidth: 0, minHeight: 0 }}
-                        onPointerDown={e => { e.preventDefault(); setSearch(label) }}>
+                        onClick={() => setSearch(label)}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="shrink-0">
                           <circle cx="11" cy="11" r="8" stroke="#a49ffe" strokeWidth="2"/>
                           <path d="M21 21l-4.35-4.35" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round"/>
@@ -420,7 +424,7 @@ export default function Checklist() {
                     <li key={'t'+i}>
                       <button className="w-full text-left px-4 py-3 text-[13px] hover:bg-[#f2edfa] flex items-center gap-2"
                         style={{ minWidth: 0, minHeight: 0 }}
-                        onPointerDown={e => { e.preventDefault(); setSearch(tag.label) }}>
+                        onClick={() => setSearch(tag.label)}>
                         <span className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full ${tagColor(tag.type)}`}>
                           {tagIcon(tag.type)}{tag.label}
                         </span>

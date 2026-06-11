@@ -254,7 +254,7 @@ export default function Checklist() {
         )}
         {/* Checkbox — toujours cliquable */}
         <button onClick={() => toggleTask(task.id, task.done)}
-          style={{ minWidth: 0, minHeight: 0, width: 18, height: 18 }}
+          style={{ minWidth: 0, minHeight: 0, width: 24, height: 24 }}
           className={`rounded-[3px] border-2 flex items-center justify-center shrink-0 ${task.done ? 'border-[#736694] bg-[#736694]' : 'border-[#6c63ff]'}`}>
           {task.done && (
             <svg width="9" height="9" viewBox="0 0 10 10" fill="none">

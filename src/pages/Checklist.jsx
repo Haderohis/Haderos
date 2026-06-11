@@ -103,20 +103,18 @@ export default function Checklist() {
   )].sort()
 
   const prevDay = () => {
-    const idx = daysWithTasks.indexOf(currentDay)
-    if (idx > 0) setCurrentDay(daysWithTasks[idx - 1])
-    else if (idx === -1) {
-      const before = daysWithTasks.filter(d => d < currentDay)
-      if (before.length) setCurrentDay(before[before.length - 1])
-    }
+    const d = new Date(currentDay + 'T12:00:00')
+    d.setDate(d.getDate() - 1)
+    setCurrentDay(toDateStr(d))
   }
   const nextDay = () => {
     if (isToday) return
-    const idx = daysWithTasks.indexOf(currentDay)
-    if (idx !== -1 && idx < daysWithTasks.length - 1) setCurrentDay(daysWithTasks[idx + 1])
-    else setCurrentDay(todayStr())
+    const d = new Date(currentDay + 'T12:00:00')
+    d.setDate(d.getDate() + 1)
+    const next = toDateStr(d)
+    setCurrentDay(next > todayStr() ? todayStr() : next)
   }
-  const hasPrev = daysWithTasks.some(d => d < currentDay)
+  const hasPrev = true
   const hasNext = !isToday
 
   const formatDay = (str) => {
@@ -240,68 +238,69 @@ export default function Checklist() {
       <li
         ref={setNodeRef}
         style={sortable ? { transform: CSS.Transform.toString(transform), transition } : {}}
-        className={`bg-white/70 border border-white/85 rounded-[8px] p-2 flex items-center justify-between gap-2
+        className={`bg-white/70 border border-white/85 rounded-[8px] p-2 flex items-center gap-2
           ${isDragging ? 'opacity-50 z-50' : ''}`}
       >
-        {/* Gauche: drag + checkbox + texte+tags */}
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          {sortable && (
-            <button {...attributes} {...listeners} className="w-4 h-4 flex items-center justify-center shrink-0 touch-none">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <circle cx="9" cy="5" r="1.5" fill="#c0befe"/><circle cx="15" cy="5" r="1.5" fill="#c0befe"/>
-                <circle cx="9" cy="12" r="1.5" fill="#c0befe"/><circle cx="15" cy="12" r="1.5" fill="#c0befe"/>
-                <circle cx="9" cy="19" r="1.5" fill="#c0befe"/><circle cx="15" cy="19" r="1.5" fill="#c0befe"/>
-              </svg>
-            </button>
-          )}
-          <button onClick={() => toggleTask(task.id, task.done)}
-            className="w-6 h-6 rounded-[4px] border-2 border-[#6c63ff] flex items-center justify-center shrink-0">
-            {task.done && (
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M2 6l3 3 5-5" stroke="#6c63ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            )}
+        {/* Drag handle */}
+        {sortable && (
+          <button {...attributes} {...listeners} className="w-4 h-4 flex items-center justify-center shrink-0 touch-none">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <circle cx="9" cy="5" r="1.5" fill="#c0befe"/><circle cx="15" cy="5" r="1.5" fill="#c0befe"/>
+              <circle cx="9" cy="12" r="1.5" fill="#c0befe"/><circle cx="15" cy="12" r="1.5" fill="#c0befe"/>
+              <circle cx="9" cy="19" r="1.5" fill="#c0befe"/><circle cx="15" cy="19" r="1.5" fill="#c0befe"/>
+            </svg>
           </button>
-          <div className="flex flex-col gap-2 min-w-0 flex-1" onClick={() => openEdit(task)}>
-            <span className={`text-[12px] font-bold text-black leading-tight ${task.done ? 'line-through opacity-50' : ''}`}>{task.label}</span>
-            {hasTags && (
-              <div className="flex flex-wrap items-center gap-1">
-                {(task.tags ?? []).map((tag, i) => (
-                  <span key={i} className={`flex items-center gap-[5px] text-[8px] px-[5px] py-[3px] rounded-full ${tagColor(tag.type)}`}>
-                    {tagIcon(tag.type)}{tag.label}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
+        )}
+        {/* Checkbox */}
+        <button onClick={() => toggleTask(task.id, task.done)}
+          className="w-[18px] h-[18px] rounded-[3px] border-2 border-[#6c63ff] flex items-center justify-center shrink-0">
+          {task.done && (
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+              <path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="#6c63ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          )}
+        </button>
+        {/* Texte + tags (flex-1) */}
+        <div className="flex flex-col gap-[6px] min-w-0 flex-1" onClick={() => openEdit(task)}>
+          <span className={`text-[12px] font-bold text-black leading-tight ${task.done ? 'line-through opacity-50' : ''}`}>{task.label}</span>
+          {hasTags && (
+            <div className="flex flex-wrap items-center gap-1">
+              {(task.tags ?? []).map((tag, i) => (
+                <span key={i} className={`flex items-center gap-[5px] text-[8px] px-[5px] py-[3px] rounded-full ${tagColor(tag.type)}`}>
+                  {tagIcon(tag.type)}{tag.label}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
-        {/* Droite: date + supprimer */}
-        <div className="flex items-center gap-2 shrink-0">
-          {task.due_date && (
-            overdue ? (
+        {/* Date (centrée dans l'espace restant) */}
+        {task.due_date && (
+          <div className="flex justify-center shrink-0">
+            {overdue ? (
               <div className="bg-[rgba(254,228,229,0.6)] border border-[rgba(153,153,166,0.2)] rounded-full px-2 py-1 flex items-center gap-[6px]">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                   <rect x="3" y="4" width="18" height="18" rx="2" stroke="#b91c1c" strokeWidth="2"/>
                   <path d="M16 2v4M8 2v4M3 10h18" stroke="#b91c1c" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
                 <span className="text-[12px] text-[#b91c1c]">{formatDueDate(task.due_date)}</span>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <div className="flex items-center gap-[6px]">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                   <rect x="3" y="4" width="18" height="18" rx="2" stroke="#736694" strokeWidth="2"/>
                   <path d="M16 2v4M8 2v4M3 10h18" stroke="#736694" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
-                <span className="text-[12px] text-black">{formatDueDate(task.due_date)}</span>
+                <span className="text-[12px] text-black whitespace-nowrap">{formatDueDate(task.due_date)}</span>
               </div>
-            )
-          )}
-          <button onClick={() => deleteTask(task.id)} className="w-6 h-6 flex items-center justify-center shrink-0">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M18 6L6 18M6 6l12 12" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-          </button>
-        </div>
+            )}
+          </div>
+        )}
+        {/* Supprimer */}
+        <button onClick={() => deleteTask(task.id)} className="w-6 h-6 flex items-center justify-center shrink-0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18M6 6l12 12" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </button>
       </li>
     )
   }

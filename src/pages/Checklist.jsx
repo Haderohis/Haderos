@@ -384,15 +384,52 @@ export default function Checklist() {
 
         {/* Barre recherche + filtres */}
         <div className="px-[14px] pb-3 flex gap-2">
-          <div className="flex-1 bg-white/70 border border-white/85 rounded-[8px] h-[44px] flex items-center px-3 gap-2">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="shrink-0">
-              <circle cx="11" cy="11" r="8" stroke="#ada7fd" strokeWidth="2"/>
-              <path d="M21 21l-4.35-4.35" stroke="#ada7fd" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-            <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Rechercher"
-              className="bg-transparent text-[14px] font-semibold text-[#211738] outline-none placeholder:text-[#ada7fd] flex-1"/>
-            {search && <button onClick={() => setSearch('')} style={{ minWidth: 0, minHeight: 0 }} className="text-[#a49ffe] leading-none">&times;</button>}
+          <div className="relative flex-1">
+            <div className="bg-white/70 border border-white/85 rounded-[8px] h-[44px] flex items-center px-3 gap-2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="shrink-0">
+                <circle cx="11" cy="11" r="8" stroke="#ada7fd" strokeWidth="2"/>
+                <path d="M21 21l-4.35-4.35" stroke="#ada7fd" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+              <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+                placeholder="Rechercher"
+                className="bg-transparent text-[14px] font-semibold text-[#211738] outline-none placeholder:text-[#ada7fd] flex-1"/>
+              {search && <button onClick={() => setSearch('')} style={{ minWidth: 0, minHeight: 0 }} className="text-[#a49ffe] leading-none">&times;</button>}
+            </div>
+            {/* Autocomplete suggestions */}
+            {search.length > 0 && (() => {
+              const q = search.toLowerCase()
+              const taskSuggestions = [...new Set(tasks.map(t => t.label).filter(l => l.toLowerCase().includes(q) && l.toLowerCase() !== q))]
+              const tagSuggestions = allTags.filter(t => t.label.toLowerCase().includes(q))
+              if (!taskSuggestions.length && !tagSuggestions.length) return null
+              return (
+                <ul className="absolute left-0 right-0 top-[50px] bg-white/95 backdrop-blur-md rounded-[10px] shadow-lg z-30 overflow-hidden border border-[#f2edfa]">
+                  {taskSuggestions.slice(0, 4).map((label, i) => (
+                    <li key={i}>
+                      <button className="w-full text-left px-4 py-3 text-[13px] text-[#211738] hover:bg-[#f2edfa] flex items-center gap-2"
+                        style={{ minWidth: 0, minHeight: 0 }}
+                        onPointerDown={e => { e.preventDefault(); setSearch(label) }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="shrink-0">
+                          <circle cx="11" cy="11" r="8" stroke="#a49ffe" strokeWidth="2"/>
+                          <path d="M21 21l-4.35-4.35" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                        {label}
+                      </button>
+                    </li>
+                  ))}
+                  {tagSuggestions.slice(0, 3).map((tag, i) => (
+                    <li key={'t'+i}>
+                      <button className="w-full text-left px-4 py-3 text-[13px] hover:bg-[#f2edfa] flex items-center gap-2"
+                        style={{ minWidth: 0, minHeight: 0 }}
+                        onPointerDown={e => { e.preventDefault(); setSearch(tag.label) }}>
+                        <span className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full ${tagColor(tag.type)}`}>
+                          {tagIcon(tag.type)}{tag.label}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )
+            })()}
           </div>
           {/* Bouton filtre + dropdown */}
           <div className="relative shrink-0" ref={filterRef}>
@@ -443,69 +480,71 @@ export default function Checklist() {
         </div>
       </div>
 
-      {/* Stats bar */}
-      {hasTasks && (
-        <div className="absolute left-4 right-4 z-10 flex gap-2" style={{ top: showFilter && (allGroups.length || allTags.length) ? 'calc(94px + 106px + 48px)' : '214px' }}>
-          <div className="flex-1 bg-[rgba(247,237,250,0.6)] border border-[#c0befe] rounded-[8px] flex items-center justify-center gap-2 py-2">
-            <span className="font-bold text-[#6c63ff] text-[22px] leading-none">{visibleTasks.length}</span>
-            <span className="text-[#a49ffe] text-[11px]">Total</span>
-          </div>
-          <div className="flex-1 bg-[rgba(220,252,231,0.6)] border border-[rgba(153,153,166,0.2)] rounded-[8px] flex items-center justify-center gap-2 py-2">
-            <span className="font-bold text-[#16a34a] text-[22px] leading-none">{visibleTasks.filter(t => t.done).length}</span>
-            <span className="text-[#16a34a] text-[11px]">Faites</span>
-          </div>
-          <div className="flex-1 bg-[rgba(254,228,229,0.6)] border border-[rgba(153,153,166,0.2)] rounded-[8px] flex items-center justify-center gap-2 py-2">
-            <span className="font-bold text-[#b91c1c] text-[22px] leading-none">{overdueTasks.length}</span>
-            <span className="text-[#b91c1c] text-[11px]">En retard</span>
-          </div>
-        </div>
-      )}
-
       {/* Contenu */}
-      <main className={`absolute left-4 right-4 flex flex-col gap-3 overflow-hidden ${isToday ? 'bottom-[76px]' : 'bottom-4'} ${hasTasks ? 'top-[284px]' : 'top-[200px]'}`}>
-        {!hasTasks && (
-          <div className="bg-white/60 border border-[#c0befe]/50 rounded-[12px] h-16 flex flex-col items-center justify-center">
-            <p className="text-[22px] font-bold text-[#6c63ff] leading-tight">Aucune tâche</p>
-            <p className="text-[11px] text-[#a49ffe]">pour le moment</p>
-          </div>
-        )}
+      <main className={`absolute left-4 right-4 overflow-hidden flex flex-col top-[194px] ${isToday ? 'bottom-[76px]' : 'bottom-4'}`}>
+        <div className="flex flex-col gap-3 overflow-y-auto flex-1">
 
-        {hasTasks && (
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-              <div className="flex flex-col gap-4 overflow-y-auto flex-1">
+          {!hasTasks && (
+            <div className="bg-white/60 border border-[#c0befe]/50 rounded-[12px] h-16 flex flex-col items-center justify-center mt-2">
+              <p className="text-[22px] font-bold text-[#6c63ff] leading-tight">Aucune tâche</p>
+              <p className="text-[11px] text-[#a49ffe]">pour le moment</p>
+            </div>
+          )}
 
-                {/* En retard */}
-                {filteredOverdue.length > 0 && (
-                  <div className="flex flex-col gap-2">
-                    <p className="text-[12px] font-semibold text-red-500 uppercase tracking-wider px-1 flex items-center gap-1">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/>
-                        <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                      </svg>
-                      En retard
-                    </p>
-                    <ul className="flex flex-col gap-2">
-                      {filteredOverdue.map(task => <TaskItem key={task.id} task={task} overdue />)}
-                    </ul>
-                    {regularTasks.length > 0 && <div className="h-px bg-[rgba(115,102,148,0.15)] mt-1"/>}
-                  </div>
-                )}
-
-                {/* Tâches normales groupées */}
-                {regularTasks.length > 0 && renderGrouped(regularTasks)}
-
-                {/* Rien à afficher après filtre */}
-                {filteredOverdue.length === 0 && regularTasks.length === 0 && (
-                  <div className="bg-white/60 border border-[#c0befe]/50 rounded-[12px] h-16 flex items-center justify-center">
-                    <p className="text-[14px] text-[#a49ffe]">Aucun résultat</p>
-                  </div>
-                )}
+          {hasTasks && (
+            <>
+              {/* Stats */}
+              <div className="flex gap-2 pt-2 shrink-0">
+                <div className="flex-1 bg-[rgba(247,237,250,0.6)] border border-[#c0befe] rounded-[8px] flex items-center justify-center gap-2 py-2">
+                  <span className="font-bold text-[#6c63ff] text-[22px] leading-none">{visibleTasks.length}</span>
+                  <span className="text-[#a49ffe] text-[11px]">Total</span>
+                </div>
+                <div className="flex-1 bg-[rgba(220,252,231,0.6)] border border-[rgba(153,153,166,0.2)] rounded-[8px] flex items-center justify-center gap-2 py-2">
+                  <span className="font-bold text-[#16a34a] text-[22px] leading-none">{visibleTasks.filter(t => t.done).length}</span>
+                  <span className="text-[#16a34a] text-[11px]">Faites</span>
+                </div>
+                <div className="flex-1 bg-[rgba(254,228,229,0.6)] border border-[rgba(153,153,166,0.2)] rounded-[8px] flex items-center justify-center gap-2 py-2">
+                  <span className="font-bold text-[#b91c1c] text-[22px] leading-none">{overdueTasks.length}</span>
+                  <span className="text-[#b91c1c] text-[11px]">En retard</span>
+                </div>
               </div>
-            </SortableContext>
-          </DndContext>
-        )}
 
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                  <div className="flex flex-col gap-4 pb-2">
+
+                    {/* En retard */}
+                    {filteredOverdue.length > 0 && (
+                      <div className="flex flex-col gap-2">
+                        <p className="text-[12px] font-semibold text-red-500 uppercase tracking-wider px-1 flex items-center gap-1">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/>
+                            <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                          </svg>
+                          En retard
+                        </p>
+                        <ul className="flex flex-col gap-2">
+                          {filteredOverdue.map(task => <TaskItem key={task.id} task={task} overdue />)}
+                        </ul>
+                        {regularTasks.length > 0 && <div className="h-px bg-[rgba(115,102,148,0.15)] mt-1"/>}
+                      </div>
+                    )}
+
+                    {/* Tâches normales groupées */}
+                    {regularTasks.length > 0 && renderGrouped(regularTasks)}
+
+                    {/* Rien après filtre */}
+                    {filteredOverdue.length === 0 && regularTasks.length === 0 && (
+                      <div className="bg-white/60 border border-[#c0befe]/50 rounded-[12px] h-16 flex items-center justify-center">
+                        <p className="text-[14px] text-[#a49ffe]">Aucun résultat</p>
+                      </div>
+                    )}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            </>
+          )}
+        </div>
       </main>
 
       {/* Bouton Nouvelle tâche (fixe en bas) */}

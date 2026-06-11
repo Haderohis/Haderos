@@ -5,6 +5,8 @@ import { supabase } from '../lib/supabase'
 import Drawer from '../components/Drawer'
 import BottomSheet from '../components/BottomSheet'
 import { FieldLabel, TextField, DateField, SelectField, SegmentedControl, SubmitButton } from '../components/FormFields'
+import NotificationBell from '../components/NotificationBell'
+import { useNotifications } from '../hooks/useNotifications'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -139,11 +141,26 @@ function NewExpenseModal({ currentUserId, onClose, onSaved, initialExpense, allT
         ? [...new Set([...tags, tagInput.trim().toLowerCase()])]
         : tags,
     }
-    const { error: err } = isEdit
-      ? await supabase.from('expenses').update(payload).eq('id', initialExpense.id)
-      : await supabase.from('expenses').insert({ ...payload, created_by: currentUserId })
-    setSaving(false)
-    if (err) { setError(err.message); return }
+    let expenseId = initialExpense?.id
+    if (isEdit) {
+      const { error: err } = await supabase.from('expenses').update(payload).eq('id', initialExpense.id)
+      setSaving(false)
+      if (err) { setError(err.message); return }
+    } else {
+      const { data, error: err } = await supabase.from('expenses').insert({ ...payload, created_by: currentUserId }).select('id').single()
+      setSaving(false)
+      if (err) { setError(err.message); return }
+      expenseId = data?.id
+      const debtorId = payer === 'me' ? otherUserId : currentUserId
+      if (debtorId !== currentUserId) {
+        await supabase.from('notifications').insert({
+          user_id: debtorId,
+          type: 'new_expense',
+          message: `Nouvelle dépense "${description}" de ${fmt(parseFloat(amount))} — tu as été ajouté comme débiteur.`,
+          expense_id: expenseId ?? null,
+        })
+      }
+    }
     onSaved()
     onClose()
   }
@@ -229,6 +246,14 @@ function ExpenseDetailModal({ expense, currentUserId, profiles, onClose, onSaved
     })
     setSaving(false)
     if (err) { setError(err.message); return }
+    if (expense.payer_id !== currentUserId) {
+      await supabase.from('notifications').insert({
+        user_id: expense.payer_id,
+        type: 'reimbursement',
+        message: `Remboursement de ${fmt(val)} reçu pour "${expense.description}".`,
+        expense_id: expense.id,
+      })
+    }
     onSaved()
     onClose()
   }
@@ -418,6 +443,7 @@ export default function Expenses() {
   const { user } = useAuth()
   const { loading: authLoading } = useAuth()
   const navigate = useNavigate()
+  const { notifications, unreadCount, markAllRead } = useNotifications(user?.id)
 
   const fetchExpenses = useCallback(async () => {
     if (!user) return
@@ -493,6 +519,9 @@ export default function Expenses() {
           <span className="block w-[22px] h-[2.5px] rounded-sm bg-[rgba(33,23,56,0.75)]" />
         </button>
         <h1 className="absolute left-1/2 -translate-x-1/2 text-[17px] font-semibold text-[#211738]">Dépenses</h1>
+        <div className="ml-auto">
+          <NotificationBell notifications={notifications} unreadCount={unreadCount} onOpen={markAllRead} />
+        </div>
       </header>
 
       {/* Barre recherche */}

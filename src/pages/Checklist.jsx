@@ -5,6 +5,8 @@ import { supabase } from '../lib/supabase'
 import Drawer from '../components/Drawer'
 import BottomSheet from '../components/BottomSheet'
 import { TextField, DateField, SubmitButton } from '../components/FormFields'
+import NotificationBell from '../components/NotificationBell'
+import { useNotifications } from '../hooks/useNotifications'
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors,
 } from '@dnd-kit/core'
@@ -70,6 +72,7 @@ export default function Checklist() {
   const dateRef   = useRef(null)
   const navigate = useNavigate()
   const { user, loading } = useAuth()
+  const { notifications, unreadCount, markAllRead } = useNotifications(user?.id)
 
   useEffect(() => { if (!loading && !user) navigate('/login') }, [user, loading])
 
@@ -404,6 +407,9 @@ export default function Checklist() {
           <span className="block w-[22px] h-[2.5px] rounded-sm bg-[rgba(33,23,56,0.75)]"/>
         </button>
         <h1 className="absolute left-1/2 -translate-x-1/2 text-[17px] font-semibold text-[#211738]">Worklist</h1>
+        <div className="ml-auto">
+          <NotificationBell notifications={notifications} unreadCount={unreadCount} onOpen={markAllRead} />
+        </div>
       </header>
 
       {/* Barre recherche + jour */}

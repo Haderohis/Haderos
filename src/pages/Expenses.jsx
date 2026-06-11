@@ -307,7 +307,7 @@ function ExpenseCard({ expense, currentUserId, profiles, onReimburse }) {
 
 export default function Expenses() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const [tab, setTab] = useState('owed') // 'owed' = on me doit | 'due' = je dois
+  const [search, setSearch] = useState('')
   const [expenses, setExpenses] = useState([])
   const [profiles, setProfiles] = useState({})
   const [showNew, setShowNew] = useState(false)
@@ -315,6 +315,7 @@ export default function Expenses() {
   const [loading, setLoading] = useState(true)
 
   const { user } = useAuth()
+  const { loading: authLoading } = useAuth()
   const navigate = useNavigate()
 
   const fetchExpenses = useCallback(async () => {
@@ -328,7 +329,6 @@ export default function Expenses() {
     setExpenses(data ?? [])
     setLoading(false)
 
-    // Collect all user ids to resolve names
     const ids = new Set()
     ;(data ?? []).forEach(e => {
       ids.add(e.payer_id)
@@ -348,8 +348,6 @@ export default function Expenses() {
     }
   }, [user])
 
-  const { loading: authLoading } = useAuth()
-
   useEffect(() => {
     if (authLoading) return
     if (!user) { navigate('/login'); return }
@@ -358,10 +356,12 @@ export default function Expenses() {
 
   const owed = expenses.filter(e => e.payer_id === user?.id)
   const due = expenses.filter(e => e.debtor_id === user?.id)
-  const list = tab === 'owed' ? owed : due
-
   const totalOwed = owed.reduce((s, e) => s + remainingAmount(e), 0)
   const totalDue = due.reduce((s, e) => s + remainingAmount(e), 0)
+
+  const filtered = search.trim()
+    ? expenses.filter(e => e.description.toLowerCase().includes(search.toLowerCase()))
+    : expenses
 
   return (
     <div className="relative w-full h-dvh overflow-hidden bg-[#f6f4f9]">
@@ -373,7 +373,7 @@ export default function Expenses() {
       <div className="absolute left-40 top-[460px] w-64 h-64 rounded-full bg-[#fed7aa] opacity-25 blur-3xl pointer-events-none" />
 
       {/* TopBar */}
-      <header className="absolute top-0 left-0 right-0 h-[76px] bg-white/55 border-b border-white/80 backdrop-blur-md z-20 flex items-center justify-between px-4">
+      <header className="absolute top-0 left-0 right-0 h-[76px] bg-white/55 border-b border-white/80 backdrop-blur-md z-20 flex items-center px-4">
         <button
           onClick={() => setMenuOpen(true)}
           className="flex flex-col gap-[5px] p-2 min-w-[44px] min-h-[44px] justify-center"
@@ -386,50 +386,54 @@ export default function Expenses() {
         <h1 className="absolute left-1/2 -translate-x-1/2 text-[17px] font-semibold text-[#211738]">Dépenses</h1>
       </header>
 
-      {/* Contenu principal */}
-      <main className="absolute top-[76px] left-0 right-0 bottom-0 flex flex-col overflow-hidden">
-
-        {/* Résumé soldes */}
-        <div className="flex gap-3 px-4 pt-4 pb-3">
-          <div className="flex-1 bg-white/60 border border-white/85 backdrop-blur-sm rounded-[16px] p-4">
-            <p className="text-[11px] font-semibold text-[#736694] uppercase tracking-wide">On me doit</p>
-            <p className="text-[20px] font-bold text-[#6c63ff] mt-1">{fmt(totalOwed)}</p>
-          </div>
-          <div className="flex-1 bg-white/60 border border-white/85 backdrop-blur-sm rounded-[16px] p-4">
-            <p className="text-[11px] font-semibold text-[#736694] uppercase tracking-wide">Je dois</p>
-            <p className="text-[20px] font-bold text-[#f59e0b] mt-1">{fmt(totalDue)}</p>
-          </div>
+      {/* Barre recherche */}
+      <div className="absolute top-[76px] left-0 right-0 h-[66px] bg-white/55 border-b border-white/80 backdrop-blur-md z-10 flex items-center px-[14px] gap-2">
+        <div className="flex-1 flex items-center gap-2 bg-white/70 border border-white/85 rounded-[8px] h-[34px] px-3">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#ada7fd">
+            <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Rechercher"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="flex-1 bg-transparent text-[14px] font-semibold text-[#6c63ff] placeholder-[#ada7fd] focus:outline-none"
+          />
         </div>
+        <button className="w-[34px] h-[34px] bg-white/75 border border-white/85 rounded-[8px] flex items-center justify-center shrink-0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#736694">
+            <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" />
+          </svg>
+        </button>
+      </div>
 
-        {/* Onglets */}
-        <div className="flex mx-4 mb-3 bg-white/50 border border-white/80 rounded-[14px] p-1 gap-1">
-          <button
-            onClick={() => setTab('owed')}
-            className={`flex-1 h-[38px] rounded-[10px] text-[13px] font-semibold transition-colors ${
-              tab === 'owed' ? 'bg-[#6c63ff] text-white' : 'text-[#736694]'
-            }`}
-          >
-            On me doit ({owed.length})
-          </button>
-          <button
-            onClick={() => setTab('due')}
-            className={`flex-1 h-[38px] rounded-[10px] text-[13px] font-semibold transition-colors ${
-              tab === 'due' ? 'bg-[#6c63ff] text-white' : 'text-[#736694]'
-            }`}
-          >
-            Je dois ({due.length})
-          </button>
+      {/* Contenu principal */}
+      <main className="absolute top-[142px] left-0 right-0 bottom-0 flex flex-col overflow-hidden">
+
+        {/* Stats inline */}
+        <div className="flex gap-2 px-[14px] pt-3 pb-3">
+          <div className="flex-1 flex items-center justify-between bg-[rgba(247,237,250,0.6)] border border-[rgba(164,159,254,0.2)] rounded-[8px] h-[43px] px-2">
+            <span className="text-[12px] text-[#8883aa]">On me doit</span>
+            <span className="text-[14px] font-bold text-[#a49ffe]">{fmt(totalOwed)}</span>
+          </div>
+          <div className="flex-1 flex items-center justify-between bg-[rgba(247,237,250,0.6)] border border-[rgba(245,158,11,0.2)] rounded-[8px] h-[43px] px-2">
+            <span className="text-[12px] text-[#8883aa]">Je dois</span>
+            <span className="text-[14px] font-bold text-[#f59e0b]">{fmt(totalDue)}</span>
+          </div>
         </div>
 
         {/* Liste */}
-        <div className="flex-1 overflow-y-auto px-4 pb-24 flex flex-col gap-3">
+        <div className="flex-1 overflow-y-auto px-[14px] pb-24 flex flex-col gap-3">
           {loading && (
             <p className="text-center text-[13px] text-[#736694] mt-8">Chargement…</p>
           )}
-          {!loading && list.length === 0 && (
-            <p className="text-center text-[13px] text-[#736694] mt-8">Aucune dépense pour l'instant</p>
+          {!loading && filtered.length === 0 && (
+            <div className="bg-white/60 border border-[#c0befe]/50 rounded-[12px] h-[64px] flex flex-col items-center justify-center mt-2">
+              <p className="text-[22px] font-bold text-[#6c63ff] leading-tight">Aucune dépense</p>
+              <p className="text-[11px] text-[#a49ffe]">pour le moment</p>
+            </div>
           )}
-          {list.map(e => (
+          {filtered.map(e => (
             <ExpenseCard
               key={e.id}
               expense={e}
@@ -441,15 +445,12 @@ export default function Expenses() {
         </div>
       </main>
 
-      {/* FAB */}
+      {/* Bouton Nouvelle dépense */}
       <button
         onClick={() => setShowNew(true)}
-        className="absolute bottom-6 right-5 w-[56px] h-[56px] bg-[#6c63ff] rounded-[18px] flex items-center justify-center shadow-lg z-10"
-        aria-label="Nouvelle dépense"
+        className="absolute bottom-4 left-4 right-4 h-[48px] bg-[#6c63ff] rounded-[12px] text-white text-[14px] font-semibold z-10"
       >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M12 5v14M5 12h14" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-        </svg>
+        Nouvelle dépense
       </button>
 
       <Drawer open={menuOpen} onClose={() => setMenuOpen(false)} />

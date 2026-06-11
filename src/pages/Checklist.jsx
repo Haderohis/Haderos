@@ -360,31 +360,8 @@ export default function Checklist() {
         <h1 className="absolute left-1/2 -translate-x-1/2 bottom-4 text-[17px] font-semibold text-[#211738]">Worklist</h1>
       </header>
 
-      {/* Barre jour + filtres */}
+      {/* Barre recherche + jour */}
       <div className="absolute top-[94px] left-0 right-0 z-10 bg-white/55 backdrop-blur-md border-b border-white/80">
-        {/* Navigation jour */}
-        <div className="flex items-center justify-between px-4 h-11">
-          <button onClick={prevDay} disabled={!hasPrev}
-            className={`min-w-[44px] min-h-[44px] flex items-center justify-center ${!hasPrev ? 'opacity-20' : ''}`}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18l-6-6 6-6" stroke="#6c63ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-          <button className="flex items-center gap-1 text-[14px] font-semibold text-[#211738]"
-            onPointerDown={e => { e.preventDefault(); dayDateRef.current?.showPicker() }}>
-            {formatDay(currentDay)}
-            {!isToday && <span className="text-[11px] font-normal text-[#736694] ml-1">← retour</span>}
-          </button>
-          <input ref={dayDateRef} type="date" value={currentDay}
-            onChange={e => e.target.value && setCurrentDay(e.target.value)}
-            className="sr-only"/>
-          <button onClick={nextDay} disabled={!hasNext}
-            className={`min-w-[44px] min-h-[44px] flex items-center justify-center ${!hasNext ? 'opacity-20' : ''}`}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M9 18l6-6-6-6" stroke="#6c63ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-        </div>
 
         {/* Barre recherche + filtres */}
         <div className="px-[14px] pb-3 flex gap-2">
@@ -511,6 +488,30 @@ export default function Checklist() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Navigation jour */}
+        <div className="flex items-center justify-between px-4 h-11">
+          <button onClick={prevDay} disabled={!hasPrev}
+            className={`min-w-[44px] min-h-[44px] flex items-center justify-center ${!hasPrev ? 'opacity-20' : ''}`}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M15 18l-6-6 6-6" stroke="#6c63ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          <button className="flex items-center gap-1 text-[14px] font-semibold text-[#211738]"
+            onPointerDown={e => { e.preventDefault(); dayDateRef.current?.showPicker() }}>
+            {formatDay(currentDay)}
+            {!isToday && <span className="text-[11px] font-normal text-[#736694] ml-1">← retour</span>}
+          </button>
+          <input ref={dayDateRef} type="date" value={currentDay}
+            onChange={e => e.target.value && setCurrentDay(e.target.value)}
+            className="sr-only"/>
+          <button onClick={nextDay} disabled={!hasNext}
+            className={`min-w-[44px] min-h-[44px] flex items-center justify-center ${!hasNext ? 'opacity-20' : ''}`}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M9 18l6-6-6-6" stroke="#6c63ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
         </div>
       </div>
 

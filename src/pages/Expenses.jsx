@@ -405,6 +405,7 @@ export default function Expenses() {
   const [filter, setFilter] = useState(null) // null | 'owed' | 'due' | 'done'
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false)
   const [tagFilters, setTagFilters] = useState([])
+  const [filterTagInput, setFilterTagInput] = useState('')
   const [expenses, setExpenses] = useState([])
   const [profiles, setProfiles] = useState({})
   const [showNew, setShowNew] = useState(false)
@@ -529,7 +530,7 @@ export default function Expenses() {
           {filterDropdownOpen && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setFilterDropdownOpen(false)} />
-              <div className="absolute top-[38px] right-0 z-20 bg-white rounded-[12px] shadow-lg border border-[#f0ebfa] overflow-hidden min-w-[180px]">
+              <div className="absolute top-[38px] right-0 z-20 bg-white rounded-[12px] shadow-lg border border-[#f0ebfa] min-w-[220px]">
                 {/* Soldés */}
                 <button
                   onClick={() => { setFilter(f => f === 'done' ? null : 'done'); setFilterDropdownOpen(false) }}
@@ -551,34 +552,52 @@ export default function Expenses() {
                 {allTags.length > 0 && (
                   <>
                     <div className="h-px bg-[#f0ebfa]" />
-                    <div className="px-4 pt-2 pb-1">
-                      <p className="text-[10px] font-semibold text-[#736694] uppercase tracking-wide">Tags</p>
-                    </div>
-                    {allTags.map(tag => {
-                      const active = tagFilters.includes(tag)
-                      return (
+                    <div className="px-3 pt-2 pb-2">
+                      <p className="text-[10px] font-semibold text-[#736694] uppercase tracking-wider mb-2">Tags</p>
+                      <div className="relative">
+                        <div className={`flex flex-wrap items-center gap-1.5 bg-[#f2edfa] rounded-[8px] px-3 min-h-9 py-1.5 ${tagFilters.length > 0 ? 'ring-2 ring-[#6c63ff]/40' : ''}`}>
+                          {tagFilters.map(t => (
+                            <span key={t} className="flex items-center gap-1 bg-[#6c63ff]/20 text-[#6c63ff] text-[11px] font-medium px-2 py-0.5 rounded-full shrink-0">
+                              {t}
+                              <button onClick={() => setTagFilters(prev => prev.filter(x => x !== t))} style={{ minWidth: 0, minHeight: 0 }} className="leading-none">&times;</button>
+                            </span>
+                          ))}
+                          <input
+                            type="text"
+                            value={filterTagInput}
+                            onChange={e => setFilterTagInput(e.target.value)}
+                            placeholder={tagFilters.length === 0 ? 'Filtrer par tag...' : ''}
+                            className="bg-transparent text-[13px] text-[#211738] outline-none placeholder:text-[#a49ffe] flex-1 min-w-[80px]"
+                          />
+                        </div>
+                        {filterTagInput && (
+                          <ul className="absolute left-0 right-0 top-[38px] bg-white rounded-[8px] shadow-lg z-30 overflow-hidden border border-[#f2edfa]">
+                            {allTags
+                              .filter(t => t.includes(filterTagInput.toLowerCase()) && !tagFilters.includes(t))
+                              .map(tag => (
+                                <li key={tag}>
+                                  <button
+                                    className="w-full text-left px-3 py-2 text-[13px] hover:bg-[#f2edfa] flex items-center gap-2"
+                                    style={{ minWidth: 0, minHeight: 0 }}
+                                    onClick={() => { setTagFilters(prev => [...prev, tag]); setFilterTagInput('') }}
+                                  >
+                                    <span className="flex items-center gap-1 bg-[#6c63ff]/20 text-[#6c63ff] text-[11px] px-2 py-0.5 rounded-full">{tag}</span>
+                                  </button>
+                                </li>
+                              ))
+                            }
+                          </ul>
+                        )}
+                      </div>
+                      {tagFilters.length > 0 && (
                         <button
-                          key={tag}
-                          onClick={() => setTagFilters(prev =>
-                            active ? prev.filter(t => t !== tag) : [...prev, tag]
-                          )}
-                          className="flex items-center gap-3 px-4 py-2.5 w-full text-left active:bg-[#f2edfa]"
+                          onClick={() => setTagFilters([])}
+                          className="flex items-center justify-center gap-1 w-full mt-2 py-1 text-[12px] text-[#736694]"
                         >
-                          <span className={`flex-1 text-[13px] font-medium ${active ? 'text-[#6c63ff]' : 'text-[#211738]'}`}>{tag}</span>
-                          <div className={`w-4 h-4 rounded-[4px] border flex items-center justify-center shrink-0 ${active ? 'bg-[#6c63ff] border-[#6c63ff]' : 'border-[#d0c9e8]'}`}>
-                            {active && <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
-                          </div>
+                          Effacer les tags
                         </button>
-                      )
-                    })}
-                    {tagFilters.length > 0 && (
-                      <button
-                        onClick={() => setTagFilters([])}
-                        className="flex items-center justify-center gap-1 w-full px-4 py-2 text-[12px] text-[#736694] border-t border-[#f0ebfa]"
-                      >
-                        Effacer les tags
-                      </button>
-                    )}
+                      )}
+                    </div>
                   </>
                 )}
               </div>

@@ -364,7 +364,7 @@ export default function Checklist() {
       <div className="absolute top-[94px] left-0 right-0 z-10 bg-white/55 backdrop-blur-md border-b border-white/80">
 
         {/* Barre recherche + filtres */}
-        <div className="px-[14px] pb-3 flex gap-2">
+        <div className="px-4 pt-4 flex gap-2">
           <div className="relative flex-1">
             <div className="bg-white/70 border border-white/85 rounded-[8px] h-[44px] flex items-center px-3 gap-2">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="shrink-0">
@@ -491,7 +491,7 @@ export default function Checklist() {
         </div>
 
         {/* Navigation jour */}
-        <div className="flex items-center justify-between px-4 h-11">
+        <div className="flex items-center justify-between px-4 mt-4 mb-4 h-11">
           <button onClick={prevDay} disabled={!hasPrev}
             className={`min-w-[44px] min-h-[44px] flex items-center justify-center ${!hasPrev ? 'opacity-20' : ''}`}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -516,7 +516,7 @@ export default function Checklist() {
       </div>
 
       {/* Contenu */}
-      <main className={`absolute left-4 right-4 overflow-hidden flex flex-col top-[194px] ${isToday ? 'bottom-[76px]' : 'bottom-4'}`}>
+      <main className={`absolute left-4 right-4 overflow-hidden flex flex-col top-[230px] ${isToday ? 'bottom-[76px]' : 'bottom-4'}`}>
         <div className="flex flex-col gap-3 overflow-y-auto flex-1">
 
           {!hasTasks && (

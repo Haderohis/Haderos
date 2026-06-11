@@ -212,7 +212,7 @@ function ExpenseDetailModal({ expense, currentUserId, profiles, onClose, onSaved
                 <div className="flex-1 w-px bg-[#e8e0f5]" style={{ visibility: i < sorted.length - 1 ? 'visible' : 'hidden' }} />
               </div>
               {/* Contenu */}
-              <div className="flex items-center gap-2 py-3 flex-1 min-w-0">
+              <div className="flex items-center gap-2 py-1.5 flex-1 min-w-0">
                 <span className="text-[13px] font-medium text-[#211738] flex-1 min-w-0 truncate">{profileName(r.reimbursed_by)}</span>
                 {fmtDate(r.reimbursement_date) && (
                   <span className="text-[11px] text-[#a49ffe] shrink-0">{fmtDate(r.reimbursement_date)}</span>

@@ -174,9 +174,13 @@ function ExpenseCard({ expense, currentUserId, profiles, onReimburse, onEdit, on
 
   const payerName = profileName(expense.payer_id)
   const canReimburse = remaining > 0
+  const isDone = remaining === 0
+  const paid = Number(expense.amount) - remaining
+  const pct = expense.amount > 0 ? Math.round((paid / Number(expense.amount)) * 100) : 0
+  const barColor = isDone ? '#22c55e' : pct > 0 ? '#f59e0b' : '#6c63ff'
 
   return (
-    <div className="bg-white/70 border border-white/85 backdrop-blur-sm rounded-[16px] relative">
+    <div className={`bg-white/70 border border-white/85 backdrop-blur-sm rounded-[16px] relative transition-all ${isDone ? 'opacity-50 grayscale' : ''}`}>
       {/* Dropdown 3-dot */}
       {dotMenuOpen && (
         <>
@@ -200,7 +204,7 @@ function ExpenseCard({ expense, currentUserId, profiles, onReimburse, onEdit, on
       )}
 
       {/* Header */}
-      <div className="flex items-center gap-3 p-4">
+      <div className="flex items-center gap-3 p-4 pb-3">
         <button onClick={() => setOpen(o => !o)} className="flex-1 min-w-0 text-left">
           <p className="text-[14px] font-semibold text-[#211738] truncate">{expense.description}</p>
           <p className="text-[12px] text-[#736694] mt-0.5">Payé par {payerName}</p>
@@ -224,6 +228,20 @@ function ExpenseCard({ expense, currentUserId, profiles, onReimburse, onEdit, on
             <circle cx="12" cy="19" r="1.5" />
           </svg>
         </button>
+      </div>
+
+      {/* Barre de progression */}
+      <div className="mx-4 mb-3 flex flex-col gap-1">
+        <div className="flex justify-between items-center">
+          <span className="text-[11px] text-[#736694]">{isDone ? 'Remboursé' : `${fmt(paid)} remboursé`}</span>
+          <span className="text-[11px] font-semibold" style={{ color: barColor }}>{pct}%</span>
+        </div>
+        <div className="h-[4px] rounded-full bg-[#f0ebfa] overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{ width: `${pct}%`, background: barColor }}
+          />
+        </div>
       </div>
 
       {open && (
@@ -270,7 +288,7 @@ function ExpenseCard({ expense, currentUserId, profiles, onReimburse, onEdit, on
 export default function Expenses() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState(null) // null | 'owed' | 'due'
+  const [filter, setFilter] = useState(null) // null | 'owed' | 'due' | 'done'
   const [expenses, setExpenses] = useState([])
   const [profiles, setProfiles] = useState({})
   const [showNew, setShowNew] = useState(false)
@@ -325,7 +343,12 @@ export default function Expenses() {
   const totalOwed = owed.reduce((s, e) => s + remainingAmount(e), 0)
   const totalDue = due.reduce((s, e) => s + remainingAmount(e), 0)
 
-  const base = filter === 'owed' ? owed : filter === 'due' ? due : expenses
+  const activeExpenses = expenses.filter(e => remainingAmount(e) > 0)
+  const doneExpenses = expenses.filter(e => remainingAmount(e) === 0)
+  const base = filter === 'owed' ? owed.filter(e => remainingAmount(e) > 0)
+    : filter === 'due' ? due.filter(e => remainingAmount(e) > 0)
+    : filter === 'done' ? doneExpenses
+    : activeExpenses
   const filtered = search.trim()
     ? base.filter(e => e.description.toLowerCase().includes(search.toLowerCase()))
     : base
@@ -378,7 +401,8 @@ export default function Expenses() {
       <main className="absolute top-[142px] left-0 right-0 bottom-0 flex flex-col overflow-hidden">
 
         {/* Stats inline */}
-        <div className="flex gap-2 px-[14px] pt-3 pb-3">
+        <div className="flex flex-col gap-2 px-[14px] pt-3 pb-3">
+          <div className="flex gap-2">
           <button
             onClick={() => setFilter(f => f === 'owed' ? null : 'owed')}
             className={`flex-1 flex items-center justify-between rounded-[8px] h-[43px] px-2 border transition-all ${
@@ -400,6 +424,22 @@ export default function Expenses() {
           >
             <span className="text-[12px] text-[#8883aa]">Je dois</span>
             <span className="text-[14px] font-bold text-[#f59e0b]">{fmt(totalDue)}</span>
+          </button>
+          </div>
+          <button
+            onClick={() => setFilter(f => f === 'done' ? null : 'done')}
+            className={`flex items-center justify-center gap-2 h-[34px] rounded-[8px] border transition-all ${
+              filter === 'done'
+                ? 'bg-[rgba(34,197,94,0.1)] border-[#22c55e]'
+                : 'bg-[rgba(247,237,250,0.6)] border-[rgba(34,197,94,0.25)]'
+            }`}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill={filter === 'done' ? '#22c55e' : '#a0a0b0'}>
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+            </svg>
+            <span className={`text-[12px] font-medium ${filter === 'done' ? 'text-[#22c55e]' : 'text-[#a0a0b0]'}`}>
+              Soldés {doneExpenses.length > 0 && `(${doneExpenses.length})`}
+            </span>
           </button>
         </div>
 

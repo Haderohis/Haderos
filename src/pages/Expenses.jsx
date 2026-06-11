@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import Drawer from '../components/Drawer'
 import BottomSheet from '../components/BottomSheet'
-import { TextField, DateField, SelectField, SegmentedControl, SubmitButton } from '../components/FormFields'
+import { FieldLabel, TextField, DateField, SelectField, SegmentedControl, SubmitButton } from '../components/FormFields'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -24,9 +24,64 @@ function statusLabel(expense) {
   return { label: 'En attente', color: '#6c63ff', bg: '#f2edfa' }
 }
 
+// ─── Saisie de tags ──────────────────────────────────────────────────────────
+
+function TagInput({ tags, onChange, suggestions = [] }) {
+  const [input, setInput] = useState('')
+
+  const add = (raw) => {
+    const t = raw.trim().toLowerCase()
+    if (t && !tags.includes(t)) onChange([...tags, t])
+    setInput('')
+  }
+
+  const remove = (t) => onChange(tags.filter(x => x !== t))
+
+  const handleKey = (e) => {
+    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(input) }
+    else if (e.key === 'Backspace' && !input && tags.length) remove(tags[tags.length - 1])
+  }
+
+  const shown = input.trim()
+    ? suggestions.filter(s => s.includes(input.toLowerCase()) && !tags.includes(s))
+    : suggestions.filter(s => !tags.includes(s))
+
+  return (
+    <div className="flex flex-col gap-1">
+      <FieldLabel>Tags</FieldLabel>
+      <div className="bg-[#f2edfa] rounded-[10px] min-h-12 px-3 py-2 flex flex-wrap gap-1.5 items-center">
+        {tags.map(t => (
+          <span key={t} className="flex items-center gap-1 bg-[#6c63ff]/20 text-[#6c63ff] text-[12px] font-semibold px-2 py-0.5 rounded-full">
+            {t}
+            <button type="button" onClick={() => remove(t)} className="opacity-60 leading-none">×</button>
+          </span>
+        ))}
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={handleKey}
+          onBlur={() => input.trim() && add(input)}
+          placeholder={tags.length === 0 ? 'Ajouter un tag…' : ''}
+          className="flex-1 min-w-[80px] bg-transparent text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe]"
+        />
+      </div>
+      {shown.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {shown.map(s => (
+            <button key={s} type="button" onClick={() => add(s)}
+              className="text-[11px] text-[#6c63ff] bg-[#6c63ff]/10 px-2 py-0.5 rounded-full">
+              + {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Modal nouvelle dépense / édition ───────────────────────────────────────
 
-function NewExpenseModal({ currentUserId, onClose, onSaved, initialExpense }) {
+function NewExpenseModal({ currentUserId, onClose, onSaved, initialExpense, allTags }) {
   const isEdit = !!initialExpense
 
   const deriveOtherAndPayer = () => {
@@ -46,6 +101,7 @@ function NewExpenseModal({ currentUserId, onClose, onSaved, initialExpense }) {
   const [payer, setPayer] = useState(initPayer)
   const [otherUserId, setOtherUserId] = useState(initOther)
   const [users, setUsers] = useState([])
+  const [tags, setTags] = useState(initialExpense?.tags ?? [])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
 
@@ -77,6 +133,7 @@ function NewExpenseModal({ currentUserId, onClose, onSaved, initialExpense }) {
       amount: parseFloat(amount),
       description,
       expense_date: expenseDate || null,
+      tags,
     }
     const { error: err } = isEdit
       ? await supabase.from('expenses').update(payload).eq('id', initialExpense.id)
@@ -104,6 +161,7 @@ function NewExpenseModal({ currentUserId, onClose, onSaved, initialExpense }) {
         onChange={setPayer}
         options={[{ value: 'me', label: 'Moi' }, { value: 'other', label: "L'autre" }]}
       />
+      <TagInput tags={tags} onChange={setTags} suggestions={allTags ?? []} />
       {error && <p className="text-[12px] text-red-500">{error}</p>}
       <SubmitButton onClick={handleSave} disabled={!canSave || saving}>
         {saving ? 'Enregistrement…' : isEdit ? 'Enregistrer' : 'Ajouter'}
@@ -320,6 +378,15 @@ function ExpenseCard({ expense, profiles, onOpen, onEdit, onDelete }) {
         </button>
       </div>
 
+      {/* Tags */}
+      {expense.tags?.length > 0 && (
+        <div className="mx-4 mb-2 flex flex-wrap gap-1">
+          {expense.tags.map(t => (
+            <span key={t} className="text-[11px] font-semibold text-[#6c63ff] bg-[#6c63ff]/10 px-2 py-0.5 rounded-full">{t}</span>
+          ))}
+        </div>
+      )}
+
       {/* Barre de progression */}
       <div className="mx-4 mb-3 flex flex-col gap-1">
         <div className="flex justify-between items-center">
@@ -342,6 +409,7 @@ export default function Expenses() {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState(null) // null | 'owed' | 'due' | 'done'
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false)
+  const [tagFilters, setTagFilters] = useState([])
   const [expenses, setExpenses] = useState([])
   const [profiles, setProfiles] = useState({})
   const [showNew, setShowNew] = useState(false)
@@ -399,13 +467,14 @@ export default function Expenses() {
 
   const activeExpenses = expenses.filter(e => remainingAmount(e) > 0)
   const doneExpenses = expenses.filter(e => remainingAmount(e) === 0)
+  const allTags = [...new Set(expenses.flatMap(e => e.tags ?? []))].sort()
   const base = filter === 'owed' ? owed.filter(e => remainingAmount(e) > 0)
     : filter === 'due' ? due.filter(e => remainingAmount(e) > 0)
     : filter === 'done' ? expenses
     : activeExpenses
-  const filtered = search.trim()
-    ? base.filter(e => e.description.toLowerCase().includes(search.toLowerCase()))
-    : base
+  const filtered = base
+    .filter(e => !search.trim() || e.description.toLowerCase().includes(search.toLowerCase()))
+    .filter(e => tagFilters.length === 0 || tagFilters.every(t => (e.tags ?? []).includes(t)))
 
   return (
     <div className="relative w-full h-dvh overflow-hidden bg-[#f6f4f9]">
@@ -447,20 +516,26 @@ export default function Expenses() {
         <div className="relative shrink-0">
           <button
             onClick={() => setFilterDropdownOpen(o => !o)}
-            className={`w-[34px] h-[34px] rounded-[8px] flex items-center justify-center border transition-all ${
-              filter === 'done'
-                ? 'bg-[rgba(34,197,94,0.12)] border-[#22c55e]'
+            className={`w-[34px] h-[34px] rounded-[8px] flex items-center justify-center border transition-all relative ${
+              filter === 'done' || tagFilters.length > 0
+                ? 'bg-[rgba(108,99,255,0.12)] border-[#a49ffe]'
                 : 'bg-white/75 border-white/85'
             }`}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill={filter === 'done' ? '#22c55e' : '#736694'}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill={filter === 'done' || tagFilters.length > 0 ? '#6c63ff' : '#736694'}>
               <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" />
             </svg>
+            {tagFilters.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#6c63ff] rounded-full text-white text-[9px] font-bold flex items-center justify-center">
+                {tagFilters.length}
+              </span>
+            )}
           </button>
           {filterDropdownOpen && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setFilterDropdownOpen(false)} />
-              <div className="absolute top-[38px] right-0 z-20 bg-white rounded-[12px] shadow-lg border border-[#f0ebfa] overflow-hidden min-w-[160px]">
+              <div className="absolute top-[38px] right-0 z-20 bg-white rounded-[12px] shadow-lg border border-[#f0ebfa] overflow-hidden min-w-[180px]">
+                {/* Soldés */}
                 <button
                   onClick={() => { setFilter(f => f === 'done' ? null : 'done'); setFilterDropdownOpen(false) }}
                   className="flex items-center gap-3 px-4 py-3 w-full text-left active:bg-[#f2edfa]"
@@ -468,15 +543,49 @@ export default function Expenses() {
                   <svg width="14" height="14" viewBox="0 0 24 24" fill={filter === 'done' ? '#22c55e' : '#a0a0b0'}>
                     <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
                   </svg>
-                  <span className={`text-[13px] font-medium ${filter === 'done' ? 'text-[#22c55e]' : 'text-[#211738]'}`}>
+                  <span className={`text-[13px] font-medium flex-1 ${filter === 'done' ? 'text-[#22c55e]' : 'text-[#211738]'}`}>
                     Soldés {doneExpenses.length > 0 && `(${doneExpenses.length})`}
                   </span>
                   {filter === 'done' && (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#22c55e" className="ml-auto">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="#22c55e">
                       <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
                     </svg>
                   )}
                 </button>
+                {/* Tags */}
+                {allTags.length > 0 && (
+                  <>
+                    <div className="h-px bg-[#f0ebfa]" />
+                    <div className="px-4 pt-2 pb-1">
+                      <p className="text-[10px] font-semibold text-[#736694] uppercase tracking-wide">Tags</p>
+                    </div>
+                    {allTags.map(tag => {
+                      const active = tagFilters.includes(tag)
+                      return (
+                        <button
+                          key={tag}
+                          onClick={() => setTagFilters(prev =>
+                            active ? prev.filter(t => t !== tag) : [...prev, tag]
+                          )}
+                          className="flex items-center gap-3 px-4 py-2.5 w-full text-left active:bg-[#f2edfa]"
+                        >
+                          <span className={`flex-1 text-[13px] font-medium ${active ? 'text-[#6c63ff]' : 'text-[#211738]'}`}>{tag}</span>
+                          <div className={`w-4 h-4 rounded-[4px] border flex items-center justify-center shrink-0 ${active ? 'bg-[#6c63ff] border-[#6c63ff]' : 'border-[#d0c9e8]'}`}>
+                            {active && <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
+                          </div>
+                        </button>
+                      )
+                    })}
+                    {tagFilters.length > 0 && (
+                      <button
+                        onClick={() => setTagFilters([])}
+                        className="flex items-center justify-center gap-1 w-full px-4 py-2 text-[12px] text-[#736694] border-t border-[#f0ebfa]"
+                      >
+                        Effacer les tags
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
             </>
           )}
@@ -550,6 +659,7 @@ export default function Expenses() {
       {showNew && (
         <NewExpenseModal
           currentUserId={user.id}
+          allTags={allTags}
           onClose={() => setShowNew(false)}
           onSaved={fetchExpenses}
         />
@@ -558,6 +668,7 @@ export default function Expenses() {
         <NewExpenseModal
           currentUserId={user.id}
           initialExpense={editingExpense}
+          allTags={allTags}
           onClose={() => setEditingExpense(null)}
           onSaved={fetchExpenses}
         />

@@ -466,7 +466,7 @@ export default function Expenses() {
   const allTags = [...new Set(expenses.flatMap(e => e.tags ?? []))].sort()
   const base = filter === 'owed' ? owed.filter(e => remainingAmount(e) > 0)
     : filter === 'due' ? due.filter(e => remainingAmount(e) > 0)
-    : filter === 'done' ? expenses
+    : (filter === 'done' || search.trim()) ? expenses
     : activeExpenses
   const filtered = base
     .filter(e => !search.trim() || e.description.toLowerCase().includes(search.toLowerCase()))

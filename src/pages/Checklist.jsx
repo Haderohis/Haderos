@@ -47,8 +47,9 @@ export default function Checklist() {
   const [groupOpen, setGroupOpen]   = useState(false)
   const [error, setError]   = useState('')
   const [saving, setSaving] = useState(false)
-  const [figmaModal, setFigmaModal] = useState(null) // task object
-  const [figmaUrl, setFigmaUrl]     = useState('')
+  const [figmaModal, setFigmaModal]     = useState(null)
+  const [figmaUrl, setFigmaUrl]         = useState('')
+  const [deleteConfirm, setDeleteConfirm] = useState(null) // task object
 
   // Jour courant
   const [currentDay, setCurrentDay] = useState(todayStr())
@@ -355,7 +356,7 @@ export default function Checklist() {
         )}
         {/* Supprimer — désactivé si terminé */}
         <button
-          onClick={() => !task.done && deleteTask(task.id)}
+          onClick={() => !task.done && setDeleteConfirm(task)}
           className={`w-6 h-6 flex items-center justify-center shrink-0 ${task.done ? 'pointer-events-none opacity-0' : ''}`}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path d="M18 6L6 18M6 6l12 12" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round"/>
@@ -639,6 +640,26 @@ export default function Checklist() {
           className="absolute bottom-4 left-4 right-4 bg-[#6c63ff] rounded-[12px] h-12 flex items-center justify-center z-10">
           <span className="text-[14px] font-semibold text-white">Nouvelle tâche</span>
         </button>
+      )}
+
+      {/* Modal confirmation suppression */}
+      {deleteConfirm && (
+        <div className="absolute inset-0 z-50 flex items-end justify-center bg-[rgba(33,23,56,0.3)]" onClick={() => setDeleteConfirm(null)}>
+          <div className="w-full bg-white/95 backdrop-blur-md rounded-t-[20px] p-6 flex flex-col gap-4" onClick={e => e.stopPropagation()}>
+            <p className="text-[17px] font-semibold text-[#211738]">Supprimer la tâche ?</p>
+            <p className="text-[13px] text-[#736694] -mt-2">« {deleteConfirm.label} »</p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteConfirm(null)}
+                className="flex-1 h-12 rounded-[12px] border border-[#736694]/30 text-[14px] font-semibold text-[#736694]">
+                Annuler
+              </button>
+              <button onClick={async () => { await deleteTask(deleteConfirm.id); setDeleteConfirm(null) }}
+                className="flex-1 h-12 rounded-[12px] bg-red-500 text-[14px] font-semibold text-white">
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Modal Figma */}

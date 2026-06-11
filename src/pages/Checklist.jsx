@@ -238,7 +238,8 @@ export default function Checklist() {
       <li
         ref={setNodeRef}
         style={sortable ? { transform: CSS.Transform.toString(transform), transition } : {}}
-        className={`bg-white/70 border border-white/85 rounded-[8px] p-2 flex items-center gap-2
+        className={`border rounded-[8px] px-2 py-[6px] flex items-center gap-2
+          ${task.done ? 'bg-[#f0eef5]/80 border-[rgba(115,102,148,0.2)]' : 'bg-white/70 border-white/85'}
           ${isDragging ? 'opacity-50 z-50' : ''}`}
       >
         {/* Drag handle */}
@@ -251,32 +252,33 @@ export default function Checklist() {
             </svg>
           </button>
         )}
-        {/* Checkbox */}
+        {/* Checkbox — toujours cliquable */}
         <button onClick={() => toggleTask(task.id, task.done)}
-          className="w-[18px] h-[18px] rounded-[3px] border-2 border-[#6c63ff] flex items-center justify-center shrink-0">
+          className={`w-[22px] h-[22px] rounded-[4px] border-2 flex items-center justify-center shrink-0 ${task.done ? 'border-[#736694] bg-[#736694]' : 'border-[#6c63ff]'}`}>
           {task.done && (
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-              <path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="#6c63ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg width="11" height="11" viewBox="0 0 10 10" fill="none">
+              <path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           )}
         </button>
-        {/* Texte + tags (flex-1) */}
-        <div className="flex flex-col gap-[6px] min-w-0 flex-1" onClick={() => openEdit(task)}>
-          <span className={`text-[12px] font-bold text-black leading-tight ${task.done ? 'line-through opacity-50' : ''}`}>{task.label}</span>
+        {/* Texte + tags (flex-1) — désactivé si terminé */}
+        <div className={`flex flex-col gap-[4px] min-w-0 flex-1 ${task.done ? 'pointer-events-none' : 'cursor-pointer'}`}
+          onClick={() => !task.done && openEdit(task)}>
+          <span className={`text-[12px] font-bold leading-tight ${task.done ? 'line-through text-[#9992a8]' : 'text-black'}`}>{task.label}</span>
           {hasTags && (
             <div className="flex flex-wrap items-center gap-1">
               {(task.tags ?? []).map((tag, i) => (
-                <span key={i} className={`flex items-center gap-[5px] text-[8px] px-[5px] py-[3px] rounded-full ${tagColor(tag.type)}`}>
+                <span key={i} className={`flex items-center gap-[5px] text-[8px] px-[5px] py-[3px] rounded-full ${task.done ? 'bg-[#e8e5f0] text-[#9992a8]' : tagColor(tag.type)}`}>
                   {tagIcon(tag.type)}{tag.label}
                 </span>
               ))}
             </div>
           )}
         </div>
-        {/* Date (centrée dans l'espace restant) */}
+        {/* Date */}
         {task.due_date && (
           <div className="flex justify-center shrink-0">
-            {overdue ? (
+            {overdue && !task.done ? (
               <div className="bg-[rgba(254,228,229,0.6)] border border-[rgba(153,153,166,0.2)] rounded-full px-2 py-1 flex items-center gap-[6px]">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                   <rect x="3" y="4" width="18" height="18" rx="2" stroke="#b91c1c" strokeWidth="2"/>
@@ -287,16 +289,18 @@ export default function Checklist() {
             ) : (
               <div className="flex items-center gap-[6px]">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <rect x="3" y="4" width="18" height="18" rx="2" stroke="#736694" strokeWidth="2"/>
-                  <path d="M16 2v4M8 2v4M3 10h18" stroke="#736694" strokeWidth="2" strokeLinecap="round"/>
+                  <rect x="3" y="4" width="18" height="18" rx="2" stroke={task.done ? '#9992a8' : '#736694'} strokeWidth="2"/>
+                  <path d="M16 2v4M8 2v4M3 10h18" stroke={task.done ? '#9992a8' : '#736694'} strokeWidth="2" strokeLinecap="round"/>
                 </svg>
-                <span className="text-[12px] text-black whitespace-nowrap">{formatDueDate(task.due_date)}</span>
+                <span className={`text-[12px] whitespace-nowrap ${task.done ? 'text-[#9992a8]' : 'text-black'}`}>{formatDueDate(task.due_date)}</span>
               </div>
             )}
           </div>
         )}
-        {/* Supprimer */}
-        <button onClick={() => deleteTask(task.id)} className="w-6 h-6 flex items-center justify-center shrink-0">
+        {/* Supprimer — désactivé si terminé */}
+        <button
+          onClick={() => !task.done && deleteTask(task.id)}
+          className={`w-6 h-6 flex items-center justify-center shrink-0 ${task.done ? 'pointer-events-none opacity-0' : ''}`}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path d="M18 6L6 18M6 6l12 12" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round"/>
           </svg>

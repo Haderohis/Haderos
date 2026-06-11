@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard'
 import Checklist from './pages/Checklist'
 import Expenses from './pages/Expenses'
 import Settings from './pages/Settings'
+import Collection from './pages/Collection'
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/checklist" element={<Checklist />} />
         <Route path="/expenses" element={<Expenses />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/collection" element={<ProtectedRoute><Collection /></ProtectedRoute>} />
         <Route
           path="/dashboard"
           element={

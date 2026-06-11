@@ -30,6 +30,15 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+  {
+    path: '/collection',
+    label: 'Collection',
+    icon: (active) => (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill={active ? 'white' : '#736694'}>
+        <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 5H10V5h8v2zm0 4H10V9h8v2zm-3 4H10v-2h5v2zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6z" />
+      </svg>
+    ),
+  },
 ]
 
 export default function Drawer({ open, onClose }) {

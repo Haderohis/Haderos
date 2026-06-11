@@ -204,14 +204,14 @@ function ExpenseDetailModal({ expense, currentUserId, profiles, onClose, onSaved
         <div className="flex flex-col">
           <p className="text-[11px] font-semibold text-[#736694] uppercase tracking-wide mb-3">Historique</p>
           {sorted.map((r, i) => (
-            <div key={r.id} className="flex gap-3">
+            <div key={r.id} className="flex gap-3 items-start">
               {/* Dot + ligne verticale */}
-              <div className="flex flex-col items-center w-2 shrink-0">
-                <div className="w-2 h-2 rounded-full bg-[#22c55e] mt-[5px] shrink-0" />
-                {i < sorted.length - 1 && <div className="w-px flex-1 bg-[#e8e0f5] mt-1" />}
+              <div className="flex flex-col items-center w-3 shrink-0">
+                <div className="w-2 h-2 rounded-full bg-[#22c55e] mt-[7px] shrink-0" />
+                {i < sorted.length - 1 && <div className="w-px flex-1 bg-[#e8e0f5] mt-1 min-h-[20px]" />}
               </div>
-              {/* Ligne de contenu */}
-              <div className="flex-1 flex items-center gap-2 pb-3 min-w-0">
+              {/* Contenu aligné sur une seule ligne */}
+              <div className="flex-1 flex items-center gap-2 pb-4 min-w-0">
                 <span className="text-[13px] font-medium text-[#211738] flex-1 min-w-0 truncate">{profileName(r.reimbursed_by)}</span>
                 {fmtDate(r.reimbursement_date) && (
                   <span className="text-[11px] text-[#a49ffe] shrink-0">{fmtDate(r.reimbursement_date)}</span>

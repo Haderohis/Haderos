@@ -566,7 +566,7 @@ export default function Checklist() {
         <div className="flex flex-col gap-3 overflow-y-auto flex-1">
 
           {!hasTasks && (
-            <div className="bg-white/60 border border-[#c0befe]/50 rounded-[12px] h-16 flex flex-col items-center justify-center mt-8">
+            <div className="bg-white/60 border border-[#c0befe]/50 rounded-[12px] h-16 flex flex-col items-center justify-center mt-4">
               <p className="text-[22px] font-bold text-[#6c63ff] leading-tight">Aucune tâche</p>
               <p className="text-[11px] text-[#a49ffe]">pour le moment</p>
             </div>

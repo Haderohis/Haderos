@@ -383,7 +383,7 @@ export default function Checklist() {
         {/* Barre recherche + filtres */}
         <div className="px-[14px] pb-3 flex flex-col gap-2">
           <div className="flex gap-2">
-            <div className="flex-1 bg-white/70 border border-white/85 rounded-[8px] h-[34px] flex items-center px-3 gap-2">
+            <div className="flex-1 bg-white/70 border border-white/85 rounded-[8px] h-[44px] flex items-center px-3 gap-2">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="shrink-0">
                 <circle cx="11" cy="11" r="8" stroke="#ada7fd" strokeWidth="2"/>
                 <path d="M21 21l-4.35-4.35" stroke="#ada7fd" strokeWidth="2" strokeLinecap="round"/>
@@ -394,7 +394,7 @@ export default function Checklist() {
               {search && <button onClick={() => setSearch('')} className="text-[#a49ffe] leading-none min-w-0 min-h-0">&times;</button>}
             </div>
             <button onClick={() => setShowFilter(f => !f)}
-              style={{ minWidth: 0, minHeight: 0, width: 34, height: 34 }}
+              style={{ minWidth: 0, minHeight: 0, width: 44, height: 44 }}
               className={`rounded-[8px] border border-white/85 flex items-center justify-center shrink-0 ${showFilter || filterTag || filterGroup ? 'bg-[#6c63ff] text-white' : 'bg-white/75 text-[#736694]'}`}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>

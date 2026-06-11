@@ -36,7 +36,50 @@ export function useNotifications(userId) {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })))
   }, [userId, notifications])
 
+  const acceptShare = useCallback(async (notification) => {
+    const shareId = notification.data?.share_id
+    const ownerId = notification.data?.owner_id
+    if (!shareId) return
+
+    await supabase
+      .from('collection_shares')
+      .update({ status: 'accepted' })
+      .eq('id', shareId)
+
+    await supabase.from('notifications').update({ read: true }).eq('id', notification.id)
+
+    // Notifie l'owner que la demande a été acceptée
+    if (ownerId) {
+      await supabase.from('notifications').insert({
+        user_id: ownerId,
+        type: 'collection_share_accepted',
+        message: `${notification.data?.recipient_name ?? 'Un utilisateur'} a accepté de partager sa collection avec toi.`,
+        read: false,
+      })
+    }
+
+    setNotifications(prev => prev.map(n =>
+      n.id === notification.id ? { ...n, read: true, data: { ...n.data, status: 'accepted' } } : n
+    ))
+  }, [])
+
+  const declineShare = useCallback(async (notification) => {
+    const shareId = notification.data?.share_id
+    if (!shareId) return
+
+    await supabase
+      .from('collection_shares')
+      .update({ status: 'declined' })
+      .eq('id', shareId)
+
+    await supabase.from('notifications').update({ read: true }).eq('id', notification.id)
+
+    setNotifications(prev => prev.map(n =>
+      n.id === notification.id ? { ...n, read: true, data: { ...n.data, status: 'declined' } } : n
+    ))
+  }, [])
+
   const unreadCount = notifications.filter(n => !n.read).length
 
-  return { notifications, unreadCount, markAllRead }
+  return { notifications, unreadCount, markAllRead, acceptShare, declineShare }
 }

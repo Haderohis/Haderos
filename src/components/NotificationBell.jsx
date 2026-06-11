@@ -13,7 +13,45 @@ const fmtTime = (iso) => {
   return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
 }
 
-export default function NotificationBell({ notifications, unreadCount, onOpen }) {
+function ShareRequestItem({ n, onAccept, onDecline }) {
+  const status = n.data?.status
+  const done = status === 'accepted' || status === 'declined'
+
+  return (
+    <li className={`px-4 py-3 transition-colors ${n.read ? '' : 'bg-[#f2edfa]/60'}`}>
+      <div className="flex items-start gap-3">
+        <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${n.read ? 'bg-transparent' : 'bg-[#6c63ff]'}`} />
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] text-[#211738] leading-snug">{n.message}</p>
+          <p className="text-[11px] text-[#a49ffe] mt-0.5">{fmtTime(n.created_at)}</p>
+          {!done && (
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => onAccept(n)}
+                className="flex-1 h-8 bg-[#6c63ff] text-white text-[12px] font-semibold rounded-[8px]"
+              >
+                Accepter
+              </button>
+              <button
+                onClick={() => onDecline(n)}
+                className="flex-1 h-8 bg-[#f2edfa] text-[#736694] text-[12px] font-semibold rounded-[8px]"
+              >
+                Refuser
+              </button>
+            </div>
+          )}
+          {done && (
+            <p className={`text-[11px] font-medium mt-1.5 ${status === 'accepted' ? 'text-[#6c63ff]' : 'text-[#736694]'}`}>
+              {status === 'accepted' ? '✓ Accepté' : '✗ Refusé'}
+            </p>
+          )}
+        </div>
+      </div>
+    </li>
+  )
+}
+
+export default function NotificationBell({ notifications, unreadCount, onOpen, onAcceptShare, onDeclineShare }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -60,16 +98,25 @@ export default function NotificationBell({ notifications, unreadCount, onOpen })
               <p className="text-[13px] text-[#a49ffe]">Aucune notification pour le moment</p>
             </div>
           ) : (
-            <ul className="max-h-[340px] overflow-y-auto divide-y divide-[#f0ebfa]">
-              {notifications.map(n => (
-                <li key={n.id} className={`flex items-start gap-3 px-4 py-3 transition-colors ${n.read ? '' : 'bg-[#f2edfa]/60'}`}>
-                  <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${n.read ? 'bg-transparent' : 'bg-[#6c63ff]'}`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] text-[#211738] leading-snug">{n.message}</p>
-                    <p className="text-[11px] text-[#a49ffe] mt-0.5">{fmtTime(n.created_at)}</p>
-                  </div>
-                </li>
-              ))}
+            <ul className="max-h-[400px] overflow-y-auto divide-y divide-[#f0ebfa]">
+              {notifications.map(n =>
+                n.type === 'collection_share_request' ? (
+                  <ShareRequestItem
+                    key={n.id}
+                    n={n}
+                    onAccept={onAcceptShare}
+                    onDecline={onDeclineShare}
+                  />
+                ) : (
+                  <li key={n.id} className={`flex items-start gap-3 px-4 py-3 transition-colors ${n.read ? '' : 'bg-[#f2edfa]/60'}`}>
+                    <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${n.read ? 'bg-transparent' : 'bg-[#6c63ff]'}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] text-[#211738] leading-snug">{n.message}</p>
+                      <p className="text-[11px] text-[#a49ffe] mt-0.5">{fmtTime(n.created_at)}</p>
+                    </div>
+                  </li>
+                )
+              )}
             </ul>
           )}
         </div>

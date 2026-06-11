@@ -4,10 +4,10 @@ import { useNotifications } from '../hooks/useNotifications'
 import Drawer from './Drawer'
 import NotificationBell from './NotificationBell'
 
-export default function AppHeader({ title }) {
+export default function AppHeader({ title, titleExtra }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const { user } = useAuth()
-  const { notifications, unreadCount, markAllRead } = useNotifications(user?.id)
+  const { notifications, unreadCount, markAllRead, acceptShare, declineShare } = useNotifications(user?.id)
 
   return (
     <>
@@ -21,9 +21,12 @@ export default function AppHeader({ title }) {
           <span className="block w-[22px] h-[2.5px] rounded-sm bg-[rgba(33,23,56,0.75)]" />
           <span className="block w-[22px] h-[2.5px] rounded-sm bg-[rgba(33,23,56,0.75)]" />
         </button>
-        <h1 className="absolute left-1/2 -translate-x-1/2 text-[17px] font-semibold text-[#211738]">{title}</h1>
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
+          <h1 className="text-[17px] font-semibold text-[#211738] whitespace-nowrap">{title}</h1>
+          {titleExtra}
+        </div>
         <div className="ml-auto">
-          <NotificationBell notifications={notifications} unreadCount={unreadCount} onOpen={markAllRead} />
+          <NotificationBell notifications={notifications} unreadCount={unreadCount} onOpen={markAllRead} onAcceptShare={acceptShare} onDeclineShare={declineShare} />
         </div>
       </header>
       <Drawer open={menuOpen} onClose={() => setMenuOpen(false)} />

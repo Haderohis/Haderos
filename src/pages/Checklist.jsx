@@ -4,66 +4,71 @@ import { useProfile } from '../hooks/useProfile'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
+  DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors,
 } from '@dnd-kit/core'
 import {
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-  arrayMove,
+  SortableContext, useSortable, verticalListSortingStrategy, arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
 const EMPTY_FORM = { label: '', group: '', dueDate: '', tags: [] }
 const TAG_TYPES = [
-  { value: 'personne', color: 'bg-[#e0f2fe] text-[#0369a1]', icon: (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+  { value: 'personne', color: 'bg-[#e0f2fe] text-[#1c78ab]', icon: (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2"/>
       <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
     </svg>
   )},
-  { value: 'contexte', color: 'bg-[#6c63ff]/10 text-[#6c63ff]', icon: (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+  { value: 'contexte', color: 'bg-[#e9ebfd] text-[#7168ff]', icon: (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/>
       <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
     </svg>
   )},
 ]
 const tagColor = (type) => TAG_TYPES.find(t => t.value === type)?.color ?? TAG_TYPES[1].color
-const tagIcon = (type) => TAG_TYPES.find(t => t.value === type)?.icon ?? null
+const tagIcon  = (type) => TAG_TYPES.find(t => t.value === type)?.icon  ?? null
+
+const toDateStr = (d) => {
+  const date = new Date(d)
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`
+}
+const todayStr = () => toDateStr(new Date())
 
 export default function Checklist() {
-  const [tasks, setTasks] = useState([])
+  const [tasks, setTasks]       = useState([])
   const [menuOpen, setMenuOpen] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState(null)
-  const [form, setForm] = useState(EMPTY_FORM)
+  const [form, setForm]         = useState(EMPTY_FORM)
   const [tagInput, setTagInput] = useState('')
+  const [tagType, setTagType]   = useState('contexte')
   const [groupInput, setGroupInput] = useState('')
-  const [groupOpen, setGroupOpen] = useState(false)
-  const [error, setError] = useState('')
+  const [groupOpen, setGroupOpen]   = useState(false)
+  const [error, setError]   = useState('')
   const [saving, setSaving] = useState(false)
+
+  // Jour courant
+  const [currentDay, setCurrentDay] = useState(todayStr())
+  const dayDateRef = useRef(null)
+
+  // Filtres
+  const [search, setSearch]           = useState('')
+  const [filterTag, setFilterTag]     = useState(null)
+  const [filterGroup, setFilterGroup] = useState(null)
+  const [showFilter, setShowFilter]   = useState(false)
+
   const groupRef = useRef(null)
-  const dateRef = useRef(null)
+  const dateRef  = useRef(null)
   const navigate = useNavigate()
   const { user, loading } = useAuth()
   const profile = useProfile(user)
 
-  useEffect(() => {
-    if (!loading && !user) navigate('/login')
-  }, [user, loading])
+  useEffect(() => { if (!loading && !user) navigate('/login') }, [user, loading])
 
   useEffect(() => {
     if (!user) return
-    supabase
-      .from('tasks')
-      .select('*')
-      .eq('user_id', user.id)
+    supabase.from('tasks').select('*').eq('user_id', user.id)
       .order('position', { ascending: true })
       .then(({ data }) => { if (data) setTasks(data) })
   }, [user])
@@ -76,27 +81,83 @@ export default function Checklist() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const firstName = profile?.first_name ?? ''
-  const lastName = profile?.last_name ?? ''
+  const firstName   = profile?.first_name ?? ''
+  const lastName    = profile?.last_name  ?? ''
   const displayName = profile?.display_name ?? user?.email ?? ''
-  const initials = firstName && lastName
+  const initials    = firstName && lastName
     ? `${firstName[0]}${lastName[0]}`.toUpperCase()
-    : displayName?.slice(0, 2).toUpperCase() ?? '??'
+    : displayName?.slice(0,2).toUpperCase() ?? '??'
 
-  const [tagType, setTagType] = useState('contexte')
-  const allTags = tasks.flatMap(t => t.tags ?? []).filter((t, i, arr) =>
+  // ── Logique jour ──────────────────────────────────────────────
+  const isToday = currentDay === todayStr()
+
+  const visibleTasks = tasks.filter(task => {
+    if (!task.done) return isToday
+    const completedDay = task.completed_at ? toDateStr(task.completed_at) : todayStr()
+    return completedDay === currentDay
+  })
+
+  // Jours avec tâches terminées (pour navigation)
+  const daysWithTasks = [...new Set(
+    tasks.filter(t => t.done && t.completed_at).map(t => toDateStr(t.completed_at))
+  )].sort()
+
+  const prevDay = () => {
+    const idx = daysWithTasks.indexOf(currentDay)
+    if (idx > 0) setCurrentDay(daysWithTasks[idx - 1])
+    else if (idx === -1) {
+      const before = daysWithTasks.filter(d => d < currentDay)
+      if (before.length) setCurrentDay(before[before.length - 1])
+    }
+  }
+  const nextDay = () => {
+    if (isToday) return
+    const idx = daysWithTasks.indexOf(currentDay)
+    if (idx !== -1 && idx < daysWithTasks.length - 1) setCurrentDay(daysWithTasks[idx + 1])
+    else setCurrentDay(todayStr())
+  }
+  const hasPrev = daysWithTasks.some(d => d < currentDay)
+  const hasNext = !isToday
+
+  const formatDay = (str) => {
+    const d = new Date(str + 'T12:00:00')
+    if (str === todayStr()) return "Aujourd'hui"
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1)
+    if (str === toDateStr(yesterday)) return 'Hier'
+    return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+  }
+
+  // ── Retard ──────────────────────────────────────────────────
+  const todayDate = new Date(todayStr() + 'T00:00:00')
+  const overdueTasks = isToday
+    ? visibleTasks.filter(t => !t.done && t.due_date && new Date(t.due_date + 'T00:00:00') < todayDate)
+    : []
+  const overdueIds = new Set(overdueTasks.map(t => t.id))
+
+  // ── Filtres/recherche ──────────────────────────────────────
+  const allTags   = tasks.flatMap(t => t.tags ?? []).filter((t, i, arr) =>
     arr.findIndex(x => x.label === t.label && x.type === t.type) === i
   )
   const allGroups = [...new Set(tasks.map(t => t.group_name).filter(Boolean))]
+
+  const applyFilters = (list) => list.filter(task => {
+    if (search && !task.label.toLowerCase().includes(search.toLowerCase())) return false
+    if (filterGroup && task.group_name !== filterGroup) return false
+    if (filterTag && !(task.tags ?? []).some(t => t.label === filterTag.label && t.type === filterTag.type)) return false
+    return true
+  })
+
+  const regularTasks  = applyFilters(visibleTasks.filter(t => !overdueIds.has(t.id)))
+  const filteredOverdue = applyFilters(overdueTasks)
+
+  // ── Tags form ───────────────────────────────────────────────
   const tagSuggestions = tagInput.length > 0
     ? allTags.filter(t =>
         t.label.toLowerCase().startsWith(tagInput.toLowerCase()) &&
         !form.tags.some(ft => ft.label === t.label && ft.type === t.type)
       )
     : []
-  const groupSuggestions = allGroups.filter(g =>
-    g.toLowerCase().includes(groupInput.toLowerCase())
-  )
+  const groupSuggestions = allGroups.filter(g => g.toLowerCase().includes(groupInput.toLowerCase()))
 
   const addTag = (label, type = tagType) => {
     const trimmed = label.trim()
@@ -104,67 +165,46 @@ export default function Checklist() {
     setForm(f => ({ ...f, tags: [...f.tags, { label: trimmed, type }] }))
     setTagInput('')
   }
-
   const removeTag = (index) => setForm(f => ({ ...f, tags: f.tags.filter((_, i) => i !== index) }))
 
+  // ── Modal ──────────────────────────────────────────────────
   const openModal = () => {
-    setForm(EMPTY_FORM)
-    setTagInput('')
-    setGroupInput('')
-    setError('')
-    setEditingId(null)
-    setShowModal(true)
+    setForm(EMPTY_FORM); setTagInput(''); setGroupInput(''); setError(''); setEditingId(null); setShowModal(true)
   }
-
   const openEdit = (task) => {
     setForm({ label: task.label, group: task.group_name ?? '', dueDate: task.due_date ?? '', tags: task.tags ?? [] })
-    setGroupInput(task.group_name ?? '')
-    setTagInput('')
-    setError('')
-    setEditingId(task.id)
-    setShowModal(true)
+    setGroupInput(task.group_name ?? ''); setTagInput(''); setError(''); setEditingId(task.id); setShowModal(true)
   }
 
   const addTask = async () => {
-    if (!form.label.trim()) {
-      setError('Le nom de la tâche est obligatoire.')
-      return
-    }
+    if (!form.label.trim()) { setError('Le nom de la tâche est obligatoire.'); return }
     const finalTags = tagInput.trim() && !form.tags.some(t => t.label === tagInput.trim() && t.type === tagType)
       ? [...form.tags, { label: tagInput.trim(), type: tagType }]
       : form.tags
     setSaving(true)
-
     if (editingId) {
       const { data, error: err } = await supabase.from('tasks').update({
-        label: form.label.trim(),
-        group_name: form.group || null,
-        due_date: form.dueDate || null,
-        tags: finalTags,
+        label: form.label.trim(), group_name: form.group || null, due_date: form.dueDate || null, tags: finalTags,
       }).eq('id', editingId).select().single()
       setSaving(false)
       if (err) { setError('Erreur lors de la sauvegarde.'); return }
       setTasks(prev => prev.map(t => t.id === editingId ? data : t))
     } else {
       const { data, error: err } = await supabase.from('tasks').insert({
-        user_id: user.id,
-        label: form.label.trim(),
-        group_name: form.group || null,
-        due_date: form.dueDate || null,
-        tags: finalTags,
-        done: false,
+        user_id: user.id, label: form.label.trim(), group_name: form.group || null,
+        due_date: form.dueDate || null, tags: finalTags, done: false,
       }).select().single()
       setSaving(false)
       if (err) { setError('Erreur lors de la sauvegarde.'); return }
       setTasks(prev => [data, ...prev])
     }
-
     setShowModal(false)
   }
 
   const toggleTask = async (id, done) => {
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, done: !done } : t))
-    await supabase.from('tasks').update({ done: !done }).eq('id', id)
+    const completed_at = !done ? new Date().toISOString() : null
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, done: !done, completed_at } : t))
+    await supabase.from('tasks').update({ done: !done, completed_at }).eq('id', id)
   }
 
   const deleteTask = async (id) => {
@@ -172,126 +212,293 @@ export default function Checklist() {
     await supabase.from('tasks').delete().eq('id', id)
   }
 
+  // ── DnD ────────────────────────────────────────────────────
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+    useSensor(TouchSensor,   { activationConstraint: { delay: 200, tolerance: 5 } }),
   )
-
   const handleDragEnd = async ({ active, over }) => {
     if (!over || active.id === over.id) return
     const oldIndex = tasks.findIndex(t => t.id === active.id)
     const newIndex = tasks.findIndex(t => t.id === over.id)
     const reordered = arrayMove(tasks, oldIndex, newIndex)
     setTasks(reordered)
-    await Promise.all(
-      reordered.map((task, i) =>
-        supabase.from('tasks').update({ position: i }).eq('id', task.id)
-      )
-    )
+    await Promise.all(reordered.map((task, i) => supabase.from('tasks').update({ position: i }).eq('id', task.id)))
   }
 
-  const SortableTask = ({ task }) => {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id })
+  const formatDueDate = (dateStr) => {
+    const d = new Date(dateStr + 'T12:00:00')
+    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+  }
+
+  // ── Composant tâche ─────────────────────────────────────────
+  const TaskItem = ({ task, overdue = false, sortable = false }) => {
+    const sortableProps = sortable ? useSortable({ id: task.id }) : null
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = sortableProps ?? {}
+    const hasTags = (task.tags ?? []).length > 0
     return (
       <li
         ref={setNodeRef}
-        style={{ transform: CSS.Transform.toString(transform), transition }}
-        className={`bg-white/60 border border-white/85 backdrop-blur-md rounded-[12px] px-4 py-3 flex items-start gap-3 ${isDragging ? 'opacity-50 z-50' : ''}`}
+        style={sortable ? { transform: CSS.Transform.toString(transform), transition } : {}}
+        className={`bg-white/70 border border-white/85 rounded-[8px] p-2 flex items-center justify-between gap-2
+          ${isDragging ? 'opacity-50 z-50' : ''}`}
       >
-        <button {...attributes} {...listeners} className="min-w-[44px] min-h-[44px] flex items-center justify-center shrink-0 touch-none">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <circle cx="9" cy="6" r="1.5" fill="#a49ffe" /><circle cx="15" cy="6" r="1.5" fill="#a49ffe" />
-            <circle cx="9" cy="12" r="1.5" fill="#a49ffe" /><circle cx="15" cy="12" r="1.5" fill="#a49ffe" />
-            <circle cx="9" cy="18" r="1.5" fill="#a49ffe" /><circle cx="15" cy="18" r="1.5" fill="#a49ffe" />
-          </svg>
-        </button>
-        <button onClick={() => toggleTask(task.id, task.done)} className="w-5 h-5 rounded-[4px] border-2 border-[#6c63ff] flex items-center justify-center shrink-0 mt-0.5">
-          {task.done && (
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M2 6l3 3 5-5" stroke="#6c63ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+        {/* Gauche: drag + checkbox + texte+tags */}
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          {sortable && (
+            <button {...attributes} {...listeners} className="w-4 h-4 flex items-center justify-center shrink-0 touch-none">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <circle cx="9" cy="5" r="1.5" fill="#c0befe"/><circle cx="15" cy="5" r="1.5" fill="#c0befe"/>
+                <circle cx="9" cy="12" r="1.5" fill="#c0befe"/><circle cx="15" cy="12" r="1.5" fill="#c0befe"/>
+                <circle cx="9" cy="19" r="1.5" fill="#c0befe"/><circle cx="15" cy="19" r="1.5" fill="#c0befe"/>
+              </svg>
+            </button>
           )}
-        </button>
-        <div className="flex-1 min-w-0" onClick={() => openEdit(task)}>
-          <span className={`text-[14px] text-[#211738] ${task.done ? 'line-through text-[#736694]' : ''}`}>{task.label}</span>
-          <div className="flex flex-wrap items-center gap-1 mt-1">
-            {task.due_date && <span className="text-[11px] text-[#736694]">📅 {new Date(task.due_date).toLocaleDateString('fr-FR')}</span>}
-            {(task.tags ?? []).map((tag, i) => (
-              <span key={i} className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full ${tagColor(tag.type)}`}>
-                {tagIcon(tag.type)}{tag.label}
-              </span>
-            ))}
+          <button onClick={() => toggleTask(task.id, task.done)}
+            className="w-6 h-6 rounded-[4px] border-2 border-[#6c63ff] flex items-center justify-center shrink-0">
+            {task.done && (
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="#6c63ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
+          </button>
+          <div className="flex flex-col gap-2 min-w-0 flex-1" onClick={() => openEdit(task)}>
+            <span className={`text-[12px] font-bold text-black leading-tight ${task.done ? 'line-through opacity-50' : ''}`}>{task.label}</span>
+            {hasTags && (
+              <div className="flex flex-wrap items-center gap-1">
+                {(task.tags ?? []).map((tag, i) => (
+                  <span key={i} className={`flex items-center gap-[5px] text-[8px] px-[5px] py-[3px] rounded-full ${tagColor(tag.type)}`}>
+                    {tagIcon(tag.type)}{tag.label}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-        <button onClick={() => deleteTask(task.id)} className="min-w-[44px] min-h-[44px] flex items-center justify-center shrink-0">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <path d="M18 6L6 18M6 6l12 12" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        </button>
+        {/* Droite: date + supprimer */}
+        <div className="flex items-center gap-2 shrink-0">
+          {task.due_date && (
+            overdue ? (
+              <div className="bg-[rgba(254,228,229,0.6)] border border-[rgba(153,153,166,0.2)] rounded-full px-2 py-1 flex items-center gap-[6px]">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="4" width="18" height="18" rx="2" stroke="#b91c1c" strokeWidth="2"/>
+                  <path d="M16 2v4M8 2v4M3 10h18" stroke="#b91c1c" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+                <span className="text-[12px] text-[#b91c1c]">{formatDueDate(task.due_date)}</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="4" width="18" height="18" rx="2" stroke="#736694" strokeWidth="2"/>
+                  <path d="M16 2v4M8 2v4M3 10h18" stroke="#736694" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+                <span className="text-[12px] text-black">{formatDueDate(task.due_date)}</span>
+              </div>
+            )
+          )}
+          <button onClick={() => deleteTask(task.id)} className="w-6 h-6 flex items-center justify-center shrink-0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M18 6L6 18M6 6l12 12" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
       </li>
     )
   }
+
+  const SortableTask = ({ task }) => <TaskItem task={task} sortable />
+
+  // ── Rendu groupé ────────────────────────────────────────────
+  const renderGrouped = (list) => {
+    const grouped = list.reduce((acc, task) => {
+      const key = task.group_name ?? ''
+      if (!acc[key]) acc[key] = []
+      acc[key].push(task)
+      return acc
+    }, {})
+    const keys = Object.keys(grouped).sort((a, b) => {
+      if (a === '') return 1; if (b === '') return -1; return a.localeCompare(b)
+    })
+    return keys.map((group, i) => (
+      <div key={group} className={`flex flex-col gap-2 ${i > 0 ? 'pt-2 border-t border-[rgba(115,102,148,0.15)]' : ''}`}>
+        {group && <p className="text-[12px] font-semibold text-[#6c63ff] uppercase tracking-wider px-1 mt-1">{group}</p>}
+        <ul className="flex flex-col gap-2">
+          {grouped[group].map(task => <SortableTask key={task.id} task={task} />)}
+        </ul>
+      </div>
+    ))
+  }
+
+  const hasTasks = tasks.length > 0
 
   return (
     <div className="relative w-full h-dvh overflow-hidden bg-[#f6f4f9]">
 
       {/* Blobs */}
-      <div className="absolute -left-16 -top-4 w-72 h-72 rounded-full bg-[#c4b5fd] opacity-30 blur-3xl pointer-events-none" />
-      <div className="absolute left-32 top-14 w-64 h-64 rounded-full bg-[#a5f3fc] opacity-25 blur-3xl pointer-events-none" />
-      <div className="absolute -left-8 top-52 w-60 h-60 rounded-full bg-[#bbf7d0] opacity-20 blur-3xl pointer-events-none" />
-      <div className="absolute left-40 top-[461px] w-64 h-64 rounded-full bg-[#fed7aa] opacity-25 blur-3xl pointer-events-none" />
+      <div className="absolute -left-16 -top-4 w-72 h-72 rounded-full bg-[#c4b5fd] opacity-30 blur-3xl pointer-events-none"/>
+      <div className="absolute left-32 top-14 w-64 h-64 rounded-full bg-[#a5f3fc] opacity-25 blur-3xl pointer-events-none"/>
+      <div className="absolute -left-8 top-52 w-60 h-60 rounded-full bg-[#bbf7d0] opacity-20 blur-3xl pointer-events-none"/>
+      <div className="absolute left-40 top-[461px] w-64 h-64 rounded-full bg-[#fed7aa] opacity-25 blur-3xl pointer-events-none"/>
 
       {/* TopBar */}
       <header className="absolute top-0 left-0 right-0 h-[94px] bg-white/55 border-b border-white/80 backdrop-blur-md z-20 flex items-end justify-between px-4 pb-4">
-        <button onClick={() => setMenuOpen(true)} className="flex flex-col gap-[5px] p-2 min-w-[44px] min-h-[44px] justify-center" aria-label="Ouvrir le menu">
-          <span className="block w-[22px] h-[2.5px] rounded-sm bg-[rgba(33,23,56,0.75)]" />
-          <span className="block w-[22px] h-[2.5px] rounded-sm bg-[rgba(33,23,56,0.75)]" />
-          <span className="block w-[22px] h-[2.5px] rounded-sm bg-[rgba(33,23,56,0.75)]" />
+        <button onClick={() => setMenuOpen(true)} className="flex flex-col gap-[5px] p-2 min-w-[44px] min-h-[44px] justify-center">
+          <span className="block w-[22px] h-[2.5px] rounded-sm bg-[rgba(33,23,56,0.75)]"/>
+          <span className="block w-[22px] h-[2.5px] rounded-sm bg-[rgba(33,23,56,0.75)]"/>
+          <span className="block w-[22px] h-[2.5px] rounded-sm bg-[rgba(33,23,56,0.75)]"/>
         </button>
-        <h1 className="absolute left-1/2 -translate-x-1/2 bottom-4 text-[17px] font-semibold text-[#211738]">Checklist</h1>
+        <h1 className="absolute left-1/2 -translate-x-1/2 bottom-4 text-[17px] font-semibold text-[#211738]">Worklist</h1>
       </header>
 
+      {/* Barre jour + filtres */}
+      <div className="absolute top-[94px] left-0 right-0 z-10 bg-white/55 backdrop-blur-md border-b border-white/80">
+        {/* Navigation jour */}
+        <div className="flex items-center justify-between px-4 h-11">
+          <button onClick={prevDay} disabled={!hasPrev}
+            className={`min-w-[44px] min-h-[44px] flex items-center justify-center ${!hasPrev ? 'opacity-20' : ''}`}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M15 18l-6-6 6-6" stroke="#6c63ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          <button className="flex items-center gap-1 text-[14px] font-semibold text-[#211738]"
+            onPointerDown={e => { e.preventDefault(); dayDateRef.current?.showPicker() }}>
+            {formatDay(currentDay)}
+            {!isToday && <span className="text-[11px] font-normal text-[#736694] ml-1">← retour</span>}
+          </button>
+          <input ref={dayDateRef} type="date" value={currentDay}
+            onChange={e => e.target.value && setCurrentDay(e.target.value)}
+            className="sr-only"/>
+          <button onClick={nextDay} disabled={!hasNext}
+            className={`min-w-[44px] min-h-[44px] flex items-center justify-center ${!hasNext ? 'opacity-20' : ''}`}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M9 18l6-6-6-6" stroke="#6c63ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* Barre recherche + filtres */}
+        <div className="px-[14px] pb-3 flex flex-col gap-2">
+          <div className="flex gap-2">
+            <div className="flex-1 bg-white/70 border border-white/85 rounded-[8px] h-[34px] flex items-center px-3 gap-2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="shrink-0">
+                <circle cx="11" cy="11" r="8" stroke="#ada7fd" strokeWidth="2"/>
+                <path d="M21 21l-4.35-4.35" stroke="#ada7fd" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+              <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+                placeholder="Rechercher"
+                className="bg-transparent text-[14px] font-semibold text-[#211738] outline-none placeholder:text-[#ada7fd] flex-1"/>
+              {search && <button onClick={() => setSearch('')} className="text-[#a49ffe] leading-none min-w-0 min-h-0">&times;</button>}
+            </div>
+            <button onClick={() => setShowFilter(f => !f)}
+              className={`w-[34px] h-[34px] rounded-[8px] border border-white/85 flex items-center justify-center shrink-0 ${showFilter || filterTag || filterGroup ? 'bg-[#6c63ff] text-white' : 'bg-white/75 text-[#736694]'}`}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
+          {/* Filtres tag / groupe */}
+          {showFilter && (
+            <div className="flex flex-col gap-2">
+              {allGroups.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {allGroups.map(g => (
+                    <button key={g} onClick={() => setFilterGroup(filterGroup === g ? null : g)}
+                      className={`text-[11px] font-medium px-3 py-1 rounded-full border transition-colors ${filterGroup === g ? 'bg-[#6c63ff] text-white border-[#6c63ff]' : 'bg-white/60 text-[#736694] border-[#736694]/30'}`}>
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {allTags.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {allTags.map((tag, i) => {
+                    const active = filterTag?.label === tag.label && filterTag?.type === tag.type
+                    return (
+                      <button key={i} onClick={() => setFilterTag(active ? null : tag)}
+                        className={`flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-full transition-opacity ${active ? tagColor(tag.type) + ' ring-2 ring-[#6c63ff]/40' : tagColor(tag.type) + ' opacity-60'}`}>
+                        {tagIcon(tag.type)}{tag.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Stats bar */}
+      {hasTasks && (
+        <div className="absolute left-4 right-4 z-10 flex gap-2" style={{ top: showFilter && (allGroups.length || allTags.length) ? 'calc(94px + 106px + 48px)' : '214px' }}>
+          <div className="flex-1 bg-[rgba(247,237,250,0.6)] border border-[#c0befe] rounded-[8px] flex items-center justify-center gap-2 py-2">
+            <span className="font-bold text-[#6c63ff] text-[22px] leading-none">{visibleTasks.length}</span>
+            <span className="text-[#a49ffe] text-[11px]">Total</span>
+          </div>
+          <div className="flex-1 bg-[rgba(220,252,231,0.6)] border border-[rgba(153,153,166,0.2)] rounded-[8px] flex items-center justify-center gap-2 py-2">
+            <span className="font-bold text-[#16a34a] text-[22px] leading-none">{visibleTasks.filter(t => t.done).length}</span>
+            <span className="text-[#16a34a] text-[11px]">Faites</span>
+          </div>
+          <div className="flex-1 bg-[rgba(254,228,229,0.6)] border border-[rgba(153,153,166,0.2)] rounded-[8px] flex items-center justify-center gap-2 py-2">
+            <span className="font-bold text-[#b91c1c] text-[22px] leading-none">{overdueTasks.length}</span>
+            <span className="text-[#b91c1c] text-[11px]">En retard</span>
+          </div>
+        </div>
+      )}
+
       {/* Contenu */}
-      <main className="absolute top-[110px] left-4 right-4 bottom-4 flex flex-col gap-3 overflow-hidden">
-        {tasks.length === 0 && (
+      <main className={`absolute left-4 right-4 flex flex-col gap-3 overflow-hidden ${isToday ? 'bottom-[76px]' : 'bottom-4'} ${hasTasks ? (showFilter && (allGroups.length || allTags.length) ? 'top-[342px]' : showFilter ? 'top-[322px]' : 'top-[284px]') : 'top-[200px]'}`}>
+        {!hasTasks && (
           <div className="bg-white/60 border border-[#c0befe]/50 rounded-[12px] h-16 flex flex-col items-center justify-center">
             <p className="text-[22px] font-bold text-[#6c63ff] leading-tight">Aucune tâche</p>
             <p className="text-[11px] text-[#a49ffe]">pour le moment</p>
           </div>
         )}
-        {tasks.length > 0 && (
+
+        {hasTasks && (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
               <div className="flex flex-col gap-4 overflow-y-auto flex-1">
-                {(() => {
-                  const grouped = tasks.reduce((acc, task) => {
-                    const key = task.group_name ?? ''
-                    if (!acc[key]) acc[key] = []
-                    acc[key].push(task)
-                    return acc
-                  }, {})
-                  const keys = Object.keys(grouped).sort((a, b) => {
-                    if (a === '') return 1
-                    if (b === '') return -1
-                    return a.localeCompare(b)
-                  })
-                  return keys.map((group, i) => (
-                    <div key={group} className={`flex flex-col gap-2 ${i > 0 ? 'pt-2 border-t border-[rgba(115,102,148,0.15)]' : ''}`}>
-                      {group && <p className="text-[12px] font-semibold text-[#6c63ff] uppercase tracking-wider px-1 mt-1">{group}</p>}
-                      <ul className="flex flex-col gap-2">
-                        {grouped[group].map(task => <SortableTask key={task.id} task={task} />)}
-                      </ul>
-                    </div>
-                  ))
-                })()}
+
+                {/* En retard */}
+                {filteredOverdue.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-[12px] font-semibold text-red-500 uppercase tracking-wider px-1 flex items-center gap-1">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/>
+                        <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      </svg>
+                      En retard
+                    </p>
+                    <ul className="flex flex-col gap-2">
+                      {filteredOverdue.map(task => <TaskItem key={task.id} task={task} overdue />)}
+                    </ul>
+                    {regularTasks.length > 0 && <div className="h-px bg-[rgba(115,102,148,0.15)] mt-1"/>}
+                  </div>
+                )}
+
+                {/* Tâches normales groupées */}
+                {regularTasks.length > 0 && renderGrouped(regularTasks)}
+
+                {/* Rien à afficher après filtre */}
+                {filteredOverdue.length === 0 && regularTasks.length === 0 && (
+                  <div className="bg-white/60 border border-[#c0befe]/50 rounded-[12px] h-16 flex items-center justify-center">
+                    <p className="text-[14px] text-[#a49ffe]">Aucun résultat</p>
+                  </div>
+                )}
               </div>
             </SortableContext>
           </DndContext>
         )}
-        <button onClick={openModal} className="bg-[#6c63ff] rounded-[12px] h-12 flex items-center justify-center shrink-0">
+
+      </main>
+
+      {/* Bouton Nouvelle tâche (fixe en bas) */}
+      {isToday && (
+        <button onClick={openModal}
+          className="absolute bottom-4 left-4 right-4 bg-[#6c63ff] rounded-[12px] h-12 flex items-center justify-center z-10">
           <span className="text-[14px] font-semibold text-white">Nouvelle tâche</span>
         </button>
-      </main>
+      )}
 
       {/* Modal */}
       {showModal && (
@@ -299,40 +506,29 @@ export default function Checklist() {
           <div className="w-full bg-white/95 backdrop-blur-md rounded-t-[20px] p-6 flex flex-col gap-4 max-h-[85dvh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <p className="text-[17px] font-semibold text-[#211738]">{editingId ? 'Modifier la tâche' : 'Nouvelle tâche'}</p>
 
-            {/* Nom */}
             <div className="flex flex-col gap-1">
               <label className="text-[12px] font-medium text-[#736694]">Nom <span className="text-[#6c63ff]">*</span></label>
-              <input
-                autoFocus
-                type="text"
-                value={form.label}
+              <input autoFocus type="text" value={form.label}
                 onChange={e => { setForm(f => ({ ...f, label: e.target.value })); setError('') }}
                 placeholder="Nom de la tâche..."
-                className={`bg-[#f2edfa] rounded-[10px] h-12 px-4 text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe] ${error ? 'ring-2 ring-red-400' : ''}`}
-              />
+                className={`bg-[#f2edfa] rounded-[10px] h-12 px-4 text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe] ${error ? 'ring-2 ring-red-400' : ''}`}/>
               {error && <p className="text-[12px] text-red-500">{error}</p>}
             </div>
 
-            {/* Groupe (combobox) */}
             <div className="flex flex-col gap-1" ref={groupRef}>
               <label className="text-[12px] font-medium text-[#736694]">Groupe</label>
               <div className="relative">
-                <input
-                  type="text"
-                  value={groupInput}
+                <input type="text" value={groupInput}
                   onChange={e => { setGroupInput(e.target.value); setForm(f => ({ ...f, group: e.target.value })); setGroupOpen(true) }}
                   onFocus={() => setGroupOpen(true)}
                   placeholder="Sélectionne ou crée un groupe..."
-                  className="bg-[#f2edfa] rounded-[10px] h-12 px-4 text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe] w-full"
-                />
+                  className="bg-[#f2edfa] rounded-[10px] h-12 px-4 text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe] w-full"/>
                 {groupOpen && (groupSuggestions.length > 0 || (groupInput.trim() && !allGroups.includes(groupInput.trim()))) && (
                   <ul className="absolute left-0 right-0 top-[52px] bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-[#f2edfa]">
                     {groupSuggestions.map(g => (
                       <li key={g}>
                         <button className="w-full text-left px-4 py-3 text-[13px] text-[#211738] hover:bg-[#f2edfa]"
-                          onClick={() => { setForm(f => ({ ...f, group: g })); setGroupInput(g); setGroupOpen(false) }}>
-                          {g}
-                        </button>
+                          onClick={() => { setForm(f => ({ ...f, group: g })); setGroupInput(g); setGroupOpen(false) }}>{g}</button>
                       </li>
                     ))}
                     {groupInput.trim() && !allGroups.includes(groupInput.trim()) && (
@@ -348,72 +544,49 @@ export default function Checklist() {
               </div>
             </div>
 
-            {/* Date d'échéance */}
             <div className="flex flex-col gap-1">
               <label className="text-[12px] font-medium text-[#736694]">Date d'échéance</label>
               <div className="relative bg-[#f2edfa] rounded-[10px] h-12 flex items-center px-4">
-                <input
-                  ref={dateRef}
-                  type="date"
-                  value={form.dueDate}
+                <input ref={dateRef} type="date" value={form.dueDate}
                   onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
-                  className="flex-1 bg-transparent text-[14px] text-[#211738] outline-none cursor-pointer [color-scheme:light]"
-                />
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="shrink-0 cursor-pointer pointer-events-auto" onPointerDown={e => { e.preventDefault(); dateRef.current?.showPicker() }}>
-                  <rect x="3" y="4" width="18" height="18" rx="2" stroke="#736694" strokeWidth="2" />
-                  <path d="M16 2v4M8 2v4M3 10h18" stroke="#736694" strokeWidth="2" strokeLinecap="round" />
+                  className="flex-1 bg-transparent text-[14px] text-[#211738] outline-none cursor-pointer [color-scheme:light]"/>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="shrink-0 cursor-pointer pointer-events-auto"
+                  onPointerDown={e => { e.preventDefault(); dateRef.current?.showPicker() }}>
+                  <rect x="3" y="4" width="18" height="18" rx="2" stroke="#736694" strokeWidth="2"/>
+                  <path d="M16 2v4M8 2v4M3 10h18" stroke="#736694" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
               </div>
             </div>
 
-            {/* Tags */}
             <div className="flex flex-col gap-2">
               <label className="text-[12px] font-medium text-[#736694]">Tags</label>
-              {/* Champ avec chips + sélecteur de type intégré */}
               <div className="relative bg-[#f2edfa] rounded-[10px] min-h-12 px-3 py-2 flex flex-wrap gap-2 items-center">
                 {form.tags.map((tag, i) => (
                   <span key={i} className={`flex items-center gap-1 text-[12px] font-medium px-2 py-1 rounded-full shrink-0 ${tagColor(tag.type)}`}>
-                    {tagIcon(tag.type)}
-                    {tag.label}
+                    {tagIcon(tag.type)}{tag.label}
                     <button onPointerDown={e => { e.preventDefault(); removeTag(i) }} className="leading-none min-w-0 min-h-0 w-4 h-4">&times;</button>
                   </span>
                 ))}
-                <input
-                  type="text"
-                  value={tagInput}
-                  onChange={e => setTagInput(e.target.value)}
+                <input type="text" value={tagInput} onChange={e => setTagInput(e.target.value)}
                   onKeyDown={e => {
-                    if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) {
-                      e.preventDefault()
-                      addTag(tagInput)
-                    }
-                    if (e.key === 'Backspace' && !tagInput && form.tags.length > 0) {
-                      removeTag(form.tags.length - 1)
-                    }
+                    if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) { e.preventDefault(); addTag(tagInput) }
+                    if (e.key === 'Backspace' && !tagInput && form.tags.length > 0) removeTag(form.tags.length - 1)
                   }}
                   placeholder={form.tags.length === 0 ? 'Ajouter un tag...' : ''}
-                  className="bg-transparent text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe] min-w-[80px] flex-1"
-                />
-                {/* Sélecteur de type intégré */}
+                  className="bg-transparent text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe] min-w-[80px] flex-1"/>
                 <div className="flex gap-1 shrink-0">
                   {TAG_TYPES.map(t => (
-                    <button
-                      key={t.value}
-                      onPointerDown={e => { e.preventDefault(); setTagType(t.value) }}
-                      className={`w-7 h-7 rounded-[6px] flex items-center justify-center transition-colors ${
-                        tagType === t.value ? t.color : 'text-[#a49ffe]'
-                      }`}
-                      title={t.value}
-                    >
-                      {t.icon}
-                    </button>
+                    <button key={t.value} onPointerDown={e => { e.preventDefault(); setTagType(t.value) }}
+                      className={`w-7 h-7 rounded-[6px] flex items-center justify-center transition-colors ${tagType === t.value ? t.color : 'text-[#a49ffe]'}`}
+                      title={t.value}>{t.icon}</button>
                   ))}
                 </div>
                 {tagSuggestions.length > 0 && (
                   <ul className="absolute left-0 right-0 top-full mt-1 bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-[#f2edfa]">
                     {tagSuggestions.map((s, i) => (
                       <li key={i}>
-                        <button className={`w-full text-left px-4 py-3 text-[13px] hover:bg-[#f2edfa] flex items-center gap-2`} onClick={() => addTag(s.label, s.type)}>
+                        <button className="w-full text-left px-4 py-3 text-[13px] hover:bg-[#f2edfa] flex items-center gap-2"
+                          onClick={() => addTag(s.label, s.type)}>
                           <span className={`text-[11px] px-2 py-0.5 rounded-full ${tagColor(s.type)}`}>{s.type}</span>
                           {s.label}
                         </button>
@@ -425,11 +598,8 @@ export default function Checklist() {
               <p className="text-[11px] text-[#a49ffe]">Entrée ou virgule pour valider, Retour arrière pour supprimer</p>
             </div>
 
-            <button
-              onClick={addTask}
-              disabled={saving}
-              className="bg-[#6c63ff] rounded-[12px] h-12 text-[14px] font-semibold text-white disabled:opacity-60"
-            >
+            <button onClick={addTask} disabled={saving}
+              className="bg-[#6c63ff] rounded-[12px] h-12 text-[14px] font-semibold text-white disabled:opacity-60">
               {saving ? 'Enregistrement...' : editingId ? 'Modifier' : 'Ajouter'}
             </button>
           </div>
@@ -437,11 +607,11 @@ export default function Checklist() {
       )}
 
       {/* Overlay menu */}
-      <div onClick={() => setMenuOpen(false)} className={`absolute inset-0 bg-[rgba(33,23,56,0.18)] z-30 transition-opacity duration-300 ${menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} />
+      <div onClick={() => setMenuOpen(false)} className={`absolute inset-0 bg-[rgba(33,23,56,0.18)] z-30 transition-opacity duration-300 ${menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}/>
 
       {/* Drawer */}
       <nav className={`absolute top-0 left-0 h-full w-[280px] z-40 bg-[#f6f4f9] transition-transform duration-300 ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="absolute -left-16 -top-4 w-72 h-72 rounded-full bg-[#c4b5fd] opacity-30 blur-3xl pointer-events-none" />
+        <div className="absolute -left-16 -top-4 w-72 h-72 rounded-full bg-[#c4b5fd] opacity-30 blur-3xl pointer-events-none"/>
         <div className="absolute inset-0 bg-white/72 border-r border-white/85 backdrop-blur-md flex flex-col">
           <div className="flex items-center gap-4 px-6 pt-16 pb-5">
             <div className="w-[52px] h-[52px] rounded-[26px] bg-[#6c63ff] flex items-center justify-center shrink-0">
@@ -452,13 +622,13 @@ export default function Checklist() {
               <p className="text-[12px] text-[#736694] leading-tight">{displayName}</p>
             </div>
           </div>
-          <div className="mx-6 h-px bg-[rgba(153,153,166,0.25)]" />
+          <div className="mx-6 h-px bg-[rgba(153,153,166,0.25)]"/>
           <div className="flex flex-col gap-1 px-4 pt-4">
             <button onClick={() => navigate('/')} className="flex items-center gap-3 w-full h-[52px] px-3 rounded-[12px]">
               <div className="w-7 h-7 bg-[#f2edfa] rounded-[8px] flex items-center justify-center shrink-0">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" stroke="#736694" strokeWidth="2" strokeLinejoin="round" />
-                  <path d="M9 21V12h6v9" stroke="#736694" strokeWidth="2" strokeLinejoin="round" />
+                  <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" stroke="#736694" strokeWidth="2" strokeLinejoin="round"/>
+                  <path d="M9 21V12h6v9" stroke="#736694" strokeWidth="2" strokeLinejoin="round"/>
                 </svg>
               </div>
               <span className="text-[14px] text-[rgba(115,102,148,0.85)] flex-1 text-left">Home</span>
@@ -466,24 +636,22 @@ export default function Checklist() {
             <button onClick={() => setMenuOpen(false)} className="flex items-center gap-3 w-full h-[52px] px-3 bg-[#f2edfa] rounded-[12px]">
               <div className="w-7 h-7 bg-[#6c63ff] rounded-[8px] flex items-center justify-center shrink-0">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <rect x="3" y="3" width="18" height="18" rx="2" stroke="white" strokeWidth="2" />
-                  <path d="M7 12l3 3 7-7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <rect x="3" y="3" width="18" height="18" rx="2" stroke="white" strokeWidth="2"/>
+                  <path d="M7 12l3 3 7-7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-              <span className="text-[14px] font-semibold text-[#6c63ff] flex-1 text-left">Checklist</span>
-              <span className="w-2 h-2 rounded-full bg-[#6c63ff]" />
+              <span className="text-[14px] font-semibold text-[#6c63ff] flex-1 text-left">Worklist</span>
+              <span className="w-2 h-2 rounded-full bg-[#6c63ff]"/>
             </button>
           </div>
-          <div className="flex-1" />
+          <div className="flex-1"/>
           <div className="px-4 pb-10">
-            <button
-              onClick={async () => { await supabase.auth.signOut(); navigate('/login') }}
-              className="flex items-center justify-center gap-2 w-full h-[46px] border border-[#736694] rounded-[8px]"
-            >
+            <button onClick={async () => { await supabase.auth.signOut(); navigate('/login') }}
+              className="flex items-center justify-center gap-2 w-full h-[46px] border border-[#736694] rounded-[8px]">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" stroke="#736694" strokeWidth="2" strokeLinecap="round" />
-                <polyline points="16 17 21 12 16 7" stroke="#736694" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <line x1="21" y1="12" x2="9" y2="12" stroke="#736694" strokeWidth="2" strokeLinecap="round" />
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" stroke="#736694" strokeWidth="2" strokeLinecap="round"/>
+                <polyline points="16 17 21 12 16 7" stroke="#736694" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <line x1="21" y1="12" x2="9" y2="12" stroke="#736694" strokeWidth="2" strokeLinecap="round"/>
               </svg>
               <span className="text-[12px] font-semibold text-[#736694]">Se déconnecter</span>
             </button>

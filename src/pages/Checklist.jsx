@@ -58,8 +58,9 @@ export default function Checklist() {
   const [filterGroup, setFilterGroup] = useState(null)
   const [showFilter, setShowFilter]   = useState(false)
 
-  const groupRef = useRef(null)
-  const dateRef  = useRef(null)
+  const groupRef  = useRef(null)
+  const filterRef = useRef(null)
+  const dateRef   = useRef(null)
   const navigate = useNavigate()
   const { user, loading } = useAuth()
   const profile = useProfile(user)
@@ -76,6 +77,7 @@ export default function Checklist() {
   useEffect(() => {
     const handler = (e) => {
       if (groupRef.current && !groupRef.current.contains(e.target)) setGroupOpen(false)
+      if (filterRef.current && !filterRef.current.contains(e.target)) setShowFilter(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -381,54 +383,63 @@ export default function Checklist() {
         </div>
 
         {/* Barre recherche + filtres */}
-        <div className="px-[14px] pb-3 flex flex-col gap-2">
-          <div className="flex gap-2">
-            <div className="flex-1 bg-white/70 border border-white/85 rounded-[8px] h-[44px] flex items-center px-3 gap-2">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="shrink-0">
-                <circle cx="11" cy="11" r="8" stroke="#ada7fd" strokeWidth="2"/>
-                <path d="M21 21l-4.35-4.35" stroke="#ada7fd" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-              <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-                placeholder="Rechercher"
-                className="bg-transparent text-[14px] font-semibold text-[#211738] outline-none placeholder:text-[#ada7fd] flex-1"/>
-              {search && <button onClick={() => setSearch('')} className="text-[#a49ffe] leading-none min-w-0 min-h-0">&times;</button>}
-            </div>
+        <div className="px-[14px] pb-3 flex gap-2">
+          <div className="flex-1 bg-white/70 border border-white/85 rounded-[8px] h-[44px] flex items-center px-3 gap-2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="shrink-0">
+              <circle cx="11" cy="11" r="8" stroke="#ada7fd" strokeWidth="2"/>
+              <path d="M21 21l-4.35-4.35" stroke="#ada7fd" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Rechercher"
+              className="bg-transparent text-[14px] font-semibold text-[#211738] outline-none placeholder:text-[#ada7fd] flex-1"/>
+            {search && <button onClick={() => setSearch('')} style={{ minWidth: 0, minHeight: 0 }} className="text-[#a49ffe] leading-none">&times;</button>}
+          </div>
+          {/* Bouton filtre + dropdown */}
+          <div className="relative shrink-0" ref={filterRef}>
             <button onClick={() => setShowFilter(f => !f)}
               style={{ minWidth: 0, minHeight: 0, width: 44, height: 44 }}
-              className={`rounded-[8px] border border-white/85 flex items-center justify-center shrink-0 ${showFilter || filterTag || filterGroup ? 'bg-[#6c63ff] text-white' : 'bg-white/75 text-[#736694]'}`}>
+              className={`rounded-[8px] border border-white/85 flex items-center justify-center ${showFilter || filterTag || filterGroup ? 'bg-[#6c63ff] text-white' : 'bg-white/75 text-[#736694]'}`}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
               </svg>
             </button>
+            {/* Dropdown filtres */}
+            {showFilter && (
+              <div className="absolute right-0 top-[50px] z-30 bg-white/90 backdrop-blur-md border border-white/85 rounded-[12px] shadow-lg p-3 flex flex-col gap-2 min-w-[200px]">
+                {allGroups.length > 0 && (
+                  <>
+                    <p className="text-[10px] font-semibold text-[#736694] uppercase tracking-wider">Groupes</p>
+                    <div className="flex flex-wrap gap-1">
+                      {allGroups.map(g => (
+                        <button key={g} onClick={() => setFilterGroup(filterGroup === g ? null : g)}
+                          style={{ minWidth: 0, minHeight: 0 }}
+                          className={`text-[11px] font-medium px-3 py-1 rounded-full border transition-colors ${filterGroup === g ? 'bg-[#6c63ff] text-white border-[#6c63ff]' : 'bg-white/60 text-[#736694] border-[#736694]/30'}`}>
+                          {g}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+                {allTags.length > 0 && (
+                  <>
+                    <p className="text-[10px] font-semibold text-[#736694] uppercase tracking-wider">Tags</p>
+                    <div className="flex flex-wrap gap-1">
+                      {allTags.map((tag, i) => {
+                        const active = filterTag?.label === tag.label && filterTag?.type === tag.type
+                        return (
+                          <button key={i} onClick={() => setFilterTag(active ? null : tag)}
+                            style={{ minWidth: 0, minHeight: 0 }}
+                            className={`flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-full transition-opacity ${active ? tagColor(tag.type) + ' ring-2 ring-[#6c63ff]/40' : tagColor(tag.type) + ' opacity-60'}`}>
+                            {tagIcon(tag.type)}{tag.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
-          {/* Filtres tag / groupe */}
-          {showFilter && (
-            <div className="flex flex-col gap-2">
-              {allGroups.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {allGroups.map(g => (
-                    <button key={g} onClick={() => setFilterGroup(filterGroup === g ? null : g)}
-                      className={`text-[11px] font-medium px-3 py-1 rounded-full border transition-colors ${filterGroup === g ? 'bg-[#6c63ff] text-white border-[#6c63ff]' : 'bg-white/60 text-[#736694] border-[#736694]/30'}`}>
-                      {g}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {allTags.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {allTags.map((tag, i) => {
-                    const active = filterTag?.label === tag.label && filterTag?.type === tag.type
-                    return (
-                      <button key={i} onClick={() => setFilterTag(active ? null : tag)}
-                        className={`flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-full transition-opacity ${active ? tagColor(tag.type) + ' ring-2 ring-[#6c63ff]/40' : tagColor(tag.type) + ' opacity-60'}`}>
-                        {tagIcon(tag.type)}{tag.label}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
@@ -451,7 +462,7 @@ export default function Checklist() {
       )}
 
       {/* Contenu */}
-      <main className={`absolute left-4 right-4 flex flex-col gap-3 overflow-hidden ${isToday ? 'bottom-[76px]' : 'bottom-4'} ${hasTasks ? (showFilter && (allGroups.length || allTags.length) ? 'top-[342px]' : showFilter ? 'top-[322px]' : 'top-[284px]') : 'top-[200px]'}`}>
+      <main className={`absolute left-4 right-4 flex flex-col gap-3 overflow-hidden ${isToday ? 'bottom-[76px]' : 'bottom-4'} ${hasTasks ? 'top-[284px]' : 'top-[200px]'}`}>
         {!hasTasks && (
           <div className="bg-white/60 border border-[#c0befe]/50 rounded-[12px] h-16 flex flex-col items-center justify-center">
             <p className="text-[22px] font-bold text-[#6c63ff] leading-tight">Aucune tâche</p>

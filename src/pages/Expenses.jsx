@@ -497,7 +497,7 @@ export default function Expenses() {
 
       {/* Barre recherche */}
       <div className="absolute top-[76px] left-0 right-0 h-[66px] bg-white/55 border-b border-white/80 backdrop-blur-md z-10 flex items-center px-[14px] gap-2">
-        <div className="flex-1 flex items-center gap-2 bg-white/70 border border-white/85 rounded-[8px] h-[34px] px-3">
+        <div className="flex-1 flex items-center gap-2 bg-white/70 border border-white/85 rounded-[8px] h-[44px] px-3">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="#ada7fd">
             <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
           </svg>

@@ -117,7 +117,7 @@ function NewExpenseModal({ currentUserId, onClose, onSaved, initialExpense }) {
 function ReimburseModal({ expense, currentUserId, onClose, onSaved }) {
   const remaining = remainingAmount(expense)
   const [amount, setAmount] = useState(remaining.toFixed(2))
-  const [note, setNote] = useState('')
+  const [reimbDate, setReimbDate] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
 
@@ -130,7 +130,7 @@ function ReimburseModal({ expense, currentUserId, onClose, onSaved }) {
       expense_id: expense.id,
       reimbursed_by: currentUserId,
       amount: val,
-      note: note || null,
+      reimbursement_date: reimbDate || null,
     })
     setSaving(false)
     if (err) { setError(err.message); return }
@@ -148,8 +148,7 @@ function ReimburseModal({ expense, currentUserId, onClose, onSaved }) {
       </p>
       <TextField label="Montant (€)" required type="number" inputMode="decimal" value={amount}
         onChange={e => setAmount(e.target.value)} placeholder="0.00" />
-      <TextField label="Note" value={note} onChange={e => setNote(e.target.value)}
-        placeholder="Ex : Virement du 10 juin" />
+      <DateField label="Date" value={reimbDate} onChange={e => setReimbDate(e.target.value)} />
       {error && <p className="text-[12px] text-red-500">{error}</p>}
       <SubmitButton onClick={handleSave} disabled={!canSave || saving}>
         {saving ? 'Enregistrement…' : 'Valider le remboursement'}

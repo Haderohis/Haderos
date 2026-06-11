@@ -289,13 +289,17 @@ function ExpenseCard({ expense, profiles, onOpen, onEdit, onDelete }) {
             >
               Modifier
             </button>
-            <div className="h-px bg-[#f0ebfa]" />
-            <button
-              onClick={() => { setDotMenuOpen(false); onDelete(expense) }}
-              className="flex items-center px-4 py-3 text-[14px] text-red-500 w-full text-left active:bg-red-50"
-            >
-              Supprimer
-            </button>
+            {!isDone && (
+              <>
+                <div className="h-px bg-[#f0ebfa]" />
+                <button
+                  onClick={() => { setDotMenuOpen(false); onDelete(expense) }}
+                  className="flex items-center px-4 py-3 text-[14px] text-red-500 w-full text-left active:bg-red-50"
+                >
+                  Supprimer
+                </button>
+              </>
+            )}
           </div>
         </>
       )}

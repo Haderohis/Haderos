@@ -141,7 +141,6 @@ function ExpenseDetailModal({ expense, currentUserId, profiles, onClose, onSaved
 
   const [amount, setAmount] = useState(remaining > 0 ? remaining.toFixed(2) : '')
   const [reimbDate, setReimbDate] = useState('')
-  const [reimbBy, setReimbBy] = useState('me')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [deletingReimbId, setDeletingReimbId] = useState(null)
@@ -162,7 +161,7 @@ function ExpenseDetailModal({ expense, currentUserId, profiles, onClose, onSaved
     setError(null)
     const { error: err } = await supabase.from('reimbursements').insert({
       expense_id: expense.id,
-      reimbursed_by: reimbBy === 'me' ? currentUserId : otherId,
+      reimbursed_by: expense.debtor_id,
       amount: val,
       reimbursement_date: reimbDate || null,
     })
@@ -241,12 +240,6 @@ function ExpenseDetailModal({ expense, currentUserId, profiles, onClose, onSaved
             Ajouter un remboursement
             <span className="text-[12px] font-normal text-[#736694] ml-2">Reste : {fmt(remaining)}</span>
           </p>
-          <SegmentedControl
-            label="Qui rembourse ?"
-            value={reimbBy}
-            onChange={setReimbBy}
-            options={[{ value: 'me', label: 'Moi' }, { value: 'other', label: profileName(otherId) }]}
-          />
           <TextField label="Montant (€)" required type="number" inputMode="decimal" value={amount}
             onChange={e => setAmount(e.target.value)} placeholder="0.00" />
           <DateField label="Date" value={reimbDate} onChange={e => setReimbDate(e.target.value)} />

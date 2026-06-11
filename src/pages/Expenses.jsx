@@ -24,14 +24,27 @@ function statusLabel(expense) {
   return { label: 'En attente', color: '#6c63ff', bg: '#f2edfa' }
 }
 
-// ─── Modal nouvelle dépense ──────────────────────────────────────────────────
+// ─── Modal nouvelle dépense / édition ───────────────────────────────────────
 
-function NewExpenseModal({ currentUserId, onClose, onSaved }) {
-  const [amount, setAmount] = useState('')
-  const [description, setDescription] = useState('')
-  const [expenseDate, setExpenseDate] = useState('')
-  const [payer, setPayer] = useState('me')
-  const [otherUserId, setOtherUserId] = useState('')
+function NewExpenseModal({ currentUserId, onClose, onSaved, initialExpense }) {
+  const isEdit = !!initialExpense
+
+  const deriveOtherAndPayer = () => {
+    if (!initialExpense) return { otherId: '', payer: 'me' }
+    const otherId = initialExpense.payer_id === currentUserId
+      ? initialExpense.debtor_id
+      : initialExpense.payer_id
+    const payer = initialExpense.payer_id === currentUserId ? 'me' : 'other'
+    return { otherId, payer }
+  }
+
+  const { otherId: initOther, payer: initPayer } = deriveOtherAndPayer()
+
+  const [amount, setAmount] = useState(initialExpense ? String(initialExpense.amount) : '')
+  const [description, setDescription] = useState(initialExpense?.description ?? '')
+  const [expenseDate, setExpenseDate] = useState(initialExpense?.expense_date ?? '')
+  const [payer, setPayer] = useState(initPayer)
+  const [otherUserId, setOtherUserId] = useState(initOther)
   const [users, setUsers] = useState([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -45,7 +58,7 @@ function NewExpenseModal({ currentUserId, onClose, onSaved }) {
       .neq('id', currentUserId)
       .then(({ data }) => {
         if (data) setUsers(data)
-        if (data?.length) setOtherUserId(data[0].id)
+        if (data?.length && !initOther) setOtherUserId(data[0].id)
       })
   }, [currentUserId])
 
@@ -58,14 +71,16 @@ function NewExpenseModal({ currentUserId, onClose, onSaved }) {
     setError(null)
     const payerId = payer === 'me' ? currentUserId : otherUserId
     const debtorId = payer === 'me' ? otherUserId : currentUserId
-    const { error: err } = await supabase.from('expenses').insert({
-      created_by: currentUserId,
+    const payload = {
       payer_id: payerId,
       debtor_id: debtorId,
       amount: parseFloat(amount),
       description,
       expense_date: expenseDate || null,
-    })
+    }
+    const { error: err } = isEdit
+      ? await supabase.from('expenses').update(payload).eq('id', initialExpense.id)
+      : await supabase.from('expenses').insert({ ...payload, created_by: currentUserId })
     setSaving(false)
     if (err) { setError(err.message); return }
     onSaved()
@@ -74,7 +89,7 @@ function NewExpenseModal({ currentUserId, onClose, onSaved }) {
 
   return (
     <BottomSheet onClose={onClose}>
-      <p className="text-[17px] font-semibold text-[#211738]">Nouvelle dépense</p>
+      <p className="text-[17px] font-semibold text-[#211738]">{isEdit ? 'Modifier la dépense' : 'Nouvelle dépense'}</p>
       <TextField label="Description" required autoFocus value={description}
         onChange={e => setDescription(e.target.value)} placeholder="Ex : Resto, courses…" />
       <TextField label="Montant (€)" required type="number" inputMode="decimal" value={amount}
@@ -91,7 +106,7 @@ function NewExpenseModal({ currentUserId, onClose, onSaved }) {
       />
       {error && <p className="text-[12px] text-red-500">{error}</p>}
       <SubmitButton onClick={handleSave} disabled={!canSave || saving}>
-        {saving ? 'Enregistrement…' : 'Ajouter'}
+        {saving ? 'Enregistrement…' : isEdit ? 'Enregistrer' : 'Ajouter'}
       </SubmitButton>
     </BottomSheet>
   )
@@ -145,8 +160,9 @@ function ReimburseModal({ expense, currentUserId, onClose, onSaved }) {
 
 // ─── Carte dépense ───────────────────────────────────────────────────────────
 
-function ExpenseCard({ expense, currentUserId, profiles, onReimburse }) {
+function ExpenseCard({ expense, currentUserId, profiles, onReimburse, onEdit, onDelete }) {
   const [open, setOpen] = useState(false)
+  const [dotMenuOpen, setDotMenuOpen] = useState(false)
   const status = statusLabel(expense)
   const remaining = remainingAmount(expense)
 
@@ -156,20 +172,39 @@ function ExpenseCard({ expense, currentUserId, profiles, onReimburse }) {
     return p.first_name && p.last_name ? `${p.first_name} ${p.last_name}` : p.display_name ?? id
   }
 
-  const iAmPayer = expense.payer_id === currentUserId
-  const otherLabel = iAmPayer ? profileName(expense.debtor_id) : profileName(expense.payer_id)
+  const payerName = profileName(expense.payer_id)
   const canReimburse = remaining > 0
 
   return (
-    <div className="bg-white/70 border border-white/85 backdrop-blur-sm rounded-[16px] overflow-hidden">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-3 p-4 text-left"
-      >
-        <div className="flex-1 min-w-0">
+    <div className="bg-white/70 border border-white/85 backdrop-blur-sm rounded-[16px] relative">
+      {/* Dropdown 3-dot */}
+      {dotMenuOpen && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setDotMenuOpen(false)} />
+          <div className="absolute top-10 right-3 z-20 bg-white rounded-[12px] shadow-lg border border-[#f0ebfa] overflow-hidden min-w-[140px]">
+            <button
+              onClick={() => { setDotMenuOpen(false); onEdit(expense) }}
+              className="flex items-center px-4 py-3 text-[14px] text-[#211738] w-full text-left active:bg-[#f2edfa]"
+            >
+              Modifier
+            </button>
+            <div className="h-px bg-[#f0ebfa]" />
+            <button
+              onClick={() => { setDotMenuOpen(false); onDelete(expense) }}
+              className="flex items-center px-4 py-3 text-[14px] text-red-500 w-full text-left active:bg-red-50"
+            >
+              Supprimer
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Header */}
+      <div className="flex items-center gap-3 p-4">
+        <button onClick={() => setOpen(o => !o)} className="flex-1 min-w-0 text-left">
           <p className="text-[14px] font-semibold text-[#211738] truncate">{expense.description}</p>
-          <p className="text-[12px] text-[#736694] mt-0.5">{otherLabel}</p>
-        </div>
+          <p className="text-[12px] text-[#736694] mt-0.5">Payé par {payerName}</p>
+        </button>
         <div className="flex flex-col items-end gap-1 shrink-0">
           <span className="text-[15px] font-bold text-[#211738]">{fmt(expense.amount)}</span>
           <span
@@ -179,16 +214,20 @@ function ExpenseCard({ expense, currentUserId, profiles, onReimburse }) {
             {status.label}
           </span>
         </div>
-        <svg
-          width="16" height="16" viewBox="0 0 24 24" fill="none"
-          className={`shrink-0 text-[#736694] transition-transform ${open ? 'rotate-180' : ''}`}
+        <button
+          onClick={() => setDotMenuOpen(o => !o)}
+          className="shrink-0 w-8 h-8 flex items-center justify-center"
         >
-          <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#736694">
+            <circle cx="12" cy="5" r="1.5" />
+            <circle cx="12" cy="12" r="1.5" />
+            <circle cx="12" cy="19" r="1.5" />
+          </svg>
+        </button>
+      </div>
 
       {open && (
-        <div className="px-4 pb-4 flex flex-col gap-3 border-t border-[#f0ebfa]">
+        <div className="px-4 pb-4 flex flex-col gap-3 border-t border-[#f0ebfa] rounded-b-[16px] overflow-hidden">
           {/* Remboursements */}
           {expense.reimbursements?.length > 0 && (
             <div className="flex flex-col gap-2 pt-3">
@@ -235,6 +274,9 @@ export default function Expenses() {
   const [expenses, setExpenses] = useState([])
   const [profiles, setProfiles] = useState({})
   const [showNew, setShowNew] = useState(false)
+  const [editingExpense, setEditingExpense] = useState(null)
+  const [deletingExpense, setDeletingExpense] = useState(null)
+  const [deleting, setDeleting] = useState(false)
   const [reimbursing, setReimbursing] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -379,6 +421,8 @@ export default function Expenses() {
               currentUserId={user.id}
               profiles={profiles}
               onReimburse={setReimbursing}
+              onEdit={setEditingExpense}
+              onDelete={setDeletingExpense}
             />
           ))}
         </div>
@@ -401,6 +445,42 @@ export default function Expenses() {
           onClose={() => setShowNew(false)}
           onSaved={fetchExpenses}
         />
+      )}
+      {editingExpense && (
+        <NewExpenseModal
+          currentUserId={user.id}
+          initialExpense={editingExpense}
+          onClose={() => setEditingExpense(null)}
+          onSaved={fetchExpenses}
+        />
+      )}
+      {deletingExpense && (
+        <BottomSheet onClose={() => setDeletingExpense(null)}>
+          <p className="text-[17px] font-semibold text-[#211738]">Supprimer la dépense ?</p>
+          <p className="text-[13px] text-[#736694] -mt-2">
+            « {deletingExpense.description} » sera définitivement supprimée ainsi que tous ses remboursements.
+          </p>
+          <button
+            disabled={deleting}
+            onClick={async () => {
+              setDeleting(true)
+              await supabase.from('reimbursements').delete().eq('expense_id', deletingExpense.id)
+              await supabase.from('expenses').delete().eq('id', deletingExpense.id)
+              setDeleting(false)
+              setDeletingExpense(null)
+              fetchExpenses()
+            }}
+            className="h-12 bg-red-500 text-white rounded-[12px] text-[14px] font-semibold disabled:opacity-40"
+          >
+            {deleting ? 'Suppression…' : 'Supprimer'}
+          </button>
+          <button
+            onClick={() => setDeletingExpense(null)}
+            className="h-12 bg-[#f2edfa] text-[#736694] rounded-[12px] text-[14px] font-semibold"
+          >
+            Annuler
+          </button>
+        </BottomSheet>
       )}
       {reimbursing && (
         <ReimburseModal

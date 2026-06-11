@@ -394,7 +394,8 @@ export default function Checklist() {
               {search && <button onClick={() => setSearch('')} className="text-[#a49ffe] leading-none min-w-0 min-h-0">&times;</button>}
             </div>
             <button onClick={() => setShowFilter(f => !f)}
-              className={`w-[34px] h-[34px] rounded-[8px] border border-white/85 flex items-center justify-center shrink-0 ${showFilter || filterTag || filterGroup ? 'bg-[#6c63ff] text-white' : 'bg-white/75 text-[#736694]'}`}>
+              style={{ minWidth: 0, minHeight: 0, width: 34, height: 34 }}
+              className={`rounded-[8px] border border-white/85 flex items-center justify-center shrink-0 ${showFilter || filterTag || filterGroup ? 'bg-[#6c63ff] text-white' : 'bg-white/75 text-[#736694]'}`}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
               </svg>

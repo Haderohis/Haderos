@@ -308,6 +308,7 @@ function ExpenseCard({ expense, currentUserId, profiles, onReimburse }) {
 export default function Expenses() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState(null) // null | 'owed' | 'due'
   const [expenses, setExpenses] = useState([])
   const [profiles, setProfiles] = useState({})
   const [showNew, setShowNew] = useState(false)
@@ -359,9 +360,10 @@ export default function Expenses() {
   const totalOwed = owed.reduce((s, e) => s + remainingAmount(e), 0)
   const totalDue = due.reduce((s, e) => s + remainingAmount(e), 0)
 
+  const base = filter === 'owed' ? owed : filter === 'due' ? due : expenses
   const filtered = search.trim()
-    ? expenses.filter(e => e.description.toLowerCase().includes(search.toLowerCase()))
-    : expenses
+    ? base.filter(e => e.description.toLowerCase().includes(search.toLowerCase()))
+    : base
 
   return (
     <div className="relative w-full h-dvh overflow-hidden bg-[#f6f4f9]">
@@ -412,14 +414,28 @@ export default function Expenses() {
 
         {/* Stats inline */}
         <div className="flex gap-2 px-[14px] pt-3 pb-3">
-          <div className="flex-1 flex items-center justify-between bg-[rgba(247,237,250,0.6)] border border-[rgba(164,159,254,0.2)] rounded-[8px] h-[43px] px-2">
+          <button
+            onClick={() => setFilter(f => f === 'owed' ? null : 'owed')}
+            className={`flex-1 flex items-center justify-between rounded-[8px] h-[43px] px-2 border transition-all ${
+              filter === 'owed'
+                ? 'bg-[rgba(108,99,255,0.12)] border-[#a49ffe]'
+                : 'bg-[rgba(247,237,250,0.6)] border-[rgba(164,159,254,0.2)]'
+            }`}
+          >
             <span className="text-[12px] text-[#8883aa]">On me doit</span>
             <span className="text-[14px] font-bold text-[#a49ffe]">{fmt(totalOwed)}</span>
-          </div>
-          <div className="flex-1 flex items-center justify-between bg-[rgba(247,237,250,0.6)] border border-[rgba(245,158,11,0.2)] rounded-[8px] h-[43px] px-2">
+          </button>
+          <button
+            onClick={() => setFilter(f => f === 'due' ? null : 'due')}
+            className={`flex-1 flex items-center justify-between rounded-[8px] h-[43px] px-2 border transition-all ${
+              filter === 'due'
+                ? 'bg-[rgba(245,158,11,0.12)] border-[#f59e0b]'
+                : 'bg-[rgba(247,237,250,0.6)] border-[rgba(245,158,11,0.2)]'
+            }`}
+          >
             <span className="text-[12px] text-[#8883aa]">Je dois</span>
             <span className="text-[14px] font-bold text-[#f59e0b]">{fmt(totalDue)}</span>
-          </div>
+          </button>
         </div>
 
         {/* Liste */}

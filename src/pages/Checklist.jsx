@@ -231,7 +231,7 @@ export default function Checklist() {
   }
 
   const formatDueDate = (dateStr) => {
-    const d = new Date(dateStr + 'T12:00:00')
+    const d = dateStr.includes('T') ? new Date(dateStr) : new Date(dateStr + 'T12:00:00')
     return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
   }
 

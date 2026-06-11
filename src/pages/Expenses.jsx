@@ -205,22 +205,22 @@ function ExpenseDetailModal({ expense, currentUserId, profiles, onClose, onSaved
           <p className="text-[11px] font-semibold text-[#736694] uppercase tracking-wide mb-3">Historique</p>
           {sorted.map((r, i) => (
             <div key={r.id} className="flex gap-3">
-              <div className="flex flex-col items-center pt-1">
-                <div className="w-[8px] h-[8px] rounded-full bg-[#22c55e] shrink-0" />
-                {i < sorted.length - 1 && <div className="w-px flex-1 bg-[#e8e0f5] my-1 min-h-[12px]" />}
+              {/* Dot + ligne verticale */}
+              <div className="flex flex-col items-center w-2 shrink-0">
+                <div className="w-2 h-2 rounded-full bg-[#22c55e] mt-[5px] shrink-0" />
+                {i < sorted.length - 1 && <div className="w-px flex-1 bg-[#e8e0f5] mt-1" />}
               </div>
-              <div className="flex-1 flex justify-between items-center pb-3 gap-2">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <span className="text-[13px] font-medium text-[#211738] truncate">{profileName(r.reimbursed_by)}</span>
-                  {fmtDate(r.reimbursement_date) && (
-                    <span className="text-[11px] text-[#a49ffe] shrink-0">{fmtDate(r.reimbursement_date)}</span>
-                  )}
-                </div>
+              {/* Ligne de contenu */}
+              <div className="flex-1 flex items-center gap-2 pb-3 min-w-0">
+                <span className="text-[13px] font-medium text-[#211738] flex-1 min-w-0 truncate">{profileName(r.reimbursed_by)}</span>
+                {fmtDate(r.reimbursement_date) && (
+                  <span className="text-[11px] text-[#a49ffe] shrink-0">{fmtDate(r.reimbursement_date)}</span>
+                )}
                 <span className="text-[13px] font-semibold text-[#22c55e] shrink-0">+{fmt(r.amount)}</span>
                 <button
                   onClick={() => handleDeleteReimb(r.id)}
                   disabled={deletingReimbId === r.id}
-                  className="shrink-0 w-6 h-6 flex items-center justify-center opacity-40 active:opacity-100 disabled:opacity-20"
+                  className="shrink-0 w-6 h-6 flex items-center justify-center opacity-30 active:opacity-100 disabled:opacity-10"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444">
                     <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>

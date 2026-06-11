@@ -289,6 +289,7 @@ export default function Expenses() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState(null) // null | 'owed' | 'due' | 'done'
+  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false)
   const [expenses, setExpenses] = useState([])
   const [profiles, setProfiles] = useState({})
   const [showNew, setShowNew] = useState(false)
@@ -390,19 +391,50 @@ export default function Expenses() {
             className="flex-1 bg-transparent text-[14px] font-semibold text-[#6c63ff] placeholder-[#ada7fd] focus:outline-none"
           />
         </div>
-        <button className="w-[34px] h-[34px] bg-white/75 border border-white/85 rounded-[8px] flex items-center justify-center shrink-0">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="#736694">
-            <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" />
-          </svg>
-        </button>
+        <div className="relative shrink-0">
+          <button
+            onClick={() => setFilterDropdownOpen(o => !o)}
+            className={`w-[34px] h-[34px] rounded-[8px] flex items-center justify-center border transition-all ${
+              filter === 'done'
+                ? 'bg-[rgba(34,197,94,0.12)] border-[#22c55e]'
+                : 'bg-white/75 border-white/85'
+            }`}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill={filter === 'done' ? '#22c55e' : '#736694'}>
+              <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" />
+            </svg>
+          </button>
+          {filterDropdownOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setFilterDropdownOpen(false)} />
+              <div className="absolute top-[38px] right-0 z-20 bg-white rounded-[12px] shadow-lg border border-[#f0ebfa] overflow-hidden min-w-[160px]">
+                <button
+                  onClick={() => { setFilter(f => f === 'done' ? null : 'done'); setFilterDropdownOpen(false) }}
+                  className="flex items-center gap-3 px-4 py-3 w-full text-left active:bg-[#f2edfa]"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill={filter === 'done' ? '#22c55e' : '#a0a0b0'}>
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                  </svg>
+                  <span className={`text-[13px] font-medium ${filter === 'done' ? 'text-[#22c55e]' : 'text-[#211738]'}`}>
+                    Soldés {doneExpenses.length > 0 && `(${doneExpenses.length})`}
+                  </span>
+                  {filter === 'done' && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#22c55e" className="ml-auto">
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Contenu principal */}
       <main className="absolute top-[142px] left-0 right-0 bottom-0 flex flex-col overflow-hidden">
 
         {/* Stats inline */}
-        <div className="flex flex-col gap-2 px-[14px] pt-3 pb-3">
-          <div className="flex gap-2">
+        <div className="flex gap-2 px-[14px] pt-3 pb-3">
           <button
             onClick={() => setFilter(f => f === 'owed' ? null : 'owed')}
             className={`flex-1 flex items-center justify-between rounded-[8px] h-[43px] px-2 border transition-all ${
@@ -424,22 +456,6 @@ export default function Expenses() {
           >
             <span className="text-[12px] text-[#8883aa]">Je dois</span>
             <span className="text-[14px] font-bold text-[#f59e0b]">{fmt(totalDue)}</span>
-          </button>
-          </div>
-          <button
-            onClick={() => setFilter(f => f === 'done' ? null : 'done')}
-            className={`flex items-center justify-center gap-2 h-[34px] rounded-[8px] border transition-all ${
-              filter === 'done'
-                ? 'bg-[rgba(34,197,94,0.1)] border-[#22c55e]'
-                : 'bg-[rgba(247,237,250,0.6)] border-[rgba(34,197,94,0.25)]'
-            }`}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill={filter === 'done' ? '#22c55e' : '#a0a0b0'}>
-              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-            </svg>
-            <span className={`text-[12px] font-medium ${filter === 'done' ? 'text-[#22c55e]' : 'text-[#a0a0b0]'}`}>
-              Soldés {doneExpenses.length > 0 && `(${doneExpenses.length})`}
-            </span>
           </button>
         </div>
 

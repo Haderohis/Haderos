@@ -385,7 +385,7 @@ export default function Expenses() {
   const doneExpenses = expenses.filter(e => remainingAmount(e) === 0)
   const base = filter === 'owed' ? owed.filter(e => remainingAmount(e) > 0)
     : filter === 'due' ? due.filter(e => remainingAmount(e) > 0)
-    : filter === 'done' ? doneExpenses
+    : filter === 'done' ? expenses
     : activeExpenses
   const filtered = search.trim()
     ? base.filter(e => e.description.toLowerCase().includes(search.toLowerCase()))

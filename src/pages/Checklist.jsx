@@ -329,14 +329,16 @@ export default function Checklist() {
     const keys = Object.keys(grouped).sort((a, b) => {
       if (a === '') return 1; if (b === '') return -1; return a.localeCompare(b)
     })
-    return keys.map((group, i) => (
-      <div key={group} className={`flex flex-col gap-2 ${i > 0 ? 'pt-2 border-t border-[rgba(115,102,148,0.15)]' : ''}`}>
-        {group && <p className="text-[12px] font-semibold text-[#6c63ff] uppercase tracking-wider px-1 mt-1">{group}</p>}
+    return keys.map((group, i) => {
+      const isDoneGroup = grouped[group].every(t => t.done)
+      return (
+      <div key={group} className={`flex flex-col gap-2 ${i > 0 ? 'border-t border-[rgba(115,102,148,0.15)]' : ''} ${isDoneGroup && i > 0 ? 'pt-6' : i > 0 ? 'pt-4' : 'mt-4'}`}>
+        {group && <p className="text-[12px] font-semibold text-[#6c63ff] uppercase tracking-wider px-1">{group}</p>}
         <ul className="flex flex-col gap-2">
           {grouped[group].map(task => <SortableTask key={task.id} task={task} />)}
         </ul>
       </div>
-    ))
+    )})
   }
 
   const hasTasks = tasks.length > 0
@@ -491,7 +493,7 @@ export default function Checklist() {
         </div>
 
         {/* Navigation jour */}
-        <div className="flex items-center justify-between px-4 mt-2 mb-2 h-11">
+        <div className="flex items-center justify-between px-4 mt-4 mb-4 h-11">
           <button onClick={prevDay} disabled={!hasPrev}
             className={`min-w-[44px] min-h-[44px] flex items-center justify-center ${!hasPrev ? 'opacity-20' : ''}`}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -516,7 +518,7 @@ export default function Checklist() {
       </div>
 
       {/* Contenu */}
-      <main className={`absolute left-4 right-4 overflow-hidden flex flex-col top-[214px] ${isToday ? 'bottom-[76px]' : 'bottom-4'}`}>
+      <main className={`absolute left-4 right-4 overflow-hidden flex flex-col top-[230px] ${isToday ? 'bottom-[76px]' : 'bottom-4'}`}>
         <div className="flex flex-col gap-3 overflow-y-auto flex-1">
 
           {!hasTasks && (
@@ -529,7 +531,7 @@ export default function Checklist() {
           {hasTasks && (
             <>
               {/* Stats */}
-              <div className="flex gap-2 pt-2 shrink-0">
+              <div className="flex gap-2 pt-4 shrink-0">
                 <div className="flex-1 bg-[rgba(247,237,250,0.6)] border border-[#c0befe] rounded-[8px] flex items-center justify-center gap-2 py-2">
                   <span className="font-bold text-[#6c63ff] text-[22px] leading-none">{visibleTasks.length}</span>
                   <span className="text-[#a49ffe] text-[11px]">Total</span>
@@ -550,7 +552,7 @@ export default function Checklist() {
 
                     {/* En retard */}
                     {filteredOverdue.length > 0 && (
-                      <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-2 mt-4">
                         <p className="text-[12px] font-semibold text-red-500 uppercase tracking-wider px-1 flex items-center gap-1">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                             <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/>
@@ -561,7 +563,7 @@ export default function Checklist() {
                         <ul className="flex flex-col gap-2">
                           {filteredOverdue.map(task => <TaskItem key={task.id} task={task} overdue />)}
                         </ul>
-                        {regularTasks.length > 0 && <div className="h-px bg-[rgba(115,102,148,0.15)] mt-1"/>}
+                        {regularTasks.length > 0 && <div className="h-px bg-[rgba(115,102,148,0.15)] mt-2"/>}
                       </div>
                     )}
 

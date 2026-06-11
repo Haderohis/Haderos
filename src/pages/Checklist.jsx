@@ -47,6 +47,8 @@ export default function Checklist() {
   const [groupOpen, setGroupOpen]   = useState(false)
   const [error, setError]   = useState('')
   const [saving, setSaving] = useState(false)
+  const [figmaModal, setFigmaModal] = useState(null) // task object
+  const [figmaUrl, setFigmaUrl]     = useState('')
 
   // Jour courant
   const [currentDay, setCurrentDay] = useState(todayStr())
@@ -171,6 +173,19 @@ export default function Checklist() {
   }
   const removeTag = (index) => setForm(f => ({ ...f, tags: f.tags.filter((_, i) => i !== index) }))
 
+  const openFigmaModal = (task) => {
+    setFigmaModal(task)
+    setFigmaUrl(task.figma_url ?? '')
+  }
+  const saveFigmaUrl = async () => {
+    if (!figmaModal) return
+    setSaving(true)
+    await supabase.from('tasks').update({ figma_url: figmaUrl || null }).eq('id', figmaModal.id)
+    setTasks(prev => prev.map(t => t.id === figmaModal.id ? { ...t, figma_url: figmaUrl || null } : t))
+    setSaving(false)
+    setFigmaModal(null)
+  }
+
   // ── Modal ──────────────────────────────────────────────────
   const openModal = () => {
     setForm(EMPTY_FORM); setTagInput(''); setGroupInput(''); setError(''); setEditingId(null); setShowModal(true)
@@ -270,8 +285,8 @@ export default function Checklist() {
           )}
         </button>
         {/* Texte + tags (flex-1) — désactivé si terminé */}
-        <div className={`flex flex-col gap-[3px] min-w-0 flex-1 ${task.done ? 'pointer-events-none' : 'cursor-pointer'}`}
-          onClick={() => !task.done && openEdit(task)}>
+        <div className={`flex flex-col gap-[3px] min-w-0 flex-1 cursor-pointer`}
+          onClick={() => task.done ? openFigmaModal(task) : openEdit(task)}>
           <span className={`text-[12px] font-bold leading-tight flex items-center gap-1 ${task.done ? 'line-through text-[#9992a8]' : 'text-black'}`}>
             {task.jira_url && (
               <a href={task.jira_url} target="_blank" rel="noopener noreferrer"
@@ -280,6 +295,19 @@ export default function Checklist() {
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                   <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke={task.done ? '#9992a8' : '#6c63ff'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke={task.done ? '#9992a8' : '#6c63ff'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </a>
+            )}
+            {task.figma_url && (
+              <a href={task.figma_url} target="_blank" rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                className="shrink-0" style={{ minWidth: 0, minHeight: 0 }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 5.5A3.5 3.5 0 018.5 2H12v7H8.5A3.5 3.5 0 015 5.5z" stroke={task.done ? '#9992a8' : '#a259ff'} strokeWidth="1.5"/>
+                  <path d="M12 2h3.5a3.5 3.5 0 010 7H12V2z" stroke={task.done ? '#9992a8' : '#a259ff'} strokeWidth="1.5"/>
+                  <path d="M12 12.5a3.5 3.5 0 117 0 3.5 3.5 0 01-7 0z" stroke={task.done ? '#9992a8' : '#a259ff'} strokeWidth="1.5"/>
+                  <path d="M5 12.5A3.5 3.5 0 018.5 9H12v7H8.5A3.5 3.5 0 015 12.5z" stroke={task.done ? '#9992a8' : '#a259ff'} strokeWidth="1.5"/>
+                  <path d="M5 19.5A3.5 3.5 0 018.5 16H12v3.5a3.5 3.5 0 01-7 0z" stroke={task.done ? '#9992a8' : '#a259ff'} strokeWidth="1.5"/>
                 </svg>
               </a>
             )}
@@ -611,6 +639,40 @@ export default function Checklist() {
           className="absolute bottom-4 left-4 right-4 bg-[#6c63ff] rounded-[12px] h-12 flex items-center justify-center z-10">
           <span className="text-[14px] font-semibold text-white">Nouvelle tâche</span>
         </button>
+      )}
+
+      {/* Modal Figma */}
+      {figmaModal && (
+        <div className="absolute inset-0 z-50 flex items-end justify-center bg-[rgba(33,23,56,0.3)]" onClick={() => setFigmaModal(null)}>
+          <div className="w-full bg-white/95 backdrop-blur-md rounded-t-[20px] p-6 flex flex-col gap-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M5 5.5A3.5 3.5 0 018.5 2H12v7H8.5A3.5 3.5 0 015 5.5z" stroke="#a259ff" strokeWidth="1.5"/>
+                <path d="M12 2h3.5a3.5 3.5 0 010 7H12V2z" stroke="#a259ff" strokeWidth="1.5"/>
+                <path d="M12 12.5a3.5 3.5 0 117 0 3.5 3.5 0 01-7 0z" stroke="#a259ff" strokeWidth="1.5"/>
+                <path d="M5 12.5A3.5 3.5 0 018.5 9H12v7H8.5A3.5 3.5 0 015 12.5z" stroke="#a259ff" strokeWidth="1.5"/>
+                <path d="M5 19.5A3.5 3.5 0 018.5 16H12v3.5a3.5 3.5 0 01-7 0z" stroke="#a259ff" strokeWidth="1.5"/>
+              </svg>
+              <p className="text-[17px] font-semibold text-[#211738]">Lien Figma</p>
+            </div>
+            <p className="text-[13px] text-[#736694] -mt-2">{figmaModal.label}</p>
+            <div className="relative bg-[#f2edfa] rounded-[10px] h-12 flex items-center px-4 gap-2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="shrink-0">
+                <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <input autoFocus type="url" value={figmaUrl}
+                onChange={e => setFigmaUrl(e.target.value)}
+                placeholder="https://figma.com/..."
+                className="flex-1 bg-transparent text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe]"/>
+              {figmaUrl && <button onClick={() => setFigmaUrl('')} style={{ minWidth: 0, minHeight: 0 }} className="text-[#a49ffe] text-lg leading-none">&times;</button>}
+            </div>
+            <button onClick={saveFigmaUrl} disabled={saving}
+              className="bg-[#6c63ff] rounded-[12px] h-12 text-[14px] font-semibold text-white disabled:opacity-60">
+              {saving ? 'Enregistrement...' : 'Enregistrer'}
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Modal */}

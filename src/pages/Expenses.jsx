@@ -42,36 +42,40 @@ function TagInput({ tags, onChange, input, onInputChange, suggestions = [] }) {
 
   const shown = input.trim()
     ? suggestions.filter(s => s.includes(input.toLowerCase()) && !tags.includes(s))
-    : suggestions.filter(s => !tags.includes(s))
+    : []
 
   return (
-    <div className="flex flex-col gap-1">
-      <FieldLabel>Tags</FieldLabel>
-      <div className="bg-[#f2edfa] rounded-[10px] min-h-12 px-3 py-2 flex flex-wrap gap-1.5 items-center">
+    <div className="flex flex-col gap-2">
+      <label className="text-[12px] font-medium text-[#736694]">Tags</label>
+      <div className="relative bg-[#f2edfa] rounded-[10px] min-h-12 px-3 py-2 flex flex-wrap gap-2 items-center">
         {tags.map(t => (
-          <span key={t} className="flex items-center gap-1 bg-[#6c63ff]/20 text-[#6c63ff] text-[12px] font-semibold px-2 py-0.5 rounded-full">
+          <span key={t} className="flex items-center gap-1 bg-[#6c63ff]/20 text-[#6c63ff] text-[12px] font-medium px-2 py-1 rounded-full shrink-0">
             {t}
-            <button type="button" onClick={() => remove(t)} className="opacity-60 leading-none">×</button>
+            <button type="button" onPointerDown={e => { e.preventDefault(); remove(t) }} className="leading-none min-w-0 min-h-0 w-4 h-4">×</button>
           </span>
         ))}
         <input
+          type="text"
           value={input}
           onChange={e => onInputChange(e.target.value)}
           onKeyDown={handleKey}
-          placeholder={tags.length === 0 ? 'Ajouter un tag…' : ''}
-          className="flex-1 min-w-[80px] bg-transparent text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe]"
+          placeholder={tags.length === 0 ? 'Ajouter un tag...' : ''}
+          className="bg-transparent text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe] min-w-[80px] flex-1"
         />
+        {shown.length > 0 && (
+          <ul className="absolute left-0 right-0 top-full mt-1 bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-[#f2edfa]">
+            {shown.map(s => (
+              <li key={s}>
+                <button type="button" className="w-full text-left px-4 py-3 text-[13px] hover:bg-[#f2edfa]"
+                  onPointerDown={e => { e.preventDefault(); add(s) }}>
+                  {s}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-      {shown.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {shown.map(s => (
-            <button key={s} type="button" onClick={() => add(s)}
-              className="text-[11px] text-[#6c63ff] bg-[#6c63ff]/10 px-2 py-0.5 rounded-full">
-              + {s}
-            </button>
-          ))}
-        </div>
-      )}
+      <p className="text-[11px] text-[#a49ffe]">Entrée ou virgule pour valider, Retour arrière pour supprimer</p>
     </div>
   )
 }

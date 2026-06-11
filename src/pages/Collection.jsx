@@ -16,46 +16,67 @@ function formatOwnedLabel(ownedArr, total) {
 
 // ─── MangaCard ────────────────────────────────────────────────────────────────
 function MangaCard({ item, onDelete }) {
+  const [menuOpen, setMenuOpen] = useState(false)
   const owned = item.owned_volumes ?? []
-  const missing = item.total_volumes
-    ? Array.from({ length: item.total_volumes }, (_, i) => i + 1).filter(n => !owned.includes(n))
-    : []
+  const maxVol = item.total_volumes ?? (owned.length ? Math.max(...owned) : 0)
 
   return (
-    <div className="relative flex flex-col rounded-[16px] overflow-hidden bg-white/60 backdrop-blur-sm border border-white/80 shadow-sm">
-      {item.cover_url
-        ? <img src={item.cover_url} alt={item.title} className="w-full aspect-[2/3] object-cover" />
-        : <div className="w-full aspect-[2/3] bg-[#f2edfa] flex items-center justify-center">
-            <span className="text-[#a49ffe] text-[11px] text-center px-2">Pas de couverture</span>
+    <div className="bg-white/70 border border-white/85 rounded-[8px] p-2 flex flex-col gap-2">
+      {/* Row 1 — title + badge */}
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[14px] font-bold text-[#211738] leading-snug truncate">{item.title}</p>
+        {item.ongoing && (
+          <span className="text-[10px] text-[#f59e0b] font-normal shrink-0">En cours</span>
+        )}
+      </div>
+
+      {/* Row 2 — cover + volumes + menu */}
+      <div className="flex items-center gap-2">
+        {/* Cover */}
+        {item.cover_url
+          ? <img src={item.cover_url} alt={item.title} className="w-[34px] h-[48px] object-cover rounded-[4px] shrink-0" />
+          : <div className="w-[34px] h-[48px] bg-[#f2edfa] rounded-[4px] shrink-0" />
+        }
+
+        {/* Volume chips — horizontal scroll */}
+        <div className="flex-1 overflow-x-auto min-w-0">
+          <div className="flex gap-1 w-max">
+            {Array.from({ length: maxVol }, (_, i) => i + 1).map(n => (
+              <div
+                key={n}
+                className={`h-[32px] min-w-[24px] px-1 flex items-center justify-center rounded-[2px] text-[14px] font-semibold text-black ${
+                  owned.includes(n) ? 'bg-[#ada7fd]' : 'bg-[#d5d3dc]'
+                }`}
+              >
+                {n}
+              </div>
+            ))}
           </div>
-      }
-      <div className="px-3 py-3 flex flex-col gap-1.5">
-        <p className="text-[13px] font-semibold text-[#211738] leading-snug line-clamp-2">{item.title}</p>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[11px] text-[#6c63ff] font-medium bg-[#f2edfa] px-2 py-0.5 rounded-full whitespace-nowrap">
-            {formatOwnedLabel(owned, item.total_volumes)}
-          </span>
-          {item.ongoing && (
-            <span className="text-[10px] text-[#f59e0b] font-semibold bg-[#fef3c7] px-2 py-0.5 rounded-full whitespace-nowrap">
-              en cours
-            </span>
-          )}
-          {missing.length > 0 && (
-            <span className="text-[10px] text-[#ef4444] font-semibold bg-[#fee2e2] px-2 py-0.5 rounded-full whitespace-nowrap">
-              {missing.length} manquant{missing.length > 1 ? 's' : ''}
-            </span>
+        </div>
+
+        {/* Three-dot menu */}
+        <div className="relative shrink-0">
+          <button
+            onClick={() => setMenuOpen(o => !o)}
+            className="w-8 h-8 flex items-center justify-center"
+            aria-label="Options"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#736694">
+              <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+            </svg>
+          </button>
+          {menuOpen && (
+            <div className="absolute right-0 top-full mt-1 z-20 bg-white rounded-[10px] shadow-lg border border-[#f0ebfa] overflow-hidden min-w-[120px]">
+              <button
+                onClick={() => { setMenuOpen(false); onDelete(item.id) }}
+                className="w-full px-4 py-3 text-left text-[13px] text-[#ef4444] font-medium hover:bg-[#fee2e2]"
+              >
+                Supprimer
+              </button>
+            </div>
           )}
         </div>
       </div>
-      <button
-        onClick={() => onDelete(item.id)}
-        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-[rgba(33,23,56,0.45)] flex items-center justify-center"
-        aria-label="Supprimer"
-      >
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
-          <path d="M18 6L6 18M6 6l12 12" />
-        </svg>
-      </button>
     </div>
   )
 }
@@ -307,7 +328,7 @@ function ShareSheet({ sharedWith, onClose }) {
               {displayName(p)}
               <button
                 onPointerDown={e => { e.preventDefault(); toggle(p) }}
-                className="leading-none w-4 h-4 flex items-center justify-center"
+                className="leading-none min-w-0 min-h-0 w-4 h-4"
               >&times;</button>
             </span>
           ))}
@@ -507,7 +528,7 @@ export default function Collection() {
               <p className="text-[11px] text-[#a49ffe]">pour le moment</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
               {filtered.map(item => (
                 <MangaCard key={item.id} item={item} onDelete={handleDelete} />
               ))}

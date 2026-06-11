@@ -53,10 +53,12 @@ export default function Checklist() {
   const dayDateRef = useRef(null)
 
   // Filtres
-  const [search, setSearch]           = useState('')
-  const [filterTag, setFilterTag]     = useState(null)
-  const [filterGroup, setFilterGroup] = useState(null)
-  const [showFilter, setShowFilter]   = useState(false)
+  const [search, setSearch]               = useState('')
+  const [filterTag, setFilterTag]         = useState(null)
+  const [filterGroup, setFilterGroup]     = useState(null)
+  const [showFilter, setShowFilter]       = useState(false)
+  const [filterGroupInput, setFilterGroupInput] = useState('')
+  const [filterTagInput, setFilterTagInput]     = useState('')
 
   const groupRef  = useRef(null)
   const filterRef = useRef(null)
@@ -434,38 +436,78 @@ export default function Checklist() {
             </button>
             {/* Dropdown filtres */}
             {showFilter && (
-              <div className="absolute right-0 top-[50px] z-30 bg-white/90 backdrop-blur-md border border-white/85 rounded-[12px] shadow-lg p-3 flex flex-col gap-2 min-w-[200px]">
-                {allGroups.length > 0 && (
-                  <>
-                    <p className="text-[10px] font-semibold text-[#736694] uppercase tracking-wider">Groupes</p>
-                    <div className="flex flex-wrap gap-1">
-                      {allGroups.map(g => (
-                        <button key={g} onClick={() => setFilterGroup(filterGroup === g ? null : g)}
-                          style={{ minWidth: 0, minHeight: 0 }}
-                          className={`text-[11px] font-medium px-3 py-1 rounded-full border transition-colors ${filterGroup === g ? 'bg-[#6c63ff] text-white border-[#6c63ff]' : 'bg-white/60 text-[#736694] border-[#736694]/30'}`}>
-                          {g}
-                        </button>
-                      ))}
+              <div className="absolute right-0 top-[50px] z-30 bg-white/95 backdrop-blur-md border border-white/85 rounded-[12px] shadow-lg p-3 flex flex-col gap-3 w-[220px]">
+
+                {/* Filtre groupe */}
+                <div className="flex flex-col gap-1">
+                  <p className="text-[10px] font-semibold text-[#736694] uppercase tracking-wider">Groupe</p>
+                  <div className="relative">
+                    <div className={`flex items-center gap-2 bg-[#f2edfa] rounded-[8px] px-3 h-9 ${filterGroup ? 'ring-2 ring-[#6c63ff]/40' : ''}`}>
+                      {filterGroup && (
+                        <span className="text-[12px] font-medium text-[#6c63ff] bg-[#6c63ff]/10 px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1">
+                          {filterGroup}
+                          <button onClick={() => { setFilterGroup(null); setFilterGroupInput('') }} style={{ minWidth: 0, minHeight: 0 }} className="text-[#6c63ff] leading-none">&times;</button>
+                        </span>
+                      )}
+                      {!filterGroup && (
+                        <input type="text" value={filterGroupInput}
+                          onChange={e => setFilterGroupInput(e.target.value)}
+                          placeholder="Filtrer par groupe..."
+                          className="bg-transparent text-[13px] text-[#211738] outline-none placeholder:text-[#a49ffe] flex-1 w-full"/>
+                      )}
                     </div>
-                  </>
-                )}
-                {allTags.length > 0 && (
-                  <>
-                    <p className="text-[10px] font-semibold text-[#736694] uppercase tracking-wider">Tags</p>
-                    <div className="flex flex-wrap gap-1">
-                      {allTags.map((tag, i) => {
-                        const active = filterTag?.label === tag.label && filterTag?.type === tag.type
-                        return (
-                          <button key={i} onClick={() => setFilterTag(active ? null : tag)}
-                            style={{ minWidth: 0, minHeight: 0 }}
-                            className={`flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-full transition-opacity ${active ? tagColor(tag.type) + ' ring-2 ring-[#6c63ff]/40' : tagColor(tag.type) + ' opacity-60'}`}>
-                            {tagIcon(tag.type)}{tag.label}
-                          </button>
-                        )
-                      })}
+                    {!filterGroup && filterGroupInput && (
+                      <ul className="absolute left-0 right-0 top-[38px] bg-white rounded-[8px] shadow-lg z-10 overflow-hidden border border-[#f2edfa]">
+                        {allGroups.filter(g => g.toLowerCase().includes(filterGroupInput.toLowerCase())).map(g => (
+                          <li key={g}>
+                            <button className="w-full text-left px-3 py-2 text-[13px] text-[#211738] hover:bg-[#f2edfa]"
+                              style={{ minWidth: 0, minHeight: 0 }}
+                              onClick={() => { setFilterGroup(g); setFilterGroupInput('') }}>
+                              {g}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+
+                {/* Filtre tag */}
+                <div className="flex flex-col gap-1">
+                  <p className="text-[10px] font-semibold text-[#736694] uppercase tracking-wider">Tag</p>
+                  <div className="relative">
+                    <div className={`flex items-center gap-2 bg-[#f2edfa] rounded-[8px] px-3 h-9 ${filterTag ? 'ring-2 ring-[#6c63ff]/40' : ''}`}>
+                      {filterTag && (
+                        <span className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full shrink-0 ${tagColor(filterTag.type)}`}>
+                          {tagIcon(filterTag.type)}{filterTag.label}
+                          <button onClick={() => { setFilterTag(null); setFilterTagInput('') }} style={{ minWidth: 0, minHeight: 0 }} className="leading-none">&times;</button>
+                        </span>
+                      )}
+                      {!filterTag && (
+                        <input type="text" value={filterTagInput}
+                          onChange={e => setFilterTagInput(e.target.value)}
+                          placeholder="Filtrer par tag..."
+                          className="bg-transparent text-[13px] text-[#211738] outline-none placeholder:text-[#a49ffe] flex-1 w-full"/>
+                      )}
                     </div>
-                  </>
-                )}
+                    {!filterTag && filterTagInput && (
+                      <ul className="absolute left-0 right-0 top-[38px] bg-white rounded-[8px] shadow-lg z-10 overflow-hidden border border-[#f2edfa]">
+                        {allTags.filter(t => t.label.toLowerCase().includes(filterTagInput.toLowerCase())).map((tag, i) => (
+                          <li key={i}>
+                            <button className="w-full text-left px-3 py-2 text-[13px] hover:bg-[#f2edfa] flex items-center gap-2"
+                              style={{ minWidth: 0, minHeight: 0 }}
+                              onClick={() => { setFilterTag(tag); setFilterTagInput('') }}>
+                              <span className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full ${tagColor(tag.type)}`}>
+                                {tagIcon(tag.type)}{tag.label}
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+
               </div>
             )}
           </div>

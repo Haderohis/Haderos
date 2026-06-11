@@ -357,7 +357,7 @@ function ExpenseCard({ expense, profiles, onOpen, onEdit, onDelete }) {
       )}
 
       {/* Header */}
-      <div className="flex items-start gap-2 p-4 pb-3">
+      <div className="flex items-center gap-2 p-4 pb-3">
         <button onClick={onOpen} className="flex-1 min-w-0 text-left">
           <p className="text-[14px] font-semibold text-[#211738] truncate">{expense.description}</p>
           <p className="text-[12px] text-[#736694] mt-0.5">Payé par {profileName(expense.payer_id)}</p>

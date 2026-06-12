@@ -15,30 +15,54 @@ function formatOwnedLabel(ownedArr, total) {
 }
 
 // ─── MangaCard ────────────────────────────────────────────────────────────────
-function MangaCard({ item, onDelete, onUpdateOwned }) {
+function MangaCard({ item, onDelete, onUpdateOwned, onCreateOwned }) {
   const [menuOpen, setMenuOpen] = useState(false)
-  const [owned, setOwned] = useState(item.owned_volumes ?? [])
+  const [myOwned, setMyOwned] = useState(item.myOwned ?? [])
   const [displayMax, setDisplayMax] = useState(() => {
-    const base = item.total_volumes ?? (item.owned_volumes?.length ? Math.max(...(item.owned_volumes ?? [])) : 0)
-    return item.ongoing ? Math.max(base, (item.owned_volumes?.length ? Math.max(...(item.owned_volumes ?? [])) : 0) + 5) : base
+    const allOwned = [...(item.myOwned ?? []), ...(item.theirOwned ?? [])]
+    const maxOwned = allOwned.length ? Math.max(...allOwned) : 0
+    const base = item.total_volumes ?? maxOwned
+    return item.ongoing ? Math.max(base, maxOwned + 5) : base
   })
 
+  const chipStyle = (n) => {
+    const mine = myOwned.includes(n)
+    const theirs = item.theirOwned.includes(n)
+    if (mine && theirs) return 'bg-[#6c63ff] text-white'
+    if (mine) return 'bg-[#ada7fd] text-black'
+    if (theirs) return 'bg-[#fbbf24] text-black'
+    return 'bg-[#d5d3dc] text-black'
+  }
+
   const toggleVolume = async (n) => {
-    const next = owned.includes(n) ? owned.filter(v => v !== n) : [...owned, n].sort((a, b) => a - b)
-    setOwned(next)
-    await onUpdateOwned(item.id, next)
+    const next = myOwned.includes(n)
+      ? myOwned.filter(v => v !== n)
+      : [...myOwned, n].sort((a, b) => a - b)
+    setMyOwned(next)
+    if (item.myItemId) {
+      await onUpdateOwned(item.myItemId, next)
+    } else {
+      await onCreateOwned(item, next)
+    }
   }
 
   const changeDisplayMax = async (next) => {
     setDisplayMax(next)
-    await supabase.from('manga_collection').update({ total_volumes: next }).eq('id', item.id)
+    const id = item.myItemId ?? item.theirItemId
+    if (id) await supabase.from('manga_collection').update({ total_volumes: next }).eq('id', id)
   }
 
   return (
     <div className="bg-white/70 border border-white/85 rounded-[8px] p-2 flex flex-col gap-2">
-      {/* Row 1 — title + badge */}
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-[14px] font-bold text-[#211738] leading-snug truncate">{item.title}</p>
+      {/* Row 1 — title + ownership chips + "En cours" */}
+      <div className="flex items-center gap-1.5 min-w-0">
+        <p className="text-[14px] font-bold text-[#211738] leading-snug truncate flex-1 min-w-0">{item.title}</p>
+        {item.myItemId && (
+          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-[#e9ebfd] text-[#6c63ff] shrink-0 whitespace-nowrap">Moi</span>
+        )}
+        {item.theirName && (
+          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-[#fef3c7] text-[#d97706] shrink-0 whitespace-nowrap">{item.theirName}</span>
+        )}
         {item.ongoing && (
           <span className="text-[10px] text-[#f59e0b] font-normal shrink-0">En cours</span>
         )}
@@ -46,7 +70,6 @@ function MangaCard({ item, onDelete, onUpdateOwned }) {
 
       {/* Row 2 — cover + volumes + menu */}
       <div className="flex items-center gap-2">
-        {/* Cover */}
         {item.cover_url
           ? <img src={item.cover_url} alt={item.title} className="w-[34px] h-[48px] object-cover rounded-[4px] shrink-0" />
           : <div className="w-[34px] h-[48px] bg-[#f2edfa] rounded-[4px] shrink-0" />
@@ -59,9 +82,7 @@ function MangaCard({ item, onDelete, onUpdateOwned }) {
               <button
                 key={n}
                 onClick={() => toggleVolume(n)}
-                className={`h-[32px] min-w-[24px] px-1 flex items-center justify-center rounded-[2px] text-[14px] font-semibold text-black transition-colors ${
-                  owned.includes(n) ? 'bg-[#ada7fd]' : 'bg-[#d5d3dc]'
-                }`}
+                className={`h-[32px] min-w-[24px] px-1 flex items-center justify-center rounded-[2px] text-[14px] font-semibold transition-colors ${chipStyle(n)}`}
               >
                 {n}
               </button>
@@ -90,17 +111,19 @@ function MangaCard({ item, onDelete, onUpdateOwned }) {
           {menuOpen && (
             <div className="absolute right-0 top-full mt-1 z-20 bg-white rounded-[10px] shadow-lg border border-[#f0ebfa] overflow-hidden min-w-[140px]">
               <button
-                onClick={() => { setMenuOpen(false); changeDisplayMax(Math.max(displayMax - 1, owned.length > 0 ? Math.max(...owned) : 0)) }}
+                onClick={() => { setMenuOpen(false); changeDisplayMax(Math.max(displayMax - 1, myOwned.length > 0 ? Math.max(...myOwned) : 0)) }}
                 className="w-full px-4 py-3 text-left text-[13px] text-[#211738] font-medium hover:bg-[#f2edfa] border-b border-[#f0ebfa]"
               >
                 Retirer le dernier tome
               </button>
-              <button
-                onClick={() => { setMenuOpen(false); onDelete(item.id) }}
-                className="w-full px-4 py-3 text-left text-[13px] text-[#ef4444] font-medium hover:bg-[#fee2e2]"
-              >
-                Supprimer
-              </button>
+              {item.myItemId && (
+                <button
+                  onClick={() => { setMenuOpen(false); onDelete(item.myItemId) }}
+                  className="w-full px-4 py-3 text-left text-[13px] text-[#ef4444] font-medium hover:bg-[#fee2e2]"
+                >
+                  Supprimer
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -482,34 +505,88 @@ export default function Collection() {
   const fetchCollection = useCallback(async () => {
     if (!user) return
     setLoading(true)
-    const { data } = await supabase
-      .from('manga_collection')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('category', category)
-      .order('created_at', { ascending: false })
-    setMangas(data ?? [])
+
+    const displayName = (p) => p?.display_name || `${p?.first_name ?? ''} ${p?.last_name ?? ''}`.trim() || 'Utilisateur'
+
+    const [{ data: myItems }, { data: shares }] = await Promise.all([
+      supabase.from('manga_collection').select('*').eq('user_id', user.id).eq('category', category).order('created_at', { ascending: false }),
+      supabase.from('collection_shares').select('owner_id').eq('shared_with_id', user.id).eq('status', 'accepted'),
+    ])
+
+    const ownerIds = shares?.map(s => s.owner_id) ?? []
+    let sharedItems = [], ownerProfiles = []
+
+    if (ownerIds.length > 0) {
+      const [{ data: shared }, { data: profiles }] = await Promise.all([
+        supabase.from('manga_collection').select('*').in('user_id', ownerIds).eq('category', category),
+        supabase.from('profiles').select('id, display_name, first_name, last_name').in('id', ownerIds),
+      ])
+      sharedItems = shared ?? []
+      ownerProfiles = profiles ?? []
+    }
+
+    const byMalId = {}
+    for (const it of (myItems ?? [])) {
+      byMalId[it.mal_id] = {
+        mal_id: it.mal_id, title: it.title, cover_url: it.cover_url,
+        total_volumes: it.total_volumes, ongoing: it.ongoing, category: it.category,
+        myItemId: it.id, myOwned: it.owned_volumes ?? [],
+        theirItemId: null, theirOwned: [], theirName: null,
+      }
+    }
+    for (const it of sharedItems) {
+      const name = displayName(ownerProfiles.find(p => p.id === it.user_id))
+      if (byMalId[it.mal_id]) {
+        byMalId[it.mal_id].theirItemId = it.id
+        byMalId[it.mal_id].theirOwned = it.owned_volumes ?? []
+        byMalId[it.mal_id].theirName = name
+      } else {
+        byMalId[it.mal_id] = {
+          mal_id: it.mal_id, title: it.title, cover_url: it.cover_url,
+          total_volumes: it.total_volumes, ongoing: it.ongoing, category: it.category,
+          myItemId: null, myOwned: [],
+          theirItemId: it.id, theirOwned: it.owned_volumes ?? [], theirName: name,
+        }
+      }
+    }
+
+    setMangas(Object.values(byMalId))
     setLoading(false)
   }, [user, category])
 
-  useEffect(() => { fetchCollection() }, [fetchCollection, category])
+  useEffect(() => { fetchCollection() }, [fetchCollection])
 
-  const handleDelete = async (id) => {
-    await supabase.from('manga_collection').delete().eq('id', id)
-    setMangas(prev => prev.filter(m => m.id !== id))
+  const handleDelete = async (myItemId) => {
+    await supabase.from('manga_collection').delete().eq('id', myItemId)
+    setMangas(prev => prev.map(m => {
+      if (m.myItemId !== myItemId) return m
+      if (m.theirItemId) return { ...m, myItemId: null, myOwned: [] }
+      return null
+    }).filter(Boolean))
   }
 
   const handleUpdateOwned = async (id, newOwned) => {
     await supabase.from('manga_collection').update({ owned_volumes: newOwned }).eq('id', id)
-    setMangas(prev => prev.map(m => m.id === id ? { ...m, owned_volumes: newOwned } : m))
+    setMangas(prev => prev.map(m => m.myItemId === id ? { ...m, myOwned: newOwned } : m))
+  }
+
+  const handleCreateOwned = async (mergedItem, newOwned) => {
+    const { data } = await supabase.from('manga_collection').upsert({
+      user_id: user.id, mal_id: mergedItem.mal_id, title: mergedItem.title,
+      total_volumes: mergedItem.total_volumes, owned_volumes: newOwned,
+      cover_url: mergedItem.cover_url, ongoing: mergedItem.ongoing,
+      category: mergedItem.category ?? category,
+    }, { onConflict: 'user_id,mal_id' }).select().single()
+    if (data) {
+      setMangas(prev => prev.map(m => m.mal_id === mergedItem.mal_id ? { ...m, myItemId: data.id, myOwned: newOwned } : m))
+    }
   }
 
   const filtered = useMemo(() =>
     search.trim()
       ? mangas.filter(m => m.title.toLowerCase().includes(search.toLowerCase()))
-      : mangas,
-    [mangas, search]
-  )
+      : mangas
+  , [mangas, search])
 
   const categoryLabel = category === 'Mangas' ? 'manga' : category.toLowerCase()
 
@@ -565,7 +642,7 @@ export default function Collection() {
           ) : (
             <div className="flex flex-col gap-2">
               {filtered.map(item => (
-                <MangaCard key={item.id} item={item} onDelete={handleDelete} onUpdateOwned={handleUpdateOwned} />
+                <MangaCard key={item.mal_id} item={item} onDelete={handleDelete} onUpdateOwned={handleUpdateOwned} onCreateOwned={handleCreateOwned} />
               ))}
             </div>
           )}

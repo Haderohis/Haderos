@@ -4,6 +4,7 @@ import BottomSheet from '../components/BottomSheet'
 import RestTimer from '../components/RestTimer'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
+import { toDateStr } from '../lib/date'
 
 function getWeekStart(date) {
   const d = new Date(date)
@@ -18,13 +19,6 @@ function addDays(date, n) {
   const d = new Date(date)
   d.setDate(d.getDate() + n)
   return d
-}
-
-function toDateStr(date) {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
 }
 
 function formatDuration(secs) {
@@ -146,20 +140,26 @@ export default function Sport() {
         setDayExercises(list)
         setLoading(false)
 
-        // Load last perfs for all exercises
+        // Load last perfs for all exercises (parallel)
+        const uniqueNames = [...new Set(list.map(e => e.name))]
+        const results = await Promise.all(
+          uniqueNames.map(name =>
+            supabase
+              .from('sport_sessions')
+              .select(`id, session_date, sport_exercises!inner(name, type, sport_sets(set_number, reps, weight_kg, duration_seconds))`)
+              .eq('user_id', user.id)
+              .eq('sport_exercises.name', name)
+              .neq('id', sid)
+              .order('session_date', { ascending: false })
+              .limit(1)
+              .then(({ data }) => ({ name, data }))
+          )
+        )
         const perfs = {}
-        for (const exo of list) {
-          if (perfs[exo.name] !== undefined) continue
-          const { data } = await supabase
-            .from('sport_sessions')
-            .select(`id, session_date, sport_exercises!inner(name, type, sport_sets(set_number, reps, weight_kg, duration_seconds))`)
-            .eq('user_id', user.id)
-            .eq('sport_exercises.name', exo.name)
-            .neq('id', sid)
-            .order('session_date', { ascending: false })
-            .limit(1)
-          perfs[exo.name] = data?.length
-            ? { date: data[0].session_date, sets: data[0].sport_exercises[0].sport_sets, type: exo.type }
+        for (const { name, data } of results) {
+          const exo = list.find(e => e.name === name)
+          perfs[name] = data?.length
+            ? { date: data[0].session_date, sets: data[0].sport_exercises[0].sport_sets, type: exo?.type }
             : null
         }
         setLastPerfs(perfs)
@@ -169,12 +169,12 @@ export default function Sport() {
   // Autocomplete
   useEffect(() => {
     if (!user) return
-    supabase.from('sport_sessions').select('id').eq('user_id', user.id)
-      .then(async ({ data: sessions }) => {
-        if (!sessions?.length) return
-        const { data: exercises } = await supabase
-          .from('sport_exercises').select('name').in('session_id', sessions.map(s => s.id))
-        if (exercises) setAllExerciseNames([...new Set(exercises.map(e => e.name))].sort())
+    supabase
+      .from('sport_exercises')
+      .select('name, sport_sessions!inner(user_id)')
+      .eq('sport_sessions.user_id', user.id)
+      .then(({ data }) => {
+        if (data) setAllExerciseNames([...new Set(data.map(e => e.name))].sort())
       })
   }, [user, daySessionId])
 
@@ -218,14 +218,12 @@ export default function Sport() {
         .neq('id', sid)
         .order('session_date', { ascending: false })
         .limit(1)
-        .then(({ data }) => {
-          setLastPerfs(prev => ({
-            ...prev,
-            [exo.name]: data?.length
-              ? { date: data[0].session_date, sets: data[0].sport_exercises[0].sport_sets, type: exo.type }
-              : null,
-          }))
-        })
+        .then(({ data }) => setLastPerfs(prev => ({
+          ...prev,
+          [exo.name]: data?.length
+            ? { date: data[0].session_date, sets: data[0].sport_exercises[0].sport_sets, type: exo.type }
+            : null,
+        })))
     }
   }
 
@@ -480,25 +478,13 @@ export default function Sport() {
                         </div>
                       </>
                     )}
-                    <div className="w-[22px] shrink-0 flex flex-col items-center gap-1">
+                    <div className="w-[22px] shrink-0 flex items-center justify-center">
                       <CheckCircleOutline
                         onClick={() => handleAddSet(exo, pi)}
                         disabled={exo.type === 'strength'
                           ? !pending.weight || !pending.reps
                           : !pending.duration}
                       />
-                      <button
-                        onClick={() => setAddingSet(prev => {
-                          const rows = [...(prev[exo.id] ?? [])]
-                          rows.splice(pi, 1)
-                          return { ...prev, [exo.id]: rows }
-                        })}
-                        className="min-w-0 min-h-0"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#c0befe">
-                          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-                        </svg>
-                      </button>
                     </div>
                   </div>
                 )

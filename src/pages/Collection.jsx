@@ -165,6 +165,29 @@ function VolumeGrid({ owned, total, ongoing, onChange }) {
   )
 }
 
+// Hash string → positive int (pour les créations manuelles)
+const strHash = (str) => {
+  let h = 0
+  for (let i = 0; i < str.length; i++) { h = Math.imul(31, h) + str.charCodeAt(i) | 0 }
+  return Math.abs(h) || 1
+}
+
+// Resize image file → base64 JPEG (max 200×280)
+const resizeImage = (file) => new Promise((resolve) => {
+  const img = new Image()
+  const url = URL.createObjectURL(file)
+  img.onload = () => {
+    const ratio = Math.min(200 / img.width, 280 / img.height, 1)
+    const canvas = document.createElement('canvas')
+    canvas.width = img.width * ratio
+    canvas.height = img.height * ratio
+    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+    URL.revokeObjectURL(url)
+    resolve(canvas.toDataURL('image/jpeg', 0.82))
+  }
+  img.src = url
+})
+
 // ─── AddMangaSheet ────────────────────────────────────────────────────────────
 function AddMangaSheet({ onClose, onSaved, category }) {
   const { user } = useAuth()
@@ -195,6 +218,18 @@ function AddMangaSheet({ onClose, onSaved, category }) {
       } catch {}
       setLoadingDetail(false)
     }
+  }
+
+  const handleCreateManual = () => {
+    setSelected({ mal_id: strHash(query || Date.now().toString()), title: query, volumes: null, ongoing: false, cover_url: null })
+    setOwned([])
+  }
+
+  const handleImagePick = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const dataUrl = await resizeImage(file)
+    setSelected(prev => ({ ...prev, cover_url: dataUrl }))
   }
 
   const handleSave = async () => {
@@ -260,14 +295,31 @@ function AddMangaSheet({ onClose, onSaved, category }) {
               ))}
             </ul>
           )}
+          {!searching && query.trim() && results.length === 0 && (
+            <button
+              onClick={handleCreateManual}
+              className="w-full h-11 border border-dashed border-[#a49ffe] rounded-[12px] text-[13px] font-medium text-[#6c63ff]"
+            >
+              Créer « {query} » manuellement
+            </button>
+          )}
         </>
       )}
       {selected && (
         <>
           <div className="flex items-center gap-4 p-3 bg-[#f2edfa] rounded-[12px]">
-            {selected.cover_url && (
-              <img src={selected.cover_url} alt={selected.title} className="w-14 h-20 object-cover rounded-[8px] shrink-0" />
-            )}
+            <label className="relative shrink-0 cursor-pointer group">
+              {selected.cover_url
+                ? <img src={selected.cover_url} alt={selected.title} className="w-14 h-20 object-cover rounded-[8px]" />
+                : <div className="w-14 h-20 bg-white/70 border border-dashed border-[#a49ffe] rounded-[8px] flex items-center justify-center">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#a49ffe"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                  </div>
+              }
+              <div className="absolute inset-0 rounded-[8px] bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+              </div>
+              <input type="file" accept="image/*" className="hidden" onChange={handleImagePick} />
+            </label>
             <div className="flex-1 min-w-0">
               <p className="text-[15px] font-bold text-[#211738] truncate">{selected.title}</p>
               <p className="text-[12px] text-[#6c63ff] mt-1">
@@ -277,6 +329,7 @@ function AddMangaSheet({ onClose, onSaved, category }) {
                     : selected.ongoing ? 'Nombre de tomes inconnu' : 'Terminé'
                 }
               </p>
+              {!selected.cover_url && <p className="text-[11px] text-[#a49ffe] mt-0.5">Toucher pour ajouter une image</p>}
             </div>
             <button onClick={() => setSelected(null)} className="text-[#736694] text-[12px] underline shrink-0">Changer</button>
           </div>

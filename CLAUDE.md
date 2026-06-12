@@ -77,19 +77,23 @@ supabase/
 `id` · `label` · `group_name` · `tags` (JSON) · `due_date` · `done` · `completed_at` · `position` · `jira_url` · `figma_url`
 
 ### `expenses`
-`id` · `amount` · `description` · `payer_id` · `debtor_id` · `created_by` · `expense_date` · `tags`
+`id` · `amount` · `description` · `payer_id` · `debtor_id` · `created_by` · `expense_date` (date) · `tags` (text[]) · `created_at`
+RLS : SELECT par `payer_id` ou `debtor_id` ; INSERT par `created_by` ; UPDATE par `payer_id` ou `debtor_id` ; DELETE par `created_by`.
 
 ### `reimbursements`
-Lié aux dépenses, track les paiements avec montant et date.
+`id` · `expense_id` · `reimbursed_by` · `amount` · `reimbursement_date` · `created_at`
+RLS : SELECT/INSERT si lié à une dépense accessible. DELETE si payer ou debtor de la dépense.
 
 ### `notifications`
-`id` · `user_id` · `type` · `read` — nouvelles dépenses et remboursements.
+`id` · `user_id` · `type` · `message` · `read` · `expense_id` · `created_at`
+Types : `new_expense` (notifie le débiteur à la création) · `reimbursement` (notifie le payeur au remboursement).
+RLS : SELECT/UPDATE par `user_id` ; INSERT par tout utilisateur authentifié (pour notifier autrui).
 
 ### `manga_collection`
 `id` · `user_id` · `mal_id` · `title` · `total_volumes` (null si en cours) · `owned_volumes` · `cover_url` · `created_at`
 Contrainte unique : `(user_id, mal_id)`
 
-Toutes les tables ont RLS activé (les utilisateurs ne voient que leurs propres données).
+Toutes les tables ont RLS activé.
 
 ## Patterns architecturaux
 
@@ -105,13 +109,26 @@ Toutes les tables ont RLS activé (les utilisateurs ne voient que leurs propres 
 Modal slide-up pour les formulaires. Toutes les pages d'ajout/édition l'utilisent.
 
 ### `<AppHeader title>`
-Header commun avec bouton menu hamburger + cloche notifications. À utiliser sur chaque nouvelle page.
+Header commun avec bouton menu hamburger + cloche notifications. Gère lui-même le Drawer et `useNotifications`. À utiliser sur chaque nouvelle page — ne pas dupliquer le header manuellement.
+
+### `<NotificationBell>`
+Utilisé en interne par `AppHeader`. Ne pas importer directement dans les pages.
 
 ### FormFields (`src/components/FormFields.jsx`)
 - `<TextField label required error ...props>`
 - `<DateField label value onChange>`
 - `<SelectField label options value onChange>`
+- `<SegmentedControl label options value onChange>`
+- `<SubmitButton disabled onClick>`
 - `<FieldLabel required>`
+
+## Comportements spécifiques Expenses
+
+- **Tags** : saisie libre (pas de catégories), majuscules autorisées, Entrée/virgule pour valider, Retour arrière pour supprimer. Suggestions issues des tags existants.
+- **Dates** : `expense_date` et `reimbursement_date` initialisées à aujourd'hui par défaut. Format `YYYY-MM-DD` (type `date` PostgreSQL).
+- **Groupement par date** : liste triée par `expense_date ?? created_at` décroissant, avec séparateur de date au-dessus de chaque groupe. La recherche inclut les dépenses soldées.
+- **Dépenses soldées** : masquées par défaut (filtre `done` ou recherche active les affiche, grisées).
+- **Notifications** : créées côté client après INSERT expense (→ débiteur) et après INSERT reimbursement (→ payeur).
 
 ## API externes
 

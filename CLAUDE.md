@@ -75,7 +75,8 @@ supabase/
 ├── manga_collection_add_category.sql   # ALTER: ajoute colonne category text default 'Mangas'
 ├── collection_shares_migration.sql     # Table collection_shares + policy shared_collection_read
 ├── collection_shares_recipient_delete.sql  # Policy: recipient peut supprimer un partage
-└── sport_migration.sql                 # Tables sport_sessions, sport_exercises, sport_sets + RLS
+├── sport_migration.sql                 # Tables sport_sessions, sport_exercises, sport_sets + RLS
+└── sport_add_muscle.sql                # ALTER sport_exercises ADD COLUMN muscle text
 ```
 
 ## Schéma base de données (Supabase)
@@ -116,7 +117,7 @@ RLS : owner peut select/insert/delete ; recipient peut select/update/delete
 RLS : CRUD par `user_id`. Créée automatiquement au premier exercice du jour.
 
 ### `sport_exercises`
-`id` · `session_id` · `name` (text) · `type` (strength|cardio) · `position` (int) · `created_at`
+`id` · `session_id` · `name` (text) · `type` (strength|cardio) · `muscle` (text, nullable) · `position` (int) · `created_at`
 RLS : accès via join `sport_sessions.user_id = auth.uid()`.
 
 ### `sport_sets`
@@ -188,27 +189,44 @@ Liste verticale. Chaque carte :
 ## Page Sport
 
 ### Calendrier semaine
-- Sous-header fixe (`fixed top-[76px]`) avec navigation semaine passée/courante (pas de futur)
+- Sous-header `sticky top-[76px]` (dans `pt-[76px]` wrapper, même pattern que Collection)
+- Navigation semaine passée/courante uniquement (pas de futur)
 - Cellules : lettre du jour + icône altère si session avec exercices ce jour-là
 - Jour sélectionné : `bg-[#6c63ff] rounded-[4px]` · Jour actuel : `border border-[#6c63ff]`
 - L'icône altère ne s'affiche que si `sport_exercises.count > 0` (pas de session vide)
 - `toDateStr()` définie dans `src/lib/date.js`, importée par Sport et Checklist — utilise `getFullYear/Month/Date` (pas `toISOString`) pour éviter le décalage timezone
 - Les perfs précédentes sont chargées en parallèle (`Promise.all`) au lieu de séquentiellement
-- Autocomplete exercices : 1 seule requête via join `!inner` sur `sport_sessions`
+- Autocomplete exercices : 1 seule requête via join `!inner` sur `sport_sessions`, s'ouvre vers le haut (`bottom-full`)
 
 ### Cartes exercice
-- Header : icône altère sur fond violet `rounded-[4px]` (37×36px) + nom + type + × supprimer
+- Header : icône du **muscle ciblé** (stroke SVG) sur fond violet `rounded-[4px]` (37×36px) + nom + muscle label + crayon édition + × supprimer
 - Colonnes **PREC / KG / REPS** (musculation) ou **PREC / Kcal / Durée** (cardio)
 - PREC = données de la session précédente pour ce numéro de série exact
-- Première série : `bg-[rgba(108,99,255,0.08)]`
-- ✓ rempli (non cliquable) sur séries validées · ✓ outline (cliquable) + × sur lignes en attente
+- Toutes les séries validées : `bg-[rgba(108,99,255,0.08)]`
+- ✓ rempli cliquable → remet la série en édition inline (UPDATE en DB à la revalidation)
+- ✓ outline sur lignes en attente (disabled si champs vides) · pas de croix sur les lignes en attente
 - Saisir le poids sur la première ligne le propage à toutes les lignes en attente
+- Valeurs min="0" sur tous les champs numériques
 
-### Flow d'ajout
+### Muscles (`sport_exercises.muscle`)
+- 6 groupes : `pectoraux` · `biceps` · `triceps` · `dos` · `jambes` · `epaules`
+- Icônes SVG style stroke (fill:none, strokeWidth:1.8) dans la constante `MUSCLES`
+- Migration : `supabase/sport_add_muscle.sql` (ALTER TABLE sport_exercises ADD COLUMN muscle text)
+- Sélecteur chips dans le formulaire d'ajout/édition, filtre l'autocomplete par muscle
+- Sélectionner un chip pré-sélectionne aussi `newExerciseMuscle`
+- Choisir une suggestion autocomplete hérite du muscle de l'exercice existant
+
+### Flow d'ajout exercice
+- BottomSheet avec `innerClassName="overflow-visible"` pour que l'autocomplete ne soit pas clippé
+- Formulaire : input nom (autocomplete) → chips muscle → toggle muscu/cardio → bouton Ajouter
 - Session auto-créée au premier `handleAddSet` via `ensureSession()`
 - Exercice ajouté → ligne de saisie ouverte automatiquement
 - Plusieurs lignes en attente simultanées possibles ("Ajouter une serie" toujours visible)
 - Validation d'une série → suppression de la ligne + déclenchement du `RestTimer`
+
+### Édition exercice
+- Bouton crayon dans le header de la carte → BottomSheet avec nom pré-rempli + chips muscle
+- `handleSaveExercise` → UPDATE `name` + `muscle` en DB
 
 ### RestTimer (`src/components/RestTimer.jsx`)
 - Overlay fixe en **haut** de l'écran (`fixed top-6`), z-50

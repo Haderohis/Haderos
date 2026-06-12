@@ -98,7 +98,7 @@ function NewExpenseModal({ currentUserId, onClose, onSaved, initialExpense, allT
 
   const [amount, setAmount] = useState(initialExpense ? String(initialExpense.amount) : '')
   const [description, setDescription] = useState(initialExpense?.description ?? '')
-  const [expenseDate, setExpenseDate] = useState(initialExpense?.expense_date?.slice(0, 10) ?? '')
+  const [expenseDate, setExpenseDate] = useState(initialExpense?.expense_date?.slice(0, 10) ?? new Date().toISOString().slice(0, 10))
   const [payer, setPayer] = useState(initPayer)
   const [otherUserId, setOtherUserId] = useState(initOther)
   const [users, setUsers] = useState([])
@@ -217,7 +217,7 @@ function ExpenseDetailModal({ expense, currentUserId, profiles, onClose, onSaved
   })
 
   const [amount, setAmount] = useState(remaining > 0 ? remaining.toFixed(2) : '')
-  const [reimbDate, setReimbDate] = useState('')
+  const [reimbDate, setReimbDate] = useState(new Date().toISOString().slice(0, 10))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [deletingReimbId, setDeletingReimbId] = useState(null)

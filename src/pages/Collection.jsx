@@ -29,6 +29,11 @@ function MangaCard({ item, onDelete, onUpdateOwned }) {
     await onUpdateOwned(item.id, next)
   }
 
+  const changeDisplayMax = async (next) => {
+    setDisplayMax(next)
+    await supabase.from('manga_collection').update({ total_volumes: next }).eq('id', item.id)
+  }
+
   return (
     <div className="bg-white/70 border border-white/85 rounded-[8px] p-2 flex flex-col gap-2">
       {/* Row 1 — title + badge */}
@@ -62,7 +67,7 @@ function MangaCard({ item, onDelete, onUpdateOwned }) {
               </button>
             ))}
             <button
-              onClick={() => setDisplayMax(d => d + 1)}
+              onClick={() => changeDisplayMax(displayMax + 1)}
               className="h-[32px] w-[32px] flex items-center justify-center rounded-[2px] text-[18px] font-semibold text-[#6c63ff] bg-[#f2edfa]"
               aria-label="Ajouter un tome"
             >
@@ -85,7 +90,7 @@ function MangaCard({ item, onDelete, onUpdateOwned }) {
           {menuOpen && (
             <div className="absolute right-0 top-full mt-1 z-20 bg-white rounded-[10px] shadow-lg border border-[#f0ebfa] overflow-hidden min-w-[140px]">
               <button
-                onClick={() => { setMenuOpen(false); setDisplayMax(d => Math.max(d - 1, owned.length > 0 ? Math.max(...owned) : 0)) }}
+                onClick={() => { setMenuOpen(false); changeDisplayMax(Math.max(displayMax - 1, owned.length > 0 ? Math.max(...owned) : 0)) }}
                 className="w-full px-4 py-3 text-left text-[13px] text-[#211738] font-medium hover:bg-[#f2edfa] border-b border-[#f0ebfa]"
               >
                 Retirer le dernier tome

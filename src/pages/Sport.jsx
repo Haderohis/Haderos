@@ -632,23 +632,6 @@ export default function Sport() {
         <BottomSheet onClose={() => { setShowAddExercise(false); setNewExerciseName(''); setNewExerciseType('strength'); setNewExerciseMuscle(null); setFilterMuscle(null) }}>
           <h2 className="text-[17px] font-bold text-[#211738]">Nouvel exercice</h2>
 
-          {/* Filtre muscle */}
-          <div className="flex flex-wrap gap-2">
-            {MUSCLES.map(m => {
-              const active = filterMuscle === m.key
-              return (
-                <button
-                  key={m.key}
-                  onPointerDown={e => { e.preventDefault(); setFilterMuscle(active ? null : m.key); if (!active) setNewExerciseMuscle(m.key); else setNewExerciseMuscle(null) }}
-                  className={`flex items-center gap-1.5 px-3 h-9 rounded-[20px] text-[12px] font-semibold transition-colors ${active ? 'bg-[#6c63ff] text-white' : 'bg-[#f2edfa] text-[#736694]'}`}
-                >
-                  <span className={active ? 'text-white' : 'text-[#6c63ff]'}>{m.icon(active ? 'white' : '#6c63ff')}</span>
-                  {m.label}
-                </button>
-              )
-            })}
-          </div>
-
           {/* Nom autocomplete */}
           <div className="relative flex flex-col">
             <input
@@ -692,6 +675,23 @@ export default function Sport() {
                 </ul>
               ) : null
             })()}
+          </div>
+
+          {/* Filtre muscle */}
+          <div className="flex flex-wrap gap-2">
+            {MUSCLES.map(m => {
+              const active = filterMuscle === m.key
+              return (
+                <button
+                  key={m.key}
+                  onPointerDown={e => { e.preventDefault(); setFilterMuscle(active ? null : m.key); if (!active) setNewExerciseMuscle(m.key); else setNewExerciseMuscle(null) }}
+                  className={`flex items-center gap-1.5 px-3 h-9 rounded-[20px] text-[12px] font-semibold transition-colors ${active ? 'bg-[#6c63ff] text-white' : 'bg-[#f2edfa] text-[#736694]'}`}
+                >
+                  <span>{m.icon(active ? 'white' : '#6c63ff')}</span>
+                  {m.label}
+                </button>
+              )
+            })}
           </div>
 
           {/* Toggle muscu / cardio */}

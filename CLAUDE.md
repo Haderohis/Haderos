@@ -33,6 +33,7 @@
 | `/settings` | Paramètres | Non |
 | `/collection` | Collection | Oui |
 | `/dashboard` | Dashboard | Oui |
+| `/sport` | Sport | Oui |
 
 ## Structure des fichiers
 
@@ -47,13 +48,15 @@ src/
 │   ├── Expenses.jsx         # Dépenses partagées + remboursements
 │   ├── Settings.jsx         # Placeholder
 │   ├── Dashboard.jsx
-│   └── Collection.jsx       # Collection perso (mangas + comics) avec partage
+│   ├── Collection.jsx       # Collection perso (mangas + comics) avec partage
+│   └── Sport.jsx            # Suivi sport : calendrier semaine, exercices, séries
 ├── components/
 │   ├── AppHeader.jsx        # Header partagé (menu + notifications) — prop titleExtra
 │   ├── Drawer.jsx           # Menu navigation latéral (fixed, nav scrollable)
 │   ├── BottomSheet.jsx      # Modal overlay réutilisable
 │   ├── FormFields.jsx       # TextField, DateField, SelectField, FieldLabel…
 │   ├── NotificationBell.jsx # Cloche + panel notifications (partage accept/refus)
+│   ├── RestTimer.jsx        # Timer de récupération 90s avec bip sonore
 │   └── ProtectedRoute.jsx
 ├── hooks/
 │   ├── useAuth.js           # Session, signIn, signOut
@@ -71,7 +74,8 @@ supabase/
 ├── manga_collection_owned_as_array.sql
 ├── manga_collection_add_category.sql   # ALTER: ajoute colonne category text default 'Mangas'
 ├── collection_shares_migration.sql     # Table collection_shares + policy shared_collection_read
-└── collection_shares_recipient_delete.sql  # Policy: recipient peut supprimer un partage
+├── collection_shares_recipient_delete.sql  # Policy: recipient peut supprimer un partage
+└── sport_migration.sql                 # Tables sport_sessions, sport_exercises, sport_sets + RLS
 ```
 
 ## Schéma base de données (Supabase)
@@ -106,6 +110,18 @@ RLS : CRUD par `user_id` + policy `shared_collection_read` (select si partage ac
 Contrainte unique : `(owner_id, shared_with_id)`
 RLS : owner peut select/insert/delete ; recipient peut select/update/delete
 - À l'acceptation, un partage inverse est créé automatiquement (bidirectionnel)
+
+### `sport_sessions`
+`id` · `user_id` · `session_date` (date) · `name` (text, optionnel) · `created_at`
+RLS : CRUD par `user_id`. Créée automatiquement au premier exercice du jour.
+
+### `sport_exercises`
+`id` · `session_id` · `name` (text) · `type` (strength|cardio) · `position` (int) · `created_at`
+RLS : accès via join `sport_sessions.user_id = auth.uid()`.
+
+### `sport_sets`
+`id` · `exercise_id` · `set_number` (int) · `reps` (int) · `weight_kg` (numeric) · `duration_seconds` (int) · `created_at`
+RLS : accès via join `sport_exercises → sport_sessions.user_id = auth.uid()`.
 
 Toutes les tables ont RLS activé.
 
@@ -168,6 +184,35 @@ Liste verticale. Chaque carte :
 - Création manuelle disponible dès qu'il y a du texte (même si résultats présents)
 - Titre éditable dans la vue de confirmation
 - Image cliquable → picker fichier → resize canvas → base64
+
+## Page Sport
+
+### Calendrier semaine
+- Sous-header fixe (`fixed top-[76px]`) avec navigation semaine passée/courante (pas de futur)
+- Cellules : lettre du jour + icône altère si session avec exercices ce jour-là
+- Jour sélectionné : `bg-[#6c63ff] rounded-[4px]` · Jour actuel : `border border-[#6c63ff]`
+- L'icône altère ne s'affiche que si `sport_exercises.count > 0` (pas de session vide)
+- `toDateStr()` utilise `getFullYear/Month/Date` (pas `toISOString`) pour éviter le décalage timezone
+
+### Cartes exercice
+- Header : icône altère sur fond violet `rounded-[4px]` (37×36px) + nom + type + × supprimer
+- Colonnes **PREC / KG / REPS** (musculation) ou **PREC / Kcal / Durée** (cardio)
+- PREC = données de la session précédente pour ce numéro de série exact
+- Première série : `bg-[rgba(108,99,255,0.08)]`
+- ✓ rempli (non cliquable) sur séries validées · ✓ outline (cliquable) + × sur lignes en attente
+- Saisir le poids sur la première ligne le propage à toutes les lignes en attente
+
+### Flow d'ajout
+- Session auto-créée au premier `handleAddSet` via `ensureSession()`
+- Exercice ajouté → ligne de saisie ouverte automatiquement
+- Plusieurs lignes en attente simultanées possibles ("Ajouter une serie" toujours visible)
+- Validation d'une série → suppression de la ligne + déclenchement du `RestTimer`
+
+### RestTimer (`src/components/RestTimer.jsx`)
+- Overlay fixe en **haut** de l'écran (`fixed top-6`), z-50
+- 90 secondes, cercle SVG progressif, bouton "Passer"
+- Bip sonore à la fin via Web Audio API (2 bips courts + 1 long)
+- Se ferme automatiquement 1,2s après le bip
 
 ## Comportements spécifiques Expenses
 

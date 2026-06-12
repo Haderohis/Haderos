@@ -321,7 +321,11 @@ function AddMangaSheet({ onClose, onSaved, category }) {
               <input type="file" accept="image/*" className="hidden" onChange={handleImagePick} />
             </label>
             <div className="flex-1 min-w-0">
-              <p className="text-[15px] font-bold text-[#211738] truncate">{selected.title}</p>
+              <input
+                value={selected.title}
+                onChange={e => setSelected(prev => ({ ...prev, title: e.target.value }))}
+                className="w-full text-[15px] font-bold text-[#211738] bg-transparent outline-none border-b border-[#a49ffe] pb-0.5 truncate"
+              />
               <p className="text-[12px] text-[#6c63ff] mt-1">
                 {loadingDetail ? 'Récupération...'
                   : selected.volumes

@@ -41,6 +41,51 @@ const TODAY = toDateStr(new Date())
 const CURRENT_WEEK_START = toDateStr(getWeekStart(new Date()))
 const DAY_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
 
+const MUSCLES = [
+  { key: 'pectoraux', label: 'Pectoraux', icon: (color = 'white') => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill={color}>
+      <path d="M12 3C7 3 3 7 3 12c0 2.4.9 4.6 2.4 6.3C6.5 16.5 8 14.5 8 12c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2 0 2.5 1.5 4.5 2.6 6.3C20.1 16.6 21 14.4 21 12c0-5-4-9-9-9z"/>
+      <path d="M12 22c1.4 0 2.7-.3 3.9-.8C14.8 19.5 14 17.8 14 16h-4c0 1.8-.8 3.5-1.9 5.2C9.3 21.7 10.6 22 12 22z"/>
+    </svg>
+  )},
+  { key: 'triceps', label: 'Triceps', icon: (color = 'white') => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill={color}>
+      <path d="M9 3.5C9 2.67 9.67 2 10.5 2S12 2.67 12 3.5 11.33 5 10.5 5 9 4.33 9 3.5zM7 20.5l1.5-8L7 11V7h7l-1 4 1.5 1.5L13 20.5h-2l-1-5.5-1 5.5H7z"/>
+    </svg>
+  )},
+  { key: 'dos', label: 'Dos', icon: (color = 'white') => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill={color}>
+      <path d="M12 2C9.24 2 7 4.24 7 7v1H5v2h2v9h2v-4h6v4h2V10h2V8h-2V7c0-2.76-2.24-5-5-5zm0 2c1.65 0 3 1.35 3 3v1H9V7c0-1.65 1.35-3 3-3zm-3 8h6v3H9v-3z"/>
+    </svg>
+  )},
+  { key: 'biceps', label: 'Biceps', icon: (color = 'white') => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill={color}>
+      <path d="M10.5 2C9.67 2 9 2.67 9 3.5S9.67 5 10.5 5 12 4.33 12 3.5 11.33 2 10.5 2zM8 7l-1 5 2.5 1L8 20h2l1.5-5.5L14 16l-1-4 2-1-1-4H8z"/>
+    </svg>
+  )},
+  { key: 'jambes', label: 'Jambes', icon: (color = 'white') => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill={color}>
+      <path d="M11.5 2C10.12 2 9 3.12 9 4.5S10.12 7 11.5 7 14 5.88 14 4.5 12.88 2 11.5 2zM9 8l-1 5h3l1 9h2l1-9h3l-1-5H9z"/>
+    </svg>
+  )},
+  { key: 'epaules', label: 'Épaules', icon: (color = 'white') => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill={color}>
+      <path d="M12 2C10.34 2 9 3.34 9 5s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zM6 8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM9 13l-3 9h2l2-6 2 6h2l2-6 2 6h2l-3-9H9z"/>
+    </svg>
+  )},
+  { key: 'cardio', label: 'Cardio', icon: (color = 'white') => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill={color}>
+      <path d="M13.49 5.48c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3.6 13.9l1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3c1.3 1.5 3.3 2.5 5.5 2.5v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1l-5.2 2.2v4.7h2v-3.4l1.8-.7-1.6 8.1-4.9-1-.4 2 7 1.4z"/>
+    </svg>
+  )},
+]
+
+function MuscleIcon({ muscleKey, size = 18, color = 'white' }) {
+  const m = MUSCLES.find(m => m.key === muscleKey)
+  if (!m) return <DumbbellIcon size={size} color={color} />
+  return <>{m.icon(color)}</>
+}
+
 function DumbbellIcon({ size = 18, color = 'white' }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
@@ -83,11 +128,13 @@ export default function Sport() {
   const [showAddExercise, setShowAddExercise] = useState(false)
   const [newExerciseName, setNewExerciseName] = useState('')
   const [newExerciseType, setNewExerciseType] = useState('strength')
+  const [newExerciseMuscle, setNewExerciseMuscle] = useState(null)
+  const [filterMuscle, setFilterMuscle] = useState(null)
   const [lastPerfs, setLastPerfs] = useState({})
   const [addingSet, setAddingSet] = useState({}) // { [exoId]: Array<{weight, reps, duration}> }
   const [editingSet, setEditingSet] = useState({}) // { [setId]: {weight, reps, duration} }
   const [restTimer, setRestTimer] = useState(false)
-  const [allExerciseNames, setAllExerciseNames] = useState([])
+  const [allExercises, setAllExercises] = useState([]) // { name, muscle }
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -175,10 +222,14 @@ export default function Sport() {
     if (!user) return
     supabase
       .from('sport_exercises')
-      .select('name, sport_sessions!inner(user_id)')
+      .select('name, muscle, sport_sessions!inner(user_id)')
       .eq('sport_sessions.user_id', user.id)
       .then(({ data }) => {
-        if (data) setAllExerciseNames([...new Set(data.map(e => e.name))].sort())
+        if (data) {
+          const seen = new Map()
+          data.forEach(e => { if (!seen.has(e.name)) seen.set(e.name, e.muscle) })
+          setAllExercises([...seen.entries()].map(([name, muscle]) => ({ name, muscle })).sort((a, b) => a.name.localeCompare(b.name)))
+        }
       })
   }, [user, daySessionId])
 
@@ -203,7 +254,7 @@ export default function Sport() {
     if (!sid) { setSaving(false); return }
     const { data: exo } = await supabase
       .from('sport_exercises')
-      .insert({ session_id: sid, name: newExerciseName.trim(), type: newExerciseType, position: dayExercises.length })
+      .insert({ session_id: sid, name: newExerciseName.trim(), type: newExerciseType, muscle: newExerciseMuscle, position: dayExercises.length })
       .select().single()
     setSaving(false)
     if (exo) {
@@ -212,6 +263,7 @@ export default function Sport() {
       setShowAddExercise(false)
       setNewExerciseName('')
       setNewExerciseType('strength')
+      setNewExerciseMuscle(null)
       // Auto-open first set row
       setAddingSet(prev => ({ ...prev, [exo.id]: [{ weight: '', reps: '', duration: '' }] }))
       supabase
@@ -388,12 +440,12 @@ export default function Sport() {
                   <div className="relative w-[37px] h-[36px] shrink-0">
                     <div className="absolute inset-0 bg-[#6c63ff] rounded-[4px]" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <DumbbellIcon size={18} color="white" />
+                      <MuscleIcon muscleKey={exo.muscle} size={18} color="white" />
                     </div>
                   </div>
                   <div className="flex flex-col gap-[3px]">
                     <p className="text-[14px] font-semibold text-black leading-tight">{exo.name}</p>
-                    <p className="text-[10px] text-[#8883aa]">{exo.type === 'strength' ? 'Musculation' : 'Cardio'}</p>
+                    <p className="text-[10px] text-[#8883aa]">{exo.muscle ? MUSCLES.find(m => m.key === exo.muscle)?.label : (exo.type === 'strength' ? 'Musculation' : 'Cardio')}</p>
                   </div>
                 </div>
                 <button onClick={() => handleDeleteExercise(exo.id)} className="shrink-0 w-6 h-6 flex items-center justify-center min-w-0 min-h-0">
@@ -577,8 +629,27 @@ export default function Sport() {
 
       {/* BottomSheet — Nouvel exercice */}
       {showAddExercise && (
-        <BottomSheet onClose={() => { setShowAddExercise(false); setNewExerciseName(''); setNewExerciseType('strength') }}>
+        <BottomSheet onClose={() => { setShowAddExercise(false); setNewExerciseName(''); setNewExerciseType('strength'); setNewExerciseMuscle(null); setFilterMuscle(null) }}>
           <h2 className="text-[17px] font-bold text-[#211738]">Nouvel exercice</h2>
+
+          {/* Filtre muscle */}
+          <div className="flex flex-wrap gap-2">
+            {MUSCLES.map(m => {
+              const active = filterMuscle === m.key
+              return (
+                <button
+                  key={m.key}
+                  onPointerDown={e => { e.preventDefault(); setFilterMuscle(active ? null : m.key); if (!active) setNewExerciseMuscle(m.key); else setNewExerciseMuscle(null) }}
+                  className={`flex items-center gap-1.5 px-3 h-9 rounded-[20px] text-[12px] font-semibold transition-colors ${active ? 'bg-[#6c63ff] text-white' : 'bg-[#f2edfa] text-[#736694]'}`}
+                >
+                  <span className={active ? 'text-white' : 'text-[#6c63ff]'}>{m.icon(active ? 'white' : '#6c63ff')}</span>
+                  {m.label}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Nom autocomplete */}
           <div className="relative flex flex-col">
             <input
               type="text"
@@ -591,22 +662,30 @@ export default function Sport() {
               className="h-12 w-full px-4 bg-[#f2edfa] rounded-[10px] text-[14px] text-[#211738] placeholder-[#a49ffe] outline-none"
             />
             {showSuggestions && (() => {
-              const suggestions = allExerciseNames
-                .filter(n => n.toLowerCase().includes(newExerciseName.toLowerCase()) && n !== newExerciseName)
+              const suggestions = allExercises
+                .filter(e => {
+                  const matchName = e.name.toLowerCase().includes(newExerciseName.toLowerCase()) && e.name !== newExerciseName
+                  const matchMuscle = !filterMuscle || e.muscle === filterMuscle
+                  return matchName && matchMuscle
+                })
                 .slice(0, 6)
               return suggestions.length > 0 ? (
                 <ul className="absolute left-0 right-0 bottom-full mb-1 bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-[#f2edfa]">
-                  {suggestions.map(name => (
+                  {suggestions.map(({ name, muscle }) => (
                     <li key={name}>
                       <button
                         type="button"
-                        onPointerDown={e => { e.preventDefault(); setNewExerciseName(name); setShowSuggestions(false) }}
+                        onPointerDown={e => {
+                          e.preventDefault()
+                          setNewExerciseName(name)
+                          if (muscle) { setNewExerciseMuscle(muscle); setFilterMuscle(muscle) }
+                          setShowSuggestions(false)
+                        }}
                         className="w-full text-left px-4 py-3 text-[13px] text-[#211738] hover:bg-[#f2edfa] flex items-center gap-2"
                       >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#a49ffe">
-                          <path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z"/>
-                        </svg>
-                        {name}
+                        <span className="text-[#6c63ff]">{muscle ? MUSCLES.find(m => m.key === muscle)?.icon('#6c63ff') : <DumbbellIcon size={14} color="#a49ffe" />}</span>
+                        <span className="flex-1">{name}</span>
+                        {muscle && <span className="text-[11px] text-[#a49ffe]">{MUSCLES.find(m => m.key === muscle)?.label}</span>}
                       </button>
                     </li>
                   ))}
@@ -614,6 +693,8 @@ export default function Sport() {
               ) : null
             })()}
           </div>
+
+          {/* Toggle muscu / cardio */}
           <div className="flex bg-[#f2edfa] rounded-[10px] p-1 gap-1">
             {[
               ['strength', 'Musculation', <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z"/></svg>],
@@ -626,6 +707,7 @@ export default function Sport() {
               </button>
             ))}
           </div>
+
           <button
             onClick={handleAddExercise}
             disabled={!newExerciseName.trim() || saving}

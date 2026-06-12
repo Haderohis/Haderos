@@ -189,7 +189,7 @@ export default function Sport() {
 
         const { data: exercises } = await supabase
           .from('sport_exercises')
-          .select('id, name, type, position, sport_sets(id, set_number, reps, weight_kg, duration_seconds)')
+          .select('id, name, type, muscle, position, sport_sets(id, set_number, reps, weight_kg, duration_seconds)')
           .eq('session_id', sid)
           .order('position')
 

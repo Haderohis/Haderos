@@ -65,10 +65,7 @@ export function useNotifications(userId) {
       })
     }
 
-    // Met à jour l'état local pour masquer les boutons immédiatement
-    setNotifications(prev => prev.map(n =>
-      n.id === notification.id ? { ...n, read: true, data: { ...n.data, status: 'accepted' } } : n
-    ))
+    setNotifications(prev => prev.filter(n => n.id !== notification.id))
   }, [])
 
   const declineShare = useCallback(async (notification) => {
@@ -82,9 +79,7 @@ export function useNotifications(userId) {
 
     await supabase.from('notifications').update({ read: true }).eq('id', notification.id)
 
-    setNotifications(prev => prev.map(n =>
-      n.id === notification.id ? { ...n, read: true, data: { ...n.data, status: 'declined' } } : n
-    ))
+    setNotifications(prev => prev.filter(n => n.id !== notification.id))
   }, [])
 
   const deleteNotification = useCallback(async (id) => {

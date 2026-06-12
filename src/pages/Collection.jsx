@@ -62,9 +62,9 @@ function MangaCard({ item, onDelete, onUpdateOwned }) {
               </button>
             ))}
             <button
-              onClick={() => setDisplayMax(d => d + 10)}
+              onClick={() => setDisplayMax(d => d + 1)}
               className="h-[32px] w-[32px] flex items-center justify-center rounded-[2px] text-[18px] font-semibold text-[#6c63ff] bg-[#f2edfa]"
-              aria-label="Afficher plus"
+              aria-label="Ajouter un tome"
             >
               +
             </button>
@@ -83,7 +83,13 @@ function MangaCard({ item, onDelete, onUpdateOwned }) {
             </svg>
           </button>
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 z-20 bg-white rounded-[10px] shadow-lg border border-[#f0ebfa] overflow-hidden min-w-[120px]">
+            <div className="absolute right-0 top-full mt-1 z-20 bg-white rounded-[10px] shadow-lg border border-[#f0ebfa] overflow-hidden min-w-[140px]">
+              <button
+                onClick={() => { setMenuOpen(false); setDisplayMax(d => Math.max(d - 1, owned.length > 0 ? Math.max(...owned) : 0)) }}
+                className="w-full px-4 py-3 text-left text-[13px] text-[#211738] font-medium hover:bg-[#f2edfa] border-b border-[#f0ebfa]"
+              >
+                Retirer le dernier tome
+              </button>
               <button
                 onClick={() => { setMenuOpen(false); onDelete(item.id) }}
                 className="w-full px-4 py-3 text-left text-[13px] text-[#ef4444] font-medium hover:bg-[#fee2e2]"

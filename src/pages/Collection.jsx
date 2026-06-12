@@ -15,10 +15,19 @@ function formatOwnedLabel(ownedArr, total) {
 }
 
 // ─── MangaCard ────────────────────────────────────────────────────────────────
-function MangaCard({ item, onDelete }) {
+function MangaCard({ item, onDelete, onUpdateOwned }) {
   const [menuOpen, setMenuOpen] = useState(false)
-  const owned = item.owned_volumes ?? []
-  const maxVol = item.total_volumes ?? (owned.length ? Math.max(...owned) : 0)
+  const [owned, setOwned] = useState(item.owned_volumes ?? [])
+  const [displayMax, setDisplayMax] = useState(() => {
+    const base = item.total_volumes ?? (item.owned_volumes?.length ? Math.max(...(item.owned_volumes ?? [])) : 0)
+    return item.ongoing ? Math.max(base, (item.owned_volumes?.length ? Math.max(...(item.owned_volumes ?? [])) : 0) + 5) : base
+  })
+
+  const toggleVolume = async (n) => {
+    const next = owned.includes(n) ? owned.filter(v => v !== n) : [...owned, n].sort((a, b) => a - b)
+    setOwned(next)
+    await onUpdateOwned(item.id, next)
+  }
 
   return (
     <div className="bg-white/70 border border-white/85 rounded-[8px] p-2 flex flex-col gap-2">
@@ -38,19 +47,28 @@ function MangaCard({ item, onDelete }) {
           : <div className="w-[34px] h-[48px] bg-[#f2edfa] rounded-[4px] shrink-0" />
         }
 
-        {/* Volume chips — horizontal scroll */}
-        <div className="flex-1 overflow-x-auto min-w-0">
-          <div className="flex gap-1 w-max">
-            {Array.from({ length: maxVol }, (_, i) => i + 1).map(n => (
-              <div
+        {/* Volume chips — horizontal scroll with margins */}
+        <div className="flex-1 overflow-x-auto min-w-0 mx-1">
+          <div className="flex items-center gap-1 w-max py-1">
+            {Array.from({ length: displayMax }, (_, i) => i + 1).map(n => (
+              <button
                 key={n}
-                className={`h-[32px] min-w-[24px] px-1 flex items-center justify-center rounded-[2px] text-[14px] font-semibold text-black ${
+                onClick={() => toggleVolume(n)}
+                className={`h-[32px] min-w-[24px] px-1 flex items-center justify-center rounded-[2px] text-[14px] font-semibold text-black transition-colors ${
                   owned.includes(n) ? 'bg-[#ada7fd]' : 'bg-[#d5d3dc]'
                 }`}
               >
                 {n}
-              </div>
+              </button>
             ))}
+            {item.ongoing && (
+              <button
+                onClick={() => setDisplayMax(d => d + 10)}
+                className="h-[32px] px-2 flex items-center justify-center rounded-[2px] text-[12px] font-semibold text-[#6c63ff] bg-[#f2edfa] whitespace-nowrap"
+              >
+                +10
+              </button>
+            )}
           </div>
         </div>
 
@@ -117,7 +135,7 @@ function VolumeGrid({ owned, total, ongoing, onChange }) {
 }
 
 // ─── AddMangaSheet ────────────────────────────────────────────────────────────
-function AddMangaSheet({ onClose, onSaved }) {
+function AddMangaSheet({ onClose, onSaved, category }) {
   const { user } = useAuth()
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState(null)
@@ -159,6 +177,7 @@ function AddMangaSheet({ onClose, onSaved }) {
         owned_volumes: owned,
         cover_url: selected.cover_url,
         ongoing: selected.ongoing,
+        category: category ?? 'Mangas',
       },
       { onConflict: 'user_id,mal_id' }
     )
@@ -457,16 +476,22 @@ export default function Collection() {
       .from('manga_collection')
       .select('*')
       .eq('user_id', user.id)
+      .eq('category', category)
       .order('created_at', { ascending: false })
     setMangas(data ?? [])
     setLoading(false)
-  }, [user])
+  }, [user, category])
 
-  useEffect(() => { fetchCollection() }, [fetchCollection])
+  useEffect(() => { fetchCollection() }, [fetchCollection, category])
 
   const handleDelete = async (id) => {
     await supabase.from('manga_collection').delete().eq('id', id)
     setMangas(prev => prev.filter(m => m.id !== id))
+  }
+
+  const handleUpdateOwned = async (id, newOwned) => {
+    await supabase.from('manga_collection').update({ owned_volumes: newOwned }).eq('id', id)
+    setMangas(prev => prev.map(m => m.id === id ? { ...m, owned_volumes: newOwned } : m))
   }
 
   const filtered = useMemo(() =>
@@ -530,7 +555,7 @@ export default function Collection() {
           ) : (
             <div className="flex flex-col gap-2">
               {filtered.map(item => (
-                <MangaCard key={item.id} item={item} onDelete={handleDelete} />
+                <MangaCard key={item.id} item={item} onDelete={handleDelete} onUpdateOwned={handleUpdateOwned} />
               ))}
             </div>
           )}
@@ -548,7 +573,7 @@ export default function Collection() {
       </div>
 
       {sheetOpen && (
-        <AddMangaSheet onClose={() => setSheetOpen(false)} onSaved={fetchCollection} />
+        <AddMangaSheet onClose={() => setSheetOpen(false)} onSaved={fetchCollection} category={category} />
       )}
       {shareOpen && (
         <ShareSheet

@@ -47,9 +47,9 @@ function MangaCard({ item, onDelete, onUpdateOwned }) {
           : <div className="w-[34px] h-[48px] bg-[#f2edfa] rounded-[4px] shrink-0" />
         }
 
-        {/* Volume chips — horizontal scroll with margins */}
-        <div className="flex-1 overflow-x-auto min-w-0 mx-1">
-          <div className="flex items-center gap-1 w-max py-1">
+        {/* Volume chips — horizontal scroll, centered when few */}
+        <div className="flex-1 overflow-x-auto min-w-0 flex">
+          <div className="flex items-center gap-1 mx-auto py-1 px-1">
             {Array.from({ length: displayMax }, (_, i) => i + 1).map(n => (
               <button
                 key={n}
@@ -61,14 +61,13 @@ function MangaCard({ item, onDelete, onUpdateOwned }) {
                 {n}
               </button>
             ))}
-            {item.ongoing && (
-              <button
-                onClick={() => setDisplayMax(d => d + 10)}
-                className="h-[32px] px-2 flex items-center justify-center rounded-[2px] text-[12px] font-semibold text-[#6c63ff] bg-[#f2edfa] whitespace-nowrap"
-              >
-                +10
-              </button>
-            )}
+            <button
+              onClick={() => setDisplayMax(d => d + 10)}
+              className="h-[32px] w-[32px] flex items-center justify-center rounded-[2px] text-[18px] font-semibold text-[#6c63ff] bg-[#f2edfa]"
+              aria-label="Afficher plus"
+            >
+              +
+            </button>
           </div>
         </div>
 

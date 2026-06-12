@@ -6,7 +6,7 @@ import AppHeader from '../components/AppHeader'
 import BottomSheet from '../components/BottomSheet'
 import { TextField, FieldLabel } from '../components/FormFields'
 
-const CATEGORIES = ['Mangas', 'Jeux vidéo', 'Comics', 'Livres', 'Cartes']
+const CATEGORIES = ['Mangas', 'Comics']
 
 function formatOwnedLabel(ownedArr, total) {
   const count = ownedArr.length

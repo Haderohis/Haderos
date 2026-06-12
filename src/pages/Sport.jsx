@@ -130,6 +130,7 @@ export default function Sport() {
   const [newExerciseType, setNewExerciseType] = useState('strength')
   const [newExerciseMuscle, setNewExerciseMuscle] = useState(null)
   const [filterMuscle, setFilterMuscle] = useState(null)
+  const [editingExercise, setEditingExercise] = useState(null) // { id, name, muscle }
   const [lastPerfs, setLastPerfs] = useState({})
   const [addingSet, setAddingSet] = useState({}) // { [exoId]: Array<{weight, reps, duration}> }
   const [editingSet, setEditingSet] = useState({}) // { [setId]: {weight, reps, duration} }
@@ -316,6 +317,13 @@ export default function Sport() {
     setEditingSet(prev => { const n = { ...prev }; delete n[set.id]; return n })
   }
 
+  const handleSaveExercise = async () => {
+    if (!editingExercise || !editingExercise.name.trim()) return
+    await supabase.from('sport_exercises').update({ name: editingExercise.name.trim(), muscle: editingExercise.muscle }).eq('id', editingExercise.id)
+    setDayExercises(prev => prev.map(e => e.id === editingExercise.id ? { ...e, name: editingExercise.name.trim(), muscle: editingExercise.muscle } : e))
+    setEditingExercise(null)
+  }
+
   const handleDeleteExercise = async (exoId) => {
     await supabase.from('sport_exercises').delete().eq('id', exoId)
     setDayExercises(prev => prev.filter(e => e.id !== exoId))
@@ -448,11 +456,18 @@ export default function Sport() {
                     <p className="text-[10px] text-[#8883aa]">{exo.muscle ? MUSCLES.find(m => m.key === exo.muscle)?.label : (exo.type === 'strength' ? 'Musculation' : 'Cardio')}</p>
                   </div>
                 </div>
-                <button onClick={() => handleDeleteExercise(exo.id)} className="shrink-0 w-6 h-6 flex items-center justify-center min-w-0 min-h-0">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="#c0befe">
-                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-                  </svg>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setEditingExercise({ id: exo.id, name: exo.name, muscle: exo.muscle ?? null })} className="shrink-0 w-6 h-6 flex items-center justify-center min-w-0 min-h-0">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="#a49ffe">
+                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                    </svg>
+                  </button>
+                  <button onClick={() => handleDeleteExercise(exo.id)} className="shrink-0 w-6 h-6 flex items-center justify-center min-w-0 min-h-0">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#c0befe">
+                      <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               {/* Column headers */}
@@ -713,6 +728,42 @@ export default function Sport() {
             disabled={!newExerciseName.trim() || saving}
             className="h-12 w-full bg-[#6c63ff] disabled:opacity-50 text-white font-semibold rounded-[12px]">
             {saving ? 'Ajout…' : 'Ajouter'}
+          </button>
+        </BottomSheet>
+      )}
+
+      {/* BottomSheet — Édition exercice */}
+      {editingExercise && (
+        <BottomSheet onClose={() => setEditingExercise(null)}>
+          <h2 className="text-[17px] font-bold text-[#211738]">Modifier l'exercice</h2>
+          <input
+            type="text"
+            placeholder="Nom de l'exercice"
+            value={editingExercise.name}
+            onChange={e => setEditingExercise(prev => ({ ...prev, name: e.target.value }))}
+            autoFocus
+            className="h-12 w-full px-4 bg-[#f2edfa] rounded-[10px] text-[14px] text-[#211738] placeholder-[#a49ffe] outline-none"
+          />
+          <div className="flex flex-wrap gap-2">
+            {MUSCLES.map(m => {
+              const active = editingExercise.muscle === m.key
+              return (
+                <button
+                  key={m.key}
+                  onPointerDown={e => { e.preventDefault(); setEditingExercise(prev => ({ ...prev, muscle: active ? null : m.key })) }}
+                  className={`flex items-center gap-1.5 px-3 h-9 rounded-[20px] text-[12px] font-semibold transition-colors ${active ? 'bg-[#6c63ff] text-white' : 'bg-[#f2edfa] text-[#736694]'}`}
+                >
+                  <span>{m.icon(active ? 'white' : '#6c63ff')}</span>
+                  {m.label}
+                </button>
+              )
+            })}
+          </div>
+          <button
+            onClick={handleSaveExercise}
+            disabled={!editingExercise.name.trim()}
+            className="h-12 w-full bg-[#6c63ff] disabled:opacity-50 text-white font-semibold rounded-[12px]">
+            Enregistrer
           </button>
         </BottomSheet>
       )}

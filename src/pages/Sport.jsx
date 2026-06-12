@@ -429,7 +429,7 @@ export default function Sport() {
                     <div className="flex-1 flex justify-center">
                       {editing ? (
                         <input
-                          type="number" inputMode="decimal" placeholder="—"
+                          type="number" inputMode="decimal" min="0" placeholder="—"
                           value={editing.weight ?? ''}
                           onChange={e => setEditingSet(prev => ({ ...prev, [set.id]: { ...prev[set.id], weight: e.target.value } }))}
                           className="w-[51px] bg-white/60 border border-[#6c63ff] rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
@@ -446,7 +446,7 @@ export default function Sport() {
                       {editing ? (
                         exo.type === 'strength' ? (
                           <input
-                            type="number" inputMode="numeric" placeholder="—"
+                            type="number" inputMode="numeric" min="0" placeholder="—"
                             value={editing.reps ?? ''}
                             onChange={e => setEditingSet(prev => ({ ...prev, [set.id]: { ...prev[set.id], reps: e.target.value } }))}
                             className="w-[51px] bg-white/60 border border-[#6c63ff] rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
@@ -494,7 +494,7 @@ export default function Sport() {
                       <>
                         <div className="flex-1 flex justify-center">
                           <input
-                            type="number" inputMode="decimal" placeholder="—"
+                            type="number" inputMode="decimal" min="0" placeholder="—"
                             value={pending.weight ?? ''}
                             onChange={e => setAddingSet(prev => {
                               const rows = [...(prev[exo.id] ?? [])]
@@ -509,7 +509,7 @@ export default function Sport() {
                         </div>
                         <div className="flex-1 flex justify-center">
                           <input
-                            type="number" inputMode="numeric" placeholder="—"
+                            type="number" inputMode="numeric" min="0" placeholder="—"
                             value={pending.reps ?? ''}
                             onChange={e => setAddingSet(prev => {
                               const rows = [...(prev[exo.id] ?? [])]

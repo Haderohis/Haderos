@@ -374,7 +374,7 @@ export default function Sport() {
     : `${weekStart.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} – ${addDays(weekStart, 6).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`
 
   return (
-    <div className="min-h-dvh bg-[#f6f4f9] relative overflow-x-hidden">
+    <div className="min-h-dvh bg-[#f6f4f9] relative">
       <div className="absolute top-[-80px] left-[-60px] w-[320px] h-[320px] rounded-full bg-[#c4b5fd] opacity-20 blur-3xl pointer-events-none" />
       <div className="absolute top-[200px] right-[-80px] w-[260px] h-[260px] rounded-full bg-[#a5f3fc] opacity-15 blur-3xl pointer-events-none" />
       <div className="absolute top-[460px] left-[40px] w-[240px] h-[240px] rounded-full bg-[#fde68a] opacity-15 blur-3xl pointer-events-none" />

@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 
 const fmtTime = (iso) => {
-  const d = new Date(iso)
+  const normalized = iso && !iso.endsWith('Z') && !iso.includes('+') ? iso + 'Z' : iso
+  const d = new Date(normalized)
   const now = new Date()
   const diffMin = Math.floor((now - d) / 60000)
   if (diffMin < 1) return "À l'instant"

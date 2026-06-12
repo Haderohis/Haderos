@@ -41,22 +41,24 @@ export function useNotifications(userId) {
     const ownerId = notification.data?.owner_id
     if (!shareId) return
 
-    await supabase
-      .from('collection_shares')
-      .update({ status: 'accepted' })
-      .eq('id', shareId)
+    // Récupère l'utilisateur courant directement pour éviter les stale closures
+    const { data: { user } } = await supabase.auth.getUser()
+    const currentUserId = user?.id
+    if (!currentUserId) return
 
-    // Partage inverse : l'accepteur partage aussi sa collection avec l'owner
-    if (ownerId && userId) {
-      await supabase.from('collection_shares').upsert(
-        { owner_id: userId, shared_with_id: ownerId, status: 'accepted' },
+    const [updateResult] = await Promise.all([
+      supabase.from('collection_shares').update({ status: 'accepted' }).eq('id', shareId),
+      // Partage inverse
+      ownerId ? supabase.from('collection_shares').upsert(
+        { owner_id: currentUserId, shared_with_id: ownerId, status: 'accepted' },
         { onConflict: 'owner_id,shared_with_id' }
-      )
-    }
+      ) : Promise.resolve(),
+    ])
+
+    if (updateResult.error) return
 
     await supabase.from('notifications').update({ read: true }).eq('id', notification.id)
 
-    // Notifie l'owner que la demande a été acceptée
     if (ownerId) {
       await supabase.from('notifications').insert({
         user_id: ownerId,
@@ -69,7 +71,7 @@ export function useNotifications(userId) {
     setNotifications(prev => prev.map(n =>
       n.id === notification.id ? { ...n, read: true, data: { ...n.data, status: 'accepted' } } : n
     ))
-  }, [userId])
+  }, [])
 
   const declineShare = useCallback(async (notification) => {
     const shareId = notification.data?.share_id

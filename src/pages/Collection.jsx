@@ -295,7 +295,7 @@ function AddMangaSheet({ onClose, onSaved, category }) {
               ))}
             </ul>
           )}
-          {!searching && query.trim() && results.length === 0 && (
+          {!searching && query.trim() && (
             <button
               onClick={handleCreateManual}
               className="w-full h-11 border border-dashed border-[#a49ffe] rounded-[12px] text-[13px] font-medium text-[#6c63ff]"

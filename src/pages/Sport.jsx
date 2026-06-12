@@ -374,16 +374,17 @@ export default function Sport() {
     : `${weekStart.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} – ${addDays(weekStart, 6).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`
 
   return (
-    <div className="min-h-dvh bg-[#f6f4f9]">
+    <div className="relative min-h-dvh bg-[#f6f4f9] overflow-hidden">
       {/* Blobs décoratifs */}
-      <div className="fixed top-[-80px] left-[-60px] w-[320px] h-[320px] rounded-full bg-[#c4b5fd] opacity-20 blur-3xl pointer-events-none z-0" />
-      <div className="fixed top-[200px] right-[-80px] w-[260px] h-[260px] rounded-full bg-[#a5f3fc] opacity-15 blur-3xl pointer-events-none z-0" />
-      <div className="fixed top-[460px] left-[40px] w-[240px] h-[240px] rounded-full bg-[#fde68a] opacity-15 blur-3xl pointer-events-none z-0" />
+      <div className="absolute top-[-80px] left-[-60px] w-[320px] h-[320px] rounded-full bg-[#c4b5fd] opacity-20 blur-3xl pointer-events-none" />
+      <div className="absolute top-[200px] right-[-80px] w-[260px] h-[260px] rounded-full bg-[#a5f3fc] opacity-15 blur-3xl pointer-events-none" />
+      <div className="absolute top-[460px] left-[40px] w-[240px] h-[240px] rounded-full bg-[#fde68a] opacity-15 blur-3xl pointer-events-none" />
 
       <AppHeader title="Sport" />
 
       {/* Calendar sub-header */}
-      <div className="fixed top-[76px] left-0 right-0 z-20 bg-[rgba(255,255,255,0.55)] border-b border-[rgba(255,255,255,0.8)] backdrop-blur-md px-[14px] pt-[14px] pb-[12px] flex flex-col gap-[12px]">
+      <div className="pt-[76px]">
+      <div className="sticky top-[76px] z-20 bg-[rgba(255,255,255,0.55)] border-b border-[rgba(255,255,255,0.8)] backdrop-blur-md px-[14px] pt-[14px] pb-[12px] flex flex-col gap-[12px]">
         <div className="flex items-center justify-between">
           <button onClick={() => setWeekStart(prev => addDays(prev, -7))} className="w-8 h-8 flex items-center justify-center">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="#211738"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" /></svg>
@@ -427,7 +428,7 @@ export default function Sport() {
       </div>
 
       {/* Content */}
-      <div className="pt-[212px] pb-28 px-[14px] flex flex-col gap-3">
+      <div className="pb-28 px-[14px] flex flex-col gap-3 mt-3">
 
         {loading && (
           <p className="text-center text-[13px] text-[#736694] mt-8">Chargement…</p>
@@ -642,11 +643,12 @@ export default function Sport() {
           )
         })}
       </div>
+      </div>{/* fin pt-[76px] */}
 
       {/* Bouton ajouter exercice */}
       <button
         onClick={() => setShowAddExercise(true)}
-        className="absolute bottom-4 left-4 right-4 h-[48px] bg-[#6c63ff] rounded-[12px] text-white text-[14px] font-semibold z-10"
+        className="fixed bottom-4 left-4 right-4 h-[48px] bg-[#6c63ff] rounded-[12px] text-white text-[14px] font-semibold z-10"
       >
         Ajouter un exercice
       </button>

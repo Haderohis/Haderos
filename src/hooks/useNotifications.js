@@ -69,7 +69,7 @@ export function useNotifications(userId) {
     setNotifications(prev => prev.map(n =>
       n.id === notification.id ? { ...n, read: true, data: { ...n.data, status: 'accepted' } } : n
     ))
-  }, [])
+  }, [userId])
 
   const declineShare = useCallback(async (notification) => {
     const shareId = notification.data?.share_id

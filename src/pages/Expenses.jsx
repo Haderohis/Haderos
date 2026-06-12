@@ -664,7 +664,7 @@ export default function Expenses() {
             const fmtLabel = (dateKey) => {
               if (dateKey === todayStr) return "Aujourd'hui"
               if (dateKey === yesterdayStr) return 'Hier'
-              return new Date(dateKey + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+              return new Date(dateKey + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
             }
             const groups = []
             let lastKey = null

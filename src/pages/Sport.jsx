@@ -419,7 +419,7 @@ export default function Sport() {
                 const precText = getPrecText(perf, set.set_number, exo.type)
                 const editing = editingSet[set.id]
                 return (
-                  <div key={set.id} className={`flex items-center gap-1 px-4 py-[5px] ${idx === 0 ? 'bg-[rgba(108,99,255,0.08)]' : ''}`}>
+                  <div key={set.id} className="flex items-center gap-1 px-4 py-[5px] bg-[rgba(108,99,255,0.08)]">
                     <span className="w-6 text-[14px] font-semibold text-black shrink-0">{set.set_number}</span>
                     <div className="flex-1 flex justify-center">
                       <div className="bg-white/60 border border-[#c0befe] rounded-[4px] px-1 py-[5px] w-[51px] flex items-center justify-center">

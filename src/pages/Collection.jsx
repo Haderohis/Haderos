@@ -637,7 +637,6 @@ export default function Collection() {
   const [loading, setLoading] = useState(true)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
-  const [sharedWith, setSharedWith] = useState([])
   const [category, setCategory] = useState('Mangas')
   const [search, setSearch] = useState('')
 
@@ -739,7 +738,7 @@ export default function Collection() {
 
   const shareChip = (
     <ShareChip
-      isShared={sharedWith.length > 0}
+      isShared={false}
       onClick={() => setShareOpen(true)}
     />
   )

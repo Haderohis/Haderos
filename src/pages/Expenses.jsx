@@ -438,8 +438,7 @@ export default function Expenses() {
   const [detailExpense, setDetailExpense] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  const { user } = useAuth()
-  const { loading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
 
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
+import { toDateStr } from '../lib/date'
 import BottomSheet from '../components/BottomSheet'
 import { TextField, DateField, SubmitButton } from '../components/FormFields'
 import AppHeader from '../components/AppHeader'
@@ -31,10 +32,6 @@ const TAG_TYPES = [
 const tagColor = (type) => TAG_TYPES.find(t => t.value === type)?.color ?? TAG_TYPES[1].color
 const tagIcon  = (type) => TAG_TYPES.find(t => t.value === type)?.icon  ?? null
 
-const toDateStr = (d) => {
-  const date = new Date(d)
-  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`
-}
 const todayStr = () => toDateStr(new Date())
 
 export default function Checklist() {

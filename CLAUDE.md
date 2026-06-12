@@ -62,11 +62,11 @@ src/
 │   ├── useAuth.js           # Session, signIn, signOut
 │   ├── useProfile.js        # Prénom/nom/display_name depuis Supabase
 │   ├── useNotifications.js  # Abonnement temps réel + acceptShare/declineShare
-│   ├── useSupabase.js       # Wrapper générique requêtes Supabase
 │   ├── useMangaSearch.js    # Recherche manga via Jikan API (debounce + abort)
 │   └── useComicsSearch.js   # Recherche comics via Open Library API (debounce + abort)
 ├── lib/
-│   └── supabase.js          # Client Supabase initialisé
+│   ├── supabase.js          # Client Supabase initialisé
+│   └── date.js              # Utilitaire toDateStr() partagé (évite décalage timezone)
 supabase/
 ├── expenses_migration.sql
 ├── manga_collection_migration.sql
@@ -192,7 +192,9 @@ Liste verticale. Chaque carte :
 - Cellules : lettre du jour + icône altère si session avec exercices ce jour-là
 - Jour sélectionné : `bg-[#6c63ff] rounded-[4px]` · Jour actuel : `border border-[#6c63ff]`
 - L'icône altère ne s'affiche que si `sport_exercises.count > 0` (pas de session vide)
-- `toDateStr()` utilise `getFullYear/Month/Date` (pas `toISOString`) pour éviter le décalage timezone
+- `toDateStr()` définie dans `src/lib/date.js`, importée par Sport et Checklist — utilise `getFullYear/Month/Date` (pas `toISOString`) pour éviter le décalage timezone
+- Les perfs précédentes sont chargées en parallèle (`Promise.all`) au lieu de séquentiellement
+- Autocomplete exercices : 1 seule requête via join `!inner` sur `sport_sessions`
 
 ### Cartes exercice
 - Header : icône altère sur fond violet `rounded-[4px]` (37×36px) + nom + type + × supprimer

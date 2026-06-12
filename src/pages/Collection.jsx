@@ -292,19 +292,46 @@ function AddMangaSheet({ onClose, onSaved, category }) {
 }
 
 // ─── ShareSheet ───────────────────────────────────────────────────────────────
-function ShareSheet({ sharedWith, onClose }) {
+const STATUS_LABEL = { pending: 'En attente', accepted: 'Accepté', declined: 'Refusé' }
+const STATUS_COLOR = { pending: 'text-[#f59e0b]', accepted: 'text-[#6c63ff]', declined: 'text-[#ef4444]' }
+
+function ShareSheet({ onClose }) {
   const { user } = useAuth()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [searching, setSearching] = useState(false)
-  const [added, setAdded] = useState(sharedWith ?? [])
+  const [added, setAdded] = useState([])
   const [saving, setSaving] = useState(false)
   const [ownerProfile, setOwnerProfile] = useState(null)
+  const [shares, setShares] = useState([])
+  const [loadingShares, setLoadingShares] = useState(true)
+
+  const displayName = (p) => p?.display_name || `${p?.first_name ?? ''} ${p?.last_name ?? ''}`.trim() || 'Utilisateur'
 
   useEffect(() => {
     if (!user) return
     supabase.from('profiles').select('first_name, last_name, display_name').eq('id', user.id).single()
       .then(({ data }) => setOwnerProfile(data))
+  }, [user])
+
+  useEffect(() => {
+    if (!user) return
+    setLoadingShares(true)
+    supabase
+      .from('collection_shares')
+      .select('id, status, shared_with_id, owner_id')
+      .or(`owner_id.eq.${user.id},shared_with_id.eq.${user.id}`)
+      .then(async ({ data }) => {
+        if (!data?.length) { setShares([]); setLoadingShares(false); return }
+        const otherIds = [...new Set(data.map(s => s.owner_id === user.id ? s.shared_with_id : s.owner_id))]
+        const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, display_name').in('id', otherIds)
+        setShares(data.map(s => ({
+          ...s,
+          isMine: s.owner_id === user.id,
+          profile: profiles?.find(p => p.id === (s.owner_id === user.id ? s.shared_with_id : s.owner_id)),
+        })))
+        setLoadingShares(false)
+      })
   }, [user])
 
   useEffect(() => {
@@ -331,57 +358,98 @@ function ShareSheet({ sharedWith, onClose }) {
     )
   }
 
-  const displayName = (p) => p.display_name || `${p.first_name ?? ''} ${p.last_name ?? ''}`.trim() || 'Utilisateur'
+  const handleDeleteShare = async (share) => {
+    const otherId = share.owner_id === user.id ? share.shared_with_id : share.owner_id
+    // Supprime les deux sens
+    await supabase.from('collection_shares')
+      .delete()
+      .or(`and(owner_id.eq.${user.id},shared_with_id.eq.${otherId}),and(owner_id.eq.${otherId},shared_with_id.eq.${user.id})`)
+    setShares(prev => prev.filter(s => {
+      const sOther = s.owner_id === user.id ? s.shared_with_id : s.owner_id
+      return sOther !== otherId
+    }))
+  }
 
   const handleConfirm = async () => {
-    if (!added.length) { onClose([]); return }
+    if (!added.length) return
     setSaving(true)
-
     const ownerName = ownerProfile ? displayName(ownerProfile) : 'Un utilisateur'
-
     for (const profile of added) {
       const { data: share } = await supabase
         .from('collection_shares')
-        .upsert(
-          { owner_id: user.id, shared_with_id: profile.id, status: 'pending' },
-          { onConflict: 'owner_id,shared_with_id' }
-        )
-        .select()
-        .single()
-
+        .upsert({ owner_id: user.id, shared_with_id: profile.id, status: 'pending' }, { onConflict: 'owner_id,shared_with_id' })
+        .select().single()
       if (share) {
         await supabase.from('notifications').insert({
-          user_id: profile.id,
-          type: 'collection_share_request',
+          user_id: profile.id, type: 'collection_share_request',
           message: `${ownerName} souhaite partager sa collection avec toi.`,
           read: false,
-          data: {
-            share_id: share.id,
-            owner_id: user.id,
-            recipient_name: displayName(profile),
-          },
+          data: { share_id: share.id, owner_id: user.id, recipient_name: displayName(profile) },
         })
+        setShares(prev => [...prev.filter(s => !(s.isMine && s.shared_with_id === profile.id)), {
+          id: share.id, status: 'pending', owner_id: user.id, shared_with_id: profile.id,
+          isMine: true, profile,
+        }])
       }
     }
-
+    setAdded([])
     setSaving(false)
-    onClose(added)
   }
 
+  // Dédoublonne : n'afficher qu'une entrée par autre utilisateur
+  const uniqueShares = shares.reduce((acc, s) => {
+    const otherId = s.owner_id === user.id ? s.shared_with_id : s.owner_id
+    if (!acc.find(a => (a.owner_id === user.id ? a.shared_with_id : a.owner_id) === otherId)) acc.push(s)
+    return acc
+  }, [])
+
   return (
-    <BottomSheet onClose={() => onClose(added)}>
+    <BottomSheet onClose={onClose}>
       <h2 className="text-[17px] font-bold text-[#211738]">Partager la collection</h2>
 
+      {/* Partages en cours */}
+      {loadingShares ? (
+        <p className="text-[13px] text-[#736694]">Chargement...</p>
+      ) : uniqueShares.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <p className="text-[12px] font-medium text-[#736694]">Partages en cours</p>
+          {uniqueShares.map(s => (
+            <div key={s.id} className="flex items-center justify-between bg-[#f2edfa] rounded-[10px] px-3 h-11">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-[#e0d9ff] flex items-center justify-center shrink-0">
+                  <span className="text-[11px] font-bold text-[#6c63ff]">
+                    {((s.profile?.first_name?.[0] ?? '') + (s.profile?.last_name?.[0] ?? '')).toUpperCase() || '?'}
+                  </span>
+                </div>
+                <p className="text-[13px] font-medium text-[#211738]">{displayName(s.profile)}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`text-[11px] font-medium ${STATUS_COLOR[s.status] ?? 'text-[#736694]'}`}>
+                  {STATUS_LABEL[s.status] ?? s.status}
+                </span>
+                <button
+                  onClick={() => handleDeleteShare(s)}
+                  className="w-6 h-6 flex items-center justify-center rounded-full bg-white text-[#ef4444]"
+                  aria-label="Supprimer"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Ajouter un partage */}
       <div className="flex flex-col gap-2">
-        <label className="text-[12px] font-medium text-[#736694]">Utilisateurs</label>
+        <label className="text-[12px] font-medium text-[#736694]">Inviter quelqu'un</label>
         <div className="relative bg-[#f2edfa] rounded-[10px] min-h-12 px-3 py-2 flex flex-wrap gap-2 items-center">
           {added.map(p => (
             <span key={p.id} className="flex items-center gap-1 text-[12px] font-medium px-2 py-1 rounded-full shrink-0 bg-[#e0d9ff] text-[#6c63ff]">
               {displayName(p)}
-              <button
-                onPointerDown={e => { e.preventDefault(); toggle(p) }}
-                className="leading-none min-w-0 min-h-0 w-4 h-4"
-              >&times;</button>
+              <button onPointerDown={e => { e.preventDefault(); toggle(p) }} className="leading-none min-w-0 min-h-0 w-4 h-4">&times;</button>
             </span>
           ))}
           <input
@@ -390,11 +458,8 @@ function ShareSheet({ sharedWith, onClose }) {
             onChange={e => setQuery(e.target.value)}
             placeholder={added.length === 0 ? 'Prénom, nom ou pseudo...' : ''}
             className="bg-transparent text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe] min-w-[80px] flex-1"
-            autoFocus
           />
-          {searching && (
-            <span className="text-[11px] text-[#a49ffe] shrink-0">Recherche...</span>
-          )}
+          {searching && <span className="text-[11px] text-[#a49ffe] shrink-0">Recherche...</span>}
           {!searching && results.length > 0 && (
             <ul className="absolute left-0 right-0 top-full mt-1 bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-[#f2edfa]">
               {results.map(p => (
@@ -422,13 +487,15 @@ function ShareSheet({ sharedWith, onClose }) {
         </div>
       </div>
 
-      <button
-        onClick={handleConfirm}
-        disabled={saving}
-        className="h-12 w-full bg-[#6c63ff] text-white font-semibold text-[15px] rounded-[12px] disabled:opacity-60"
-      >
-        {saving ? 'Envoi...' : added.length > 0 ? `Envoyer ${added.length} invitation${added.length > 1 ? 's' : ''}` : 'Fermer'}
-      </button>
+      {added.length > 0 && (
+        <button
+          onClick={handleConfirm}
+          disabled={saving}
+          className="h-12 w-full bg-[#6c63ff] text-white font-semibold text-[15px] rounded-[12px] disabled:opacity-60"
+        >
+          {saving ? 'Envoi...' : `Envoyer ${added.length} invitation${added.length > 1 ? 's' : ''}`}
+        </button>
+      )}
     </BottomSheet>
   )
 }
@@ -664,11 +731,7 @@ export default function Collection() {
       )}
       {shareOpen && (
         <ShareSheet
-          sharedWith={sharedWith}
-          onClose={(updated) => {
-            if (updated) setSharedWith(updated)
-            setShareOpen(false)
-          }}
+          onClose={() => setShareOpen(false)}
         />
       )}
     </div>

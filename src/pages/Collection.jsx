@@ -360,10 +360,11 @@ function ShareSheet({ onClose }) {
 
   const handleDeleteShare = async (share) => {
     const otherId = share.owner_id === user.id ? share.shared_with_id : share.owner_id
-    // Supprime les deux sens
-    await supabase.from('collection_shares')
-      .delete()
-      .or(`and(owner_id.eq.${user.id},shared_with_id.eq.${otherId}),and(owner_id.eq.${otherId},shared_with_id.eq.${user.id})`)
+    // Supprime les deux sens en deux appels séparés (RLS : owner ou recipient)
+    await Promise.all([
+      supabase.from('collection_shares').delete().eq('owner_id', user.id).eq('shared_with_id', otherId),
+      supabase.from('collection_shares').delete().eq('owner_id', otherId).eq('shared_with_id', user.id),
+    ])
     setShares(prev => prev.filter(s => {
       const sOther = s.owner_id === user.id ? s.shared_with_id : s.owner_id
       return sOther !== otherId

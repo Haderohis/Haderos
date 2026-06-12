@@ -666,9 +666,14 @@ export default function Expenses() {
               if (dateKey === yesterdayStr) return 'Hier'
               return new Date(dateKey + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
             }
+            const sorted = [...filtered].sort((a, b) => {
+              const da = (a.expense_date ?? a.created_at).slice(0, 10)
+              const db = (b.expense_date ?? b.created_at).slice(0, 10)
+              return db.localeCompare(da)
+            })
             const groups = []
             let lastKey = null
-            filtered.forEach(e => {
+            sorted.forEach(e => {
               const key = (e.expense_date ?? e.created_at).slice(0, 10)
               if (key !== lastKey) { groups.push({ key, items: [] }); lastKey = key }
               groups[groups.length - 1].items.push(e)

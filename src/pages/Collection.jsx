@@ -69,7 +69,7 @@ function MangaCard({ item, onDelete, onUpdateOwned, onCreateOwned }) {
       </div>
 
       {/* Row 2 — cover + volumes + menu */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         {item.cover_url
           ? <img src={item.cover_url} alt={item.title} className="w-[34px] h-[48px] object-cover rounded-[4px] shrink-0" />
           : <div className="w-[34px] h-[48px] bg-[#f2edfa] rounded-[4px] shrink-0" />

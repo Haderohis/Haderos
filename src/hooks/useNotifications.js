@@ -46,16 +46,13 @@ export function useNotifications(userId) {
     const currentUserId = user?.id
     if (!currentUserId) return
 
-    const [updateResult] = await Promise.all([
+    await Promise.all([
       supabase.from('collection_shares').update({ status: 'accepted' }).eq('id', shareId),
-      // Partage inverse
       ownerId ? supabase.from('collection_shares').upsert(
         { owner_id: currentUserId, shared_with_id: ownerId, status: 'accepted' },
         { onConflict: 'owner_id,shared_with_id' }
       ) : Promise.resolve(),
     ])
-
-    if (updateResult.error) return
 
     await supabase.from('notifications').update({ read: true }).eq('id', notification.id)
 
@@ -68,6 +65,7 @@ export function useNotifications(userId) {
       })
     }
 
+    // Met à jour l'état local pour masquer les boutons immédiatement
     setNotifications(prev => prev.map(n =>
       n.id === notification.id ? { ...n, read: true, data: { ...n.data, status: 'accepted' } } : n
     ))

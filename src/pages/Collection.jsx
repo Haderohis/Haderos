@@ -314,25 +314,33 @@ function ShareSheet({ onClose }) {
       .then(({ data }) => setOwnerProfile(data))
   }, [user])
 
-  useEffect(() => {
+  const fetchShares = useCallback(async () => {
     if (!user) return
     setLoadingShares(true)
-    supabase
+    const { data } = await supabase
       .from('collection_shares')
       .select('id, status, shared_with_id, owner_id')
       .or(`owner_id.eq.${user.id},shared_with_id.eq.${user.id}`)
-      .then(async ({ data }) => {
-        if (!data?.length) { setShares([]); setLoadingShares(false); return }
-        const otherIds = [...new Set(data.map(s => s.owner_id === user.id ? s.shared_with_id : s.owner_id))]
-        const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, display_name').in('id', otherIds)
-        setShares(data.map(s => ({
-          ...s,
-          isMine: s.owner_id === user.id,
-          profile: profiles?.find(p => p.id === (s.owner_id === user.id ? s.shared_with_id : s.owner_id)),
-        })))
-        setLoadingShares(false)
-      })
+    if (!data?.length) { setShares([]); setLoadingShares(false); return }
+    const otherIds = [...new Set(data.map(s => s.owner_id === user.id ? s.shared_with_id : s.owner_id))]
+    const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, display_name').in('id', otherIds)
+    setShares(data.map(s => ({
+      ...s,
+      isMine: s.owner_id === user.id,
+      profile: profiles?.find(p => p.id === (s.owner_id === user.id ? s.shared_with_id : s.owner_id)),
+    })))
+    setLoadingShares(false)
   }, [user])
+
+  useEffect(() => {
+    fetchShares()
+    if (!user) return
+    const channel = supabase
+      .channel(`shares:${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'collection_shares' }, fetchShares)
+      .subscribe()
+    return () => supabase.removeChannel(channel)
+  }, [user, fetchShares])
 
   useEffect(() => {
     if (!query.trim()) { setResults([]); return }

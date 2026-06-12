@@ -46,6 +46,14 @@ export function useNotifications(userId) {
       .update({ status: 'accepted' })
       .eq('id', shareId)
 
+    // Partage inverse : l'accepteur partage aussi sa collection avec l'owner
+    if (ownerId && userId) {
+      await supabase.from('collection_shares').upsert(
+        { owner_id: userId, shared_with_id: ownerId, status: 'accepted' },
+        { onConflict: 'owner_id,shared_with_id' }
+      )
+    }
+
     await supabase.from('notifications').update({ read: true }).eq('id', notification.id)
 
     // Notifie l'owner que la demande a été acceptée

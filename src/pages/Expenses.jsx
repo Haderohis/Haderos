@@ -28,7 +28,7 @@ function statusLabel(expense) {
 
 function TagInput({ tags, onChange, input, onInputChange, suggestions = [] }) {
   const add = (raw) => {
-    const t = raw.trim().toLowerCase()
+    const t = raw.trim()
     if (t && !tags.includes(t)) onChange([...tags, t])
     onInputChange('')
   }
@@ -136,7 +136,7 @@ function NewExpenseModal({ currentUserId, onClose, onSaved, initialExpense, allT
       description,
       expense_date: expenseDate || null,
       tags: tagInput.trim()
-        ? [...new Set([...tags, tagInput.trim().toLowerCase()])]
+        ? [...new Set([...tags, tagInput.trim()])]
         : tags,
     }
     let expenseId = initialExpense?.id

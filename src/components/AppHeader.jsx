@@ -7,7 +7,7 @@ import NotificationBell from './NotificationBell'
 export default function AppHeader({ title, titleExtra }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const { user } = useAuth()
-  const { notifications, unreadCount, markAllRead, acceptShare, declineShare } = useNotifications(user?.id)
+  const { notifications, unreadCount, markAllRead, acceptShare, declineShare, deleteNotification, deleteAll } = useNotifications(user?.id)
 
   return (
     <>
@@ -26,7 +26,7 @@ export default function AppHeader({ title, titleExtra }) {
           {titleExtra}
         </div>
         <div className="ml-auto">
-          <NotificationBell notifications={notifications} unreadCount={unreadCount} onOpen={markAllRead} onAcceptShare={acceptShare} onDeclineShare={declineShare} />
+          <NotificationBell notifications={notifications} unreadCount={unreadCount} onOpen={markAllRead} onAcceptShare={acceptShare} onDeclineShare={declineShare} onDelete={deleteNotification} onDeleteAll={deleteAll} />
         </div>
       </header>
       <Drawer open={menuOpen} onClose={() => setMenuOpen(false)} />

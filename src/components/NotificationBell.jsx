@@ -51,7 +51,7 @@ function ShareRequestItem({ n, onAccept, onDecline }) {
   )
 }
 
-export default function NotificationBell({ notifications, unreadCount, onOpen, onAcceptShare, onDeclineShare }) {
+export default function NotificationBell({ notifications, unreadCount, onOpen, onAcceptShare, onDeclineShare, onDelete, onDeleteAll }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -86,8 +86,13 @@ export default function NotificationBell({ notifications, unreadCount, onOpen, o
 
       {open && (
         <div className="absolute top-[46px] right-0 z-50 w-[300px] bg-white rounded-[14px] shadow-xl border border-[#f0ebfa] overflow-hidden">
-          <div className="px-4 py-3 border-b border-[#f0ebfa]">
+          <div className="px-4 py-3 border-b border-[#f0ebfa] flex items-center justify-between">
             <p className="text-[13px] font-semibold text-[#211738]">Notifications</p>
+            {notifications.length > 0 && (
+              <button onClick={onDeleteAll} className="text-[11px] text-[#a49ffe] hover:text-[#ef4444] transition-colors">
+                Tout supprimer
+              </button>
+            )}
           </div>
           {notifications.length === 0 ? (
             <div className="px-4 py-6 flex flex-col items-center gap-2">
@@ -114,6 +119,11 @@ export default function NotificationBell({ notifications, unreadCount, onOpen, o
                       <p className="text-[13px] text-[#211738] leading-snug">{n.message}</p>
                       <p className="text-[11px] text-[#a49ffe] mt-0.5">{fmtTime(n.created_at)}</p>
                     </div>
+                    <button onClick={() => onDelete(n.id)} className="shrink-0 w-6 h-6 flex items-center justify-center opacity-30 hover:opacity-100 transition-opacity mt-0.5">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                      </svg>
+                    </button>
                   </li>
                 )
               )}

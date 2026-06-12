@@ -1,7 +1,7 @@
 export default function BottomSheet({ onClose, children }) {
   return (
     <div
-      className="absolute inset-0 z-50 flex items-end justify-center bg-[rgba(33,23,56,0.3)]"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(33,23,56,0.3)]"
       onClick={onClose}
     >
       <div

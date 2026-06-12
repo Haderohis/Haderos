@@ -63,9 +63,6 @@ function MangaCard({ item, onDelete, onUpdateOwned, onCreateOwned }) {
         {item.theirName && (
           <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-[#fef3c7] text-[#d97706] shrink-0 whitespace-nowrap">{item.theirName}</span>
         )}
-        {item.ongoing && (
-          <span className="text-[10px] text-[#f59e0b] font-normal shrink-0">En cours</span>
-        )}
       </div>
 
       {/* Row 2 — cover + volumes + menu */}

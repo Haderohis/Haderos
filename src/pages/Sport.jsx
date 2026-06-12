@@ -84,7 +84,8 @@ export default function Sport() {
   const [newExerciseName, setNewExerciseName] = useState('')
   const [newExerciseType, setNewExerciseType] = useState('strength')
   const [lastPerfs, setLastPerfs] = useState({})
-  const [addingSet, setAddingSet] = useState({}) // { [exoId]: { weight, reps, duration } }
+  const [addingSet, setAddingSet] = useState({}) // { [exoId]: Array<{weight, reps, duration}> }
+  const [editingSet, setEditingSet] = useState({}) // { [setId]: {weight, reps, duration} }
   const [restTimer, setRestTimer] = useState(false)
   const [allExerciseNames, setAllExerciseNames] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -116,6 +117,7 @@ export default function Sport() {
     setDaySessionId(null)
     setLastPerfs({})
     setAddingSet({})
+    setEditingSet({})
 
     supabase
       .from('sport_sessions')
@@ -237,17 +239,29 @@ export default function Sport() {
   }
 
   const handleUncheckSet = (exo, set) => {
+    const row = exo.type === 'strength'
+      ? { weight: set.weight_kg ?? '', reps: set.reps ?? '', duration: '' }
+      : { weight: '', reps: '', duration: set.duration_seconds != null ? `${Math.floor(set.duration_seconds / 60).toString().padStart(2, '0')}:${(set.duration_seconds % 60).toString().padStart(2, '0')}` : '' }
+    setEditingSet(prev => ({ ...prev, [set.id]: row }))
+  }
+
+  const handleUpdateSet = async (exo, set) => {
+    const inputs = editingSet[set.id] ?? {}
+    const patch = {}
+    if (exo.type === 'strength') {
+      patch.reps = parseInt(inputs.reps) || null
+      patch.weight_kg = parseFloat(inputs.weight) || null
+    } else {
+      const parts = (inputs.duration ?? '').split(':')
+      patch.duration_seconds = parts.length === 2
+        ? parseInt(parts[0]) * 60 + parseInt(parts[1])
+        : parseInt(inputs.duration) || null
+    }
+    await supabase.from('sport_sets').update(patch).eq('id', set.id)
     setDayExercises(prev => prev.map(e =>
-      e.id === exo.id ? { ...e, sport_sets: e.sport_sets.filter(s => s.id !== set.id) } : e
+      e.id === exo.id ? { ...e, sport_sets: e.sport_sets.map(s => s.id === set.id ? { ...s, ...patch } : s) } : e
     ))
-    supabase.from('sport_sets').delete().eq('id', set.id)
-    setAddingSet(prev => {
-      const existing = prev[exo.id] ?? []
-      const newRow = exo.type === 'strength'
-        ? { weight: set.weight_kg ?? '', reps: set.reps ?? '', duration: '' }
-        : { weight: '', reps: '', duration: set.duration_seconds != null ? `${Math.floor(set.duration_seconds / 60).toString().padStart(2, '0')}:${(set.duration_seconds % 60).toString().padStart(2, '0')}` : '' }
-      return { ...prev, [exo.id]: [...existing, newRow] }
-    })
+    setEditingSet(prev => { const n = { ...prev }; delete n[set.id]; return n })
   }
 
   const handleDeleteExercise = async (exoId) => {
@@ -403,6 +417,7 @@ export default function Sport() {
               {/* Saved set rows */}
               {exo.sport_sets.map((set, idx) => {
                 const precText = getPrecText(perf, set.set_number, exo.type)
+                const editing = editingSet[set.id]
                 return (
                   <div key={set.id} className={`flex items-center gap-1 px-4 py-[5px] ${idx === 0 ? 'bg-[rgba(108,99,255,0.08)]' : ''}`}>
                     <span className="w-6 text-[14px] font-semibold text-black shrink-0">{set.set_number}</span>
@@ -412,21 +427,51 @@ export default function Sport() {
                       </div>
                     </div>
                     <div className="flex-1 flex justify-center">
-                      <div className="bg-white/60 border border-[#c0befe] rounded-[4px] px-1 py-[5px] w-[51px] flex items-center justify-center">
-                        <span className="text-[10px] text-black">
-                          {exo.type === 'strength' ? (set.weight_kg ?? '—') : '—'}
-                        </span>
-                      </div>
+                      {editing ? (
+                        <input
+                          type="number" inputMode="decimal" placeholder="—"
+                          value={editing.weight ?? ''}
+                          onChange={e => setEditingSet(prev => ({ ...prev, [set.id]: { ...prev[set.id], weight: e.target.value } }))}
+                          className="w-[51px] bg-white/60 border border-[#6c63ff] rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
+                        />
+                      ) : (
+                        <div className="bg-white/60 border border-[#c0befe] rounded-[4px] px-1 py-[5px] w-[51px] flex items-center justify-center">
+                          <span className="text-[10px] text-black">
+                            {exo.type === 'strength' ? (set.weight_kg ?? '—') : '—'}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1 flex justify-center">
-                      <div className="bg-white/60 border border-[#c0befe] rounded-[4px] px-1 py-[5px] w-[51px] flex items-center justify-center">
-                        <span className="text-[10px] text-black">
-                          {exo.type === 'strength' ? (set.reps ?? '—') : formatDuration(set.duration_seconds)}
-                        </span>
-                      </div>
+                      {editing ? (
+                        exo.type === 'strength' ? (
+                          <input
+                            type="number" inputMode="numeric" placeholder="—"
+                            value={editing.reps ?? ''}
+                            onChange={e => setEditingSet(prev => ({ ...prev, [set.id]: { ...prev[set.id], reps: e.target.value } }))}
+                            className="w-[51px] bg-white/60 border border-[#6c63ff] rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
+                          />
+                        ) : (
+                          <input
+                            type="text" placeholder="mm:ss"
+                            value={editing.duration ?? ''}
+                            onChange={e => setEditingSet(prev => ({ ...prev, [set.id]: { ...prev[set.id], duration: e.target.value } }))}
+                            className="w-[51px] bg-white/60 border border-[#6c63ff] rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
+                          />
+                        )
+                      ) : (
+                        <div className="bg-white/60 border border-[#c0befe] rounded-[4px] px-1 py-[5px] w-[51px] flex items-center justify-center">
+                          <span className="text-[10px] text-black">
+                            {exo.type === 'strength' ? (set.reps ?? '—') : formatDuration(set.duration_seconds)}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className="w-[22px] shrink-0 flex justify-center">
-                      <CheckCircleFilled onClick={() => handleUncheckSet(exo, set)} />
+                      {editing
+                        ? <CheckCircleOutline onClick={() => handleUpdateSet(exo, set)} disabled={false} />
+                        : <CheckCircleFilled onClick={() => handleUncheckSet(exo, set)} />
+                      }
                     </div>
                   </div>
                 )

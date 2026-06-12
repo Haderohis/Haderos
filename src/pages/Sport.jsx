@@ -44,33 +44,40 @@ const DAY_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
 const MUSCLES = [
   { key: 'pectoraux', label: 'Pectoraux', icon: (color = 'white') => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill={color}>
-      <path d="M12 3C7 3 3 7 3 12c0 2.4.9 4.6 2.4 6.3C6.5 16.5 8 14.5 8 12c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2 0 2.5 1.5 4.5 2.6 6.3C20.1 16.6 21 14.4 21 12c0-5-4-9-9-9z"/>
-      <path d="M12 22c1.4 0 2.7-.3 3.9-.8C14.8 19.5 14 17.8 14 16h-4c0 1.8-.8 3.5-1.9 5.2C9.3 21.7 10.6 22 12 22z"/>
+      {/* Deux plaques pectorales séparées par une ligne centrale */}
+      <path d="M11 6H8C5.8 6 4 7.8 4 10v4c0 2.2 1.8 3.5 3.5 3.5H11V6zm2 0v11.5h3.5C18.2 17.5 20 16.2 20 14v-4c0-2.2-1.8-4-4-4h-3z"/>
     </svg>
   )},
   { key: 'triceps', label: 'Triceps', icon: (color = 'white') => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill={color}>
-      <path d="M9 3.5C9 2.67 9.67 2 10.5 2S12 2.67 12 3.5 11.33 5 10.5 5 9 4.33 9 3.5zM7 20.5l1.5-8L7 11V7h7l-1 4 1.5 1.5L13 20.5h-2l-1-5.5-1 5.5H7z"/>
+      {/* Bras tendu, bosse tricep visible en haut */}
+      <path d="M9 4h6c1.1 0 2 .9 2 2v3c0 2-1.3 3.7-3 4.5V21H10v-7.5C8.3 12.7 7 11 7 9V6c0-1.1.9-2 2-2z"/>
+      <path d="M9 9Q12 6.5 15 9" stroke={color === 'white' ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.5)'} strokeWidth="1.5" fill="none" strokeLinecap="round"/>
     </svg>
   )},
   { key: 'dos', label: 'Dos', icon: (color = 'white') => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill={color}>
-      <path d="M12 2C9.24 2 7 4.24 7 7v1H5v2h2v9h2v-4h6v4h2V10h2V8h-2V7c0-2.76-2.24-5-5-5zm0 2c1.65 0 3 1.35 3 3v1H9V7c0-1.65 1.35-3 3-3zm-3 8h6v3H9v-3z"/>
+      {/* V-taper dos vu de derrière */}
+      <path d="M5 4h14L16 15c0 2.8-1.8 4.5-4 4.5S8 17.8 8 15L5 4z"/>
+      <line x1="12" y1="5" x2="12" y2="19" stroke={color === 'white' ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.4)'} strokeWidth="1.5"/>
     </svg>
   )},
   { key: 'biceps', label: 'Biceps', icon: (color = 'white') => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill={color}>
-      <path d="M10.5 2C9.67 2 9 2.67 9 3.5S9.67 5 10.5 5 12 4.33 12 3.5 11.33 2 10.5 2zM8 7l-1 5 2.5 1L8 20h2l1.5-5.5L14 16l-1-4 2-1-1-4H8z"/>
+      {/* Bras fléchi, bicep bombé en haut */}
+      <path d="M12 2C8.7 2 6 4.7 6 8c0 2.5 1.4 4.6 3.4 5.7L9 22h6l-.4-8.3C16.6 12.6 18 10.5 18 8c0-3.3-2.7-6-6-6z"/>
     </svg>
   )},
   { key: 'jambes', label: 'Jambes', icon: (color = 'white') => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill={color}>
-      <path d="M11.5 2C10.12 2 9 3.12 9 4.5S10.12 7 11.5 7 14 5.88 14 4.5 12.88 2 11.5 2zM9 8l-1 5h3l1 9h2l1-9h3l-1-5H9z"/>
+      {/* Deux jambes côte à côte */}
+      <path d="M7.5 3h3L12 13l1.5-10h3L14 16l1 6h-3l-.5-5-.5 5H8l1-6L7.5 3z"/>
     </svg>
   )},
   { key: 'epaules', label: 'Épaules', icon: (color = 'white') => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill={color}>
-      <path d="M12 2C10.34 2 9 3.34 9 5s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zM6 8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM9 13l-3 9h2l2-6 2 6h2l2-6 2 6h2l-3-9H9z"/>
+      {/* Deltoïdes — deux dômes sur les épaules + tronc */}
+      <path d="M12 5C9 5 6.5 7 5.5 10L4 13h4l.5-1.5C9.2 10.2 10.5 9 12 9s2.8 1.2 3.5 2.5L16 13h4l-1.5-3C17.5 7 15 5 12 5zM8.5 13v8h7v-8h-7z"/>
     </svg>
   )},
 ]

@@ -220,14 +220,17 @@ function AddMangaSheet({ onClose, onSaved, category }) {
     onClose()
   }
 
+  const isComics = category === 'Comics'
+  const label = isComics ? 'comics' : 'manga'
+
   return (
     <BottomSheet onClose={onClose}>
-      <h2 className="text-[17px] font-bold text-[#211738]">Ajouter un manga</h2>
+      <h2 className="text-[17px] font-bold text-[#211738]">Ajouter un {label}</h2>
       {!selected && (
         <>
           <TextField
             label="Rechercher un titre"
-            placeholder="Ex: One Piece, Naruto..."
+            placeholder={isComics ? 'Ex: Batman, Spider-Man...' : 'Ex: One Piece, Naruto...'}
             value={query}
             onChange={e => setQuery(e.target.value)}
             autoFocus
@@ -246,7 +249,10 @@ function AddMangaSheet({ onClose, onSaved, category }) {
                     <div>
                       <p className="text-[14px] font-medium text-[#211738]">{m.title}</p>
                       <p className="text-[12px] text-[#736694]">
-                        {m.volumes ? `${m.volumes} tome${m.volumes > 1 ? 's' : ''}${m.ongoing ? ' parus' : ''}` : m.ongoing ? 'En cours' : 'Terminé'}
+                        {isComics
+                          ? (m.author ?? 'Auteur inconnu')
+                          : (m.volumes ? `${m.volumes} tome${m.volumes > 1 ? 's' : ''}${m.ongoing ? ' parus' : ''}` : m.ongoing ? 'En cours' : 'Terminé')
+                        }
                       </p>
                     </div>
                   </button>

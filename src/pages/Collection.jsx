@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import { useMangaSearch } from '../hooks/useMangaSearch'
+import { useComicsSearch } from '../hooks/useComicsSearch'
 import AppHeader from '../components/AppHeader'
 import BottomSheet from '../components/BottomSheet'
 import { TextField, FieldLabel } from '../components/FormFields'
@@ -174,13 +175,15 @@ function AddMangaSheet({ onClose, onSaved, category }) {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState(null)
 
-  const { results, loading: searching, error: searchError } = useMangaSearch(query)
+  const mangaSearch = useMangaSearch(category === 'Comics' ? '' : query)
+  const comicsSearch = useComicsSearch(category === 'Comics' ? query : '')
+  const { results, loading: searching, error: searchError } = category === 'Comics' ? comicsSearch : mangaSearch
 
   const handleSelect = async (manga) => {
     setSelected(manga)
     setOwned([])
     setQuery('')
-    if (manga.volumes == null) {
+    if (manga.volumes == null && category !== 'Comics') {
       setLoadingDetail(true)
       try {
         const res = await fetch(`https://api.jikan.moe/v4/manga/${manga.mal_id}`)

@@ -41,43 +41,49 @@ const TODAY = toDateStr(new Date())
 const CURRENT_WEEK_START = toDateStr(getWeekStart(new Date()))
 const DAY_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
 
+const S = { fill: 'none', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }
 const MUSCLES = [
   { key: 'pectoraux', label: 'Pectoraux', icon: (color = 'white') => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill={color}>
-      {/* Deux plaques pectorales séparées par une ligne centrale */}
-      <path d="M11 6H8C5.8 6 4 7.8 4 10v4c0 2.2 1.8 3.5 3.5 3.5H11V6zm2 0v11.5h3.5C18.2 17.5 20 16.2 20 14v-4c0-2.2-1.8-4-4-4h-3z"/>
-    </svg>
-  )},
-  { key: 'triceps', label: 'Triceps', icon: (color = 'white') => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill={color}>
-      {/* Bras tendu, bosse tricep visible en haut */}
-      <path d="M9 4h6c1.1 0 2 .9 2 2v3c0 2-1.3 3.7-3 4.5V21H10v-7.5C8.3 12.7 7 11 7 9V6c0-1.1.9-2 2-2z"/>
-      <path d="M9 9Q12 6.5 15 9" stroke={color === 'white' ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.5)'} strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-    </svg>
-  )},
-  { key: 'dos', label: 'Dos', icon: (color = 'white') => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill={color}>
-      {/* V-taper dos vu de derrière */}
-      <path d="M5 4h14L16 15c0 2.8-1.8 4.5-4 4.5S8 17.8 8 15L5 4z"/>
-      <line x1="12" y1="5" x2="12" y2="19" stroke={color === 'white' ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.4)'} strokeWidth="1.5"/>
+    <svg width="18" height="18" viewBox="0 0 24 24" {...S} stroke={color}>
+      {/* Pec gauche */}
+      <path d="M3 9 Q3 6 6 5 L11 5 Q12 6.5 12 9 Q11 16 7 18 Q4 17 3 14 Z"/>
+      {/* Pec droit */}
+      <path d="M21 9 Q21 6 18 5 L13 5 Q12 6.5 12 9 Q13 16 17 18 Q20 17 21 14 Z"/>
     </svg>
   )},
   { key: 'biceps', label: 'Biceps', icon: (color = 'white') => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill={color}>
-      {/* Bras fléchi, bicep bombé en haut */}
-      <path d="M12 2C8.7 2 6 4.7 6 8c0 2.5 1.4 4.6 3.4 5.7L9 22h6l-.4-8.3C16.6 12.6 18 10.5 18 8c0-3.3-2.7-6-6-6z"/>
+    <svg width="18" height="18" viewBox="0 0 24 24" {...S} stroke={color}>
+      {/* Bras fléchi vu de face, bosse bicep visible */}
+      <path d="M9 21 L9 15 Q6 13 6 9 Q6 4 12 4 Q18 4 18 9 Q18 13 15 15 L15 21 Z"/>
+    </svg>
+  )},
+  { key: 'triceps', label: 'Triceps', icon: (color = 'white') => (
+    <svg width="18" height="18" viewBox="0 0 24 24" {...S} stroke={color}>
+      {/* Bras tendu vu de derrière, tricep marqué en arc */}
+      <path d="M8 4 L16 4 Q19 5 19 8 L19 12 Q19 16 15.5 17.5 L15.5 21 L8.5 21 L8.5 17.5 Q5 16 5 12 L5 8 Q5 5 8 4 Z"/>
+      <path d="M8 9 Q12 7 16 9"/>
+    </svg>
+  )},
+  { key: 'dos', label: 'Dos', icon: (color = 'white') => (
+    <svg width="18" height="18" viewBox="0 0 24 24" {...S} stroke={color}>
+      {/* V-taper dos, large en haut, effilé en bas */}
+      <path d="M3 4 L21 4 L17 15 Q15.5 20 12 20 Q8.5 20 7 15 Z"/>
+      <line x1="12" y1="4" x2="12" y2="20"/>
+      <path d="M6 8 Q12 11 18 8"/>
     </svg>
   )},
   { key: 'jambes', label: 'Jambes', icon: (color = 'white') => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill={color}>
-      {/* Deux jambes côte à côte */}
-      <path d="M7.5 3h3L12 13l1.5-10h3L14 16l1 6h-3l-.5-5-.5 5H8l1-6L7.5 3z"/>
+    <svg width="18" height="18" viewBox="0 0 24 24" {...S} stroke={color}>
+      {/* Deux cuisses / jambes vues de face */}
+      <path d="M4 3 L10 3 L11 13 L10 21 L7 21 L6 13 L5 21 L2 21 L3 13 Z"/>
+      <path d="M14 3 L20 3 L21 13 L20 21 L17 21 L16 13 L15 21 L12 21 L13 13 Z"/>
     </svg>
   )},
   { key: 'epaules', label: 'Épaules', icon: (color = 'white') => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill={color}>
-      {/* Deltoïdes — deux dômes sur les épaules + tronc */}
-      <path d="M12 5C9 5 6.5 7 5.5 10L4 13h4l.5-1.5C9.2 10.2 10.5 9 12 9s2.8 1.2 3.5 2.5L16 13h4l-1.5-3C17.5 7 15 5 12 5zM8.5 13v8h7v-8h-7z"/>
+    <svg width="18" height="18" viewBox="0 0 24 24" {...S} stroke={color}>
+      {/* Deltoïdes — dômes arrondis sur les épaules */}
+      <path d="M12 7 Q8 7 5 10 L3 14 L7 14 L8.5 12 Q10 10 12 10 Q14 10 15.5 12 L17 14 L21 14 L19 10 Q16 7 12 7 Z"/>
+      <path d="M7 14 L7 21 L17 21 L17 14"/>
     </svg>
   )},
 ]

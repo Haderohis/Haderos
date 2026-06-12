@@ -679,7 +679,7 @@ export default function Sport() {
                 })
                 .slice(0, 6)
               return suggestions.length > 0 ? (
-                <ul className="absolute left-0 right-0 bottom-full mb-1 bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-[#f2edfa]">
+                <ul className="absolute left-0 right-0 top-full mt-1 bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-[#f2edfa]">
                   {suggestions.map(({ name, muscle }) => (
                     <li key={name}>
                       <button

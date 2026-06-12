@@ -236,6 +236,20 @@ export default function Sport() {
     ))
   }
 
+  const handleUncheckSet = (exo, set) => {
+    setDayExercises(prev => prev.map(e =>
+      e.id === exo.id ? { ...e, sport_sets: e.sport_sets.filter(s => s.id !== set.id) } : e
+    ))
+    supabase.from('sport_sets').delete().eq('id', set.id)
+    setAddingSet(prev => {
+      const existing = prev[exo.id] ?? []
+      const newRow = exo.type === 'strength'
+        ? { weight: set.weight_kg ?? '', reps: set.reps ?? '', duration: '' }
+        : { weight: '', reps: '', duration: set.duration_seconds != null ? `${Math.floor(set.duration_seconds / 60).toString().padStart(2, '0')}:${(set.duration_seconds % 60).toString().padStart(2, '0')}` : '' }
+      return { ...prev, [exo.id]: [...existing, newRow] }
+    })
+  }
+
   const handleDeleteExercise = async (exoId) => {
     await supabase.from('sport_exercises').delete().eq('id', exoId)
     setDayExercises(prev => prev.filter(e => e.id !== exoId))
@@ -412,7 +426,7 @@ export default function Sport() {
                       </div>
                     </div>
                     <div className="w-[22px] shrink-0 flex justify-center">
-                      <CheckCircleFilled onClick={() => handleDeleteSet(exo, set.id)} />
+                      <CheckCircleFilled onClick={() => handleUncheckSet(exo, set)} />
                     </div>
                   </div>
                 )

@@ -98,7 +98,7 @@ function NewExpenseModal({ currentUserId, onClose, onSaved, initialExpense, allT
 
   const [amount, setAmount] = useState(initialExpense ? String(initialExpense.amount) : '')
   const [description, setDescription] = useState(initialExpense?.description ?? '')
-  const [expenseDate, setExpenseDate] = useState(initialExpense?.expense_date ?? '')
+  const [expenseDate, setExpenseDate] = useState(initialExpense?.expense_date?.slice(0, 10) ?? '')
   const [payer, setPayer] = useState(initPayer)
   const [otherUserId, setOtherUserId] = useState(initOther)
   const [users, setUsers] = useState([])

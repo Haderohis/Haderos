@@ -630,7 +630,15 @@ export default function Collection() {
     setLoading(false)
   }, [user, category])
 
-  useEffect(() => { fetchCollection() }, [fetchCollection])
+  useEffect(() => {
+    fetchCollection()
+    if (!user) return
+    const channel = supabase
+      .channel(`collection_shares_watch:${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'collection_shares' }, fetchCollection)
+      .subscribe()
+    return () => supabase.removeChannel(channel)
+  }, [fetchCollection, user])
 
   const handleDelete = async (myItemId) => {
     await supabase.from('manga_collection').delete().eq('id', myItemId)

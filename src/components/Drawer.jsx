@@ -103,15 +103,15 @@ export default function Drawer({ open, onClose }) {
 
           <div className="mx-6 h-px bg-[rgba(153,153,166,0.25)]" />
 
-          {/* Navigation */}
-          <div className="flex flex-col gap-2 px-4 pt-4">
+          {/* Navigation — scrollable */}
+          <div className="flex-1 overflow-y-auto px-4 pt-4 flex flex-col gap-2 min-h-0">
             {NAV_ITEMS.map(({ path, label, icon }) => {
               const active = location.pathname === path
               return (
                 <button
                   key={path}
                   onClick={() => handleNav(path)}
-                  className={`flex items-center gap-3 w-full h-[52px] px-3 rounded-[12px] ${active ? 'bg-[#f2edfa]' : ''}`}
+                  className={`flex items-center gap-3 w-full h-[52px] px-3 rounded-[12px] shrink-0 ${active ? 'bg-[#f2edfa]' : ''}`}
                 >
                   <div className={`w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0 overflow-hidden ${active ? 'bg-[#6c63ff]' : 'bg-[#f2edfa]'}`}>
                     {icon(active)}
@@ -125,10 +125,8 @@ export default function Drawer({ open, onClose }) {
             })}
           </div>
 
-          <div className="flex-1" />
-
-          {/* Déconnexion */}
-          <div className="px-4 pb-10">
+          {/* Déconnexion — fixe en bas */}
+          <div className="px-4 pb-10 pt-3 shrink-0 border-t border-[rgba(153,153,166,0.15)]">
             <button
               onClick={handleSignOut}
               className="flex items-center justify-center gap-2 w-full h-[46px] border border-[#736694] rounded-[8px]"

@@ -658,16 +658,40 @@ export default function Expenses() {
               <p className="text-[11px] text-[#a49ffe]">pour le moment</p>
             </div>
           )}
-          {filtered.map(e => (
-            <ExpenseCard
-              key={e.id}
-              expense={e}
-              profiles={profiles}
-              onOpen={() => setDetailExpense(e)}
-              onEdit={setEditingExpense}
-              onDelete={setDeletingExpense}
-            />
-          ))}
+          {(() => {
+            const todayStr = new Date().toISOString().slice(0, 10)
+            const yesterdayStr = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+            const fmtLabel = (dateKey) => {
+              if (dateKey === todayStr) return "Aujourd'hui"
+              if (dateKey === yesterdayStr) return 'Hier'
+              return new Date(dateKey + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+            }
+            const groups = []
+            let lastKey = null
+            filtered.forEach(e => {
+              const key = (e.expense_date ?? e.created_at).slice(0, 10)
+              if (key !== lastKey) { groups.push({ key, items: [] }); lastKey = key }
+              groups[groups.length - 1].items.push(e)
+            })
+            return groups.map(({ key, items }) => (
+              <div key={key} className="flex flex-col gap-3">
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-[11px] font-semibold text-[#a49ffe] whitespace-nowrap">{fmtLabel(key)}</span>
+                  <div className="flex-1 h-px bg-[#e8e0f5]" />
+                </div>
+                {items.map(e => (
+                  <ExpenseCard
+                    key={e.id}
+                    expense={e}
+                    profiles={profiles}
+                    onOpen={() => setDetailExpense(e)}
+                    onEdit={setEditingExpense}
+                    onDelete={setDeletingExpense}
+                  />
+                ))}
+              </div>
+            ))
+          })()}
         </div>
       </main>
 

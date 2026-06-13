@@ -88,7 +88,19 @@ const MUSCLES = [
   )},
 ]
 
-function MuscleIcon({ muscleKey, size = 18, color = 'white' }) {
+function CardioIcon({ color = 'white' }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="4.5" r="1.5"/>
+      <path d="M9 21 L10 15 L8 11 L5 13"/>
+      <path d="M10 15 L12 17 L15 13 L17 15"/>
+      <path d="M13 9 L15 11 L19 9"/>
+    </svg>
+  )
+}
+
+function MuscleIcon({ muscleKey, type, size = 18, color = 'white' }) {
+  if (type === 'cardio') return <CardioIcon color={color} />
   const m = MUSCLES.find(m => m.key === muscleKey)
   if (!m) return <DumbbellIcon size={size} color={color} />
   return <>{m.icon(color)}</>
@@ -189,7 +201,7 @@ export default function Sport() {
 
         const { data: exercises } = await supabase
           .from('sport_exercises')
-          .select('id, name, type, muscle, position, sport_sets(id, set_number, reps, weight_kg, duration_seconds)')
+          .select('id, name, type, muscle, position, sport_sets(id, set_number, reps, weight_kg, duration_seconds, kcal)')
           .eq('session_id', sid)
           .order('position')
 
@@ -206,7 +218,7 @@ export default function Sport() {
           uniqueNames.map(name =>
             supabase
               .from('sport_sessions')
-              .select(`id, session_date, sport_exercises!inner(name, type, sport_sets(set_number, reps, weight_kg, duration_seconds))`)
+              .select(`id, session_date, sport_exercises!inner(name, type, sport_sets(set_number, reps, weight_kg, duration_seconds, kcal))`)
               .eq('user_id', user.id)
               .eq('sport_exercises.name', name)
               .neq('id', sid)
@@ -277,7 +289,7 @@ export default function Sport() {
       setAddingSet(prev => ({ ...prev, [exo.id]: [{ weight: '', reps: '', duration: '' }] }))
       supabase
         .from('sport_sessions')
-        .select(`id, session_date, sport_exercises!inner(name, type, sport_sets(set_number, reps, weight_kg, duration_seconds))`)
+        .select(`id, session_date, sport_exercises!inner(name, type, sport_sets(set_number, reps, weight_kg, duration_seconds, kcal))`)
         .eq('user_id', user.id)
         .eq('sport_exercises.name', exo.name)
         .neq('id', sid)
@@ -302,7 +314,7 @@ export default function Sport() {
   const handleUncheckSet = (exo, set) => {
     const row = exo.type === 'strength'
       ? { weight: set.weight_kg ?? '', reps: set.reps ?? '', duration: '' }
-      : { weight: '', reps: '', duration: set.duration_seconds != null ? `${Math.floor(set.duration_seconds / 60).toString().padStart(2, '0')}:${(set.duration_seconds % 60).toString().padStart(2, '0')}` : '' }
+      : { weight: '', reps: '', duration: set.duration_seconds != null ? `${Math.floor(set.duration_seconds / 60).toString().padStart(2, '0')}:${(set.duration_seconds % 60).toString().padStart(2, '0')}` : '', kcal: set.kcal ?? '' }
     setEditingSet(prev => ({ ...prev, [set.id]: row }))
   }
 
@@ -317,6 +329,7 @@ export default function Sport() {
       patch.duration_seconds = parts.length === 2
         ? parseInt(parts[0]) * 60 + parseInt(parts[1])
         : parseInt(inputs.duration) || null
+      patch.kcal = parseInt(inputs.kcal) || null
     }
     await supabase.from('sport_sets').update(patch).eq('id', set.id)
     setDayExercises(prev => prev.map(e =>
@@ -351,6 +364,7 @@ export default function Sport() {
       payload.duration_seconds = parts.length === 2
         ? parseInt(parts[0]) * 60 + parseInt(parts[1])
         : parseInt(inputs.duration) || null
+      payload.kcal = parseInt(inputs.kcal) || null
     }
     setSaving(true)
     const { data: newSet } = await supabase.from('sport_sets').insert(payload).select().single()
@@ -458,7 +472,7 @@ export default function Sport() {
                   <div className="relative w-[37px] h-[36px] shrink-0">
                     <div className="absolute inset-0 bg-[#6c63ff] rounded-[4px]" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <MuscleIcon muscleKey={exo.muscle} size={18} color="white" />
+                      <MuscleIcon muscleKey={exo.muscle} type={exo.type} size={18} color="white" />
                     </div>
                   </div>
                   <div className="flex flex-col gap-[3px]">
@@ -505,16 +519,25 @@ export default function Sport() {
                     </div>
                     <div className="flex-1 flex justify-center">
                       {editing ? (
-                        <input
-                          type="number" inputMode="decimal" min="0" placeholder="—"
-                          value={editing.weight ?? ''}
-                          onChange={e => setEditingSet(prev => ({ ...prev, [set.id]: { ...prev[set.id], weight: e.target.value } }))}
-                          className="w-[51px] bg-white/60 border border-[#6c63ff] rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
-                        />
+                        exo.type === 'strength' ? (
+                          <input
+                            type="number" inputMode="decimal" min="0" placeholder="—"
+                            value={editing.weight ?? ''}
+                            onChange={e => setEditingSet(prev => ({ ...prev, [set.id]: { ...prev[set.id], weight: e.target.value } }))}
+                            className="w-[51px] bg-white/60 border border-[#6c63ff] rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
+                          />
+                        ) : (
+                          <input
+                            type="number" inputMode="numeric" min="0" placeholder="—"
+                            value={editing.kcal ?? ''}
+                            onChange={e => setEditingSet(prev => ({ ...prev, [set.id]: { ...prev[set.id], kcal: e.target.value } }))}
+                            className="w-[51px] bg-white/60 border border-[#6c63ff] rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
+                          />
+                        )
                       ) : (
                         <div className="bg-white/60 border border-[#c0befe] rounded-[4px] px-1 py-[5px] w-[51px] flex items-center justify-center">
                           <span className="text-[10px] text-black">
-                            {exo.type === 'strength' ? (set.weight_kg ?? '—') : '—'}
+                            {exo.type === 'strength' ? (set.weight_kg ?? '—') : (set.kcal ?? '—')}
                           </span>
                         </div>
                       )}
@@ -600,7 +623,16 @@ export default function Sport() {
                     ) : (
                       <>
                         <div className="flex-1 flex justify-center">
-                          <div className="w-[51px] h-[27px]" />
+                          <input
+                            type="number" inputMode="numeric" min="0" placeholder="—"
+                            value={pending.kcal ?? ''}
+                            onChange={e => setAddingSet(prev => {
+                              const rows = [...(prev[exo.id] ?? [])]
+                              rows[pi] = { ...rows[pi], kcal: e.target.value }
+                              return { ...prev, [exo.id]: rows }
+                            })}
+                            className="w-[51px] bg-white/60 border border-[#6c63ff] rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
+                          />
                         </div>
                         <div className="flex-1 flex justify-center">
                           <input

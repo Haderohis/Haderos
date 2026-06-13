@@ -57,10 +57,10 @@ function MangaCard({ item, onDelete, onUpdateOwned, onCreateOwned, isCottagecore
 
   return (
     <div className={`bg-white/70 border rounded-[8px] p-2 flex flex-col gap-2 relative ${isCottagecore ? 'cc-border' : 'border-white/85'}`}>
-      {isCottagecore && item._decoIdx === 0 && <><LeafBig   width={24} rotate={-25} style={{ position:'absolute', left:-10, top:-8,    zIndex:10, pointerEvents:'none' }} /><Flower    width={14} rotate={20}  style={{ position:'absolute', left:'45%',top:-9,    zIndex:10, pointerEvents:'none' }} /><LeafSmall width={13} rotate={80}  style={{ position:'absolute', right:-6,  bottom:-6, zIndex:10, pointerEvents:'none' }} /></>}
-      {isCottagecore && item._decoIdx === 1 && <><Mushroom  width={26} rotate={10}  style={{ position:'absolute', right:-10, top:-9,    zIndex:10, pointerEvents:'none' }} /><LeafSmall width={13} rotate={-50} style={{ position:'absolute', left:'40%', top:-7,    zIndex:10, pointerEvents:'none' }} /><Flower    width={16} rotate={-20} style={{ position:'absolute', left:-7,   bottom:-6, zIndex:10, pointerEvents:'none' }} /></>}
-      {isCottagecore && item._decoIdx === 2 && <><Flower    width={18} rotate={30}  style={{ position:'absolute', left:-8,   top:-8,    zIndex:10, pointerEvents:'none' }} /><LeafBig   width={20} rotate={-10} style={{ position:'absolute', right:-9,  top:-7,    zIndex:10, pointerEvents:'none' }} /><LeafSmall width={13} rotate={65}  style={{ position:'absolute', left:'50%', bottom:-7, zIndex:10, pointerEvents:'none' }} /></>}
-      {isCottagecore && item._decoIdx === 3 && <><LeafSmall width={15} rotate={50}  style={{ position:'absolute', left:-6,   top:-7,    zIndex:10, pointerEvents:'none' }} /><Mushroom  width={22} rotate={-15} style={{ position:'absolute', right:-9,  bottom:-8, zIndex:10, pointerEvents:'none' }} /><Flower    width={14} rotate={40}  style={{ position:'absolute', left:'42%', bottom:-8, zIndex:10, pointerEvents:'none' }} /></>}
+      {isCottagecore && item._decoIdx === 0 && <><LeafBig   width={22} rotate={-25} style={{ position:'absolute', left:-9,  top:-8,  zIndex:10, pointerEvents:'none' }} /><LeafSmall width={12} rotate={70}  style={{ position:'absolute', right:-5, bottom:-5,zIndex:10, pointerEvents:'none' }} /></>}
+      {isCottagecore && item._decoIdx === 1 && <><Mushroom  width={24} rotate={10}  style={{ position:'absolute', right:-9, top:-8,  zIndex:10, pointerEvents:'none' }} /><Flower    width={14} rotate={-20} style={{ position:'absolute', left:-6,  bottom:-5,zIndex:10, pointerEvents:'none' }} /></>}
+      {isCottagecore && item._decoIdx === 2 && <><Flower    width={16} rotate={30}  style={{ position:'absolute', left:-7,  top:-7,  zIndex:10, pointerEvents:'none' }} /><LeafBig   width={18} rotate={-10} style={{ position:'absolute', right:-8, top:-6,  zIndex:10, pointerEvents:'none' }} /></>}
+      {isCottagecore && item._decoIdx === 3 && <><LeafSmall width={13} rotate={50}  style={{ position:'absolute', left:-5,  top:-6,  zIndex:10, pointerEvents:'none' }} /><Mushroom  width={20} rotate={-15} style={{ position:'absolute', right:-8, bottom:-7,zIndex:10, pointerEvents:'none' }} /></>}
       {/* Row 1 — title + ownership chips + "En cours" */}
       <div className="flex items-center gap-1.5 min-w-0">
         <p className="text-[14px] font-bold text-dark leading-snug truncate flex-1 min-w-0">{item.title}</p>
@@ -813,11 +813,9 @@ export default function Collection() {
         </button>
         {isCottagecore && <>
           <LeafSmall width={15} rotate={-40} style={{ position:'absolute', left:-6,    top:-8,    zIndex:11, pointerEvents:'none' }} />
-          <Flower    width={18} rotate={30}  style={{ position:'absolute', left:14,    top:-11,   zIndex:11, pointerEvents:'none' }} />
           <LeafBig   width={24} rotate={-20} style={{ position:'absolute', left:'42%', top:-12,   zIndex:11, pointerEvents:'none' }} />
-          <Mushroom  width={22} rotate={5}   style={{ position:'absolute', right:14,   top:-10,   zIndex:11, pointerEvents:'none' }} />
-          <LeafSmall width={14} rotate={70}  style={{ position:'absolute', right:-5,   top:-7,    zIndex:11, pointerEvents:'none' }} />
-          <Flower    width={15} rotate={-35} style={{ position:'absolute', left:'28%', bottom:-7, zIndex:11, pointerEvents:'none' }} />
+          <Mushroom  width={22} rotate={5}   style={{ position:'absolute', right:-6,   top:-10,   zIndex:11, pointerEvents:'none' }} />
+          <Flower    width={15} rotate={35}  style={{ position:'absolute', left:'54%', bottom:-7, zIndex:11, pointerEvents:'none' }} />
         </>}
       </div>
 

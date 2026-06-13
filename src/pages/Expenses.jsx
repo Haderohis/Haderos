@@ -359,10 +359,10 @@ function ExpenseCard({ expense, profiles, onOpen, onEdit, onDelete, isCottagecor
 
   return (
     <div className={`bg-white/70 border backdrop-blur-sm rounded-[16px] relative transition-all ${isCottagecore ? 'cc-border' : 'border-white/85'} ${isDone ? 'opacity-50 grayscale' : ''}`}>
-      {isCottagecore && decoIdx === 0 && <><Mushroom  width={24} rotate={15}  style={{ position:'absolute', left:-10, top:-9,     zIndex:10, pointerEvents:'none' }} /><Flower    width={15} rotate={25}  style={{ position:'absolute', left:'38%',top:-9,     zIndex:10, pointerEvents:'none' }} /><LeafBig   width={22} rotate={-10} style={{ position:'absolute', right:-9,  top:'30%',  zIndex:10, pointerEvents:'none' }} /><LeafSmall width={13} rotate={60}  style={{ position:'absolute', left:'45%',bottom:-7,  zIndex:10, pointerEvents:'none' }} /></>}
-      {isCottagecore && decoIdx === 1 && <><LeafBig   width={24} rotate={-20} style={{ position:'absolute', left:'30%', top:-9,    zIndex:10, pointerEvents:'none' }} /><LeafSmall width={13} rotate={55}  style={{ position:'absolute', right:-5,  top:-6,    zIndex:10, pointerEvents:'none' }} /><Flower    width={16} rotate={30}  style={{ position:'absolute', left:-7,   top:'25%',  zIndex:10, pointerEvents:'none' }} /><Mushroom  width={20} rotate={-8}  style={{ position:'absolute', left:'42%',bottom:-9,  zIndex:10, pointerEvents:'none' }} /></>}
-      {isCottagecore && decoIdx === 2 && <><Flower    width={17} rotate={-35} style={{ position:'absolute', left:-8,   top:-9,    zIndex:10, pointerEvents:'none' }} /><LeafSmall width={13} rotate={70}  style={{ position:'absolute', left:'44%', top:-7,    zIndex:10, pointerEvents:'none' }} /><Mushroom  width={22} rotate={10}  style={{ position:'absolute', right:-9,  top:'20%',  zIndex:10, pointerEvents:'none' }} /><LeafBig   width={21} rotate={20}  style={{ position:'absolute', left:'28%', bottom:-9,  zIndex:10, pointerEvents:'none' }} /></>}
-      {isCottagecore && decoIdx === 3 && <><LeafSmall width={14} rotate={100} style={{ position:'absolute', left:'35%', top:-7,    zIndex:10, pointerEvents:'none' }} /><LeafBig   width={24} rotate={-15} style={{ position:'absolute', right:-9,  top:-8,    zIndex:10, pointerEvents:'none' }} /><Flower    width={15} rotate={40}  style={{ position:'absolute', left:-7,   top:'22%',  zIndex:10, pointerEvents:'none' }} /><Mushroom  width={20} rotate={-12} style={{ position:'absolute', left:'48%', bottom:-9,  zIndex:10, pointerEvents:'none' }} /></>}
+      {isCottagecore && decoIdx === 0 && <><Mushroom  width={24} rotate={15}  style={{ position:'absolute', left:-10, top:-9,    zIndex:10, pointerEvents:'none' }} /><Flower    width={15} rotate={25}  style={{ position:'absolute', left:'40%',top:-9,    zIndex:10, pointerEvents:'none' }} /><LeafSmall width={13} rotate={60}  style={{ position:'absolute', right:-6,  bottom:-6, zIndex:10, pointerEvents:'none' }} /></>}
+      {isCottagecore && decoIdx === 1 && <><LeafBig   width={24} rotate={-20} style={{ position:'absolute', left:'32%', top:-9,   zIndex:10, pointerEvents:'none' }} /><Flower    width={16} rotate={30}  style={{ position:'absolute', left:-7,   top:'25%', zIndex:10, pointerEvents:'none' }} /><LeafSmall width={13} rotate={55}  style={{ position:'absolute', right:-5,  bottom:-6, zIndex:10, pointerEvents:'none' }} /></>}
+      {isCottagecore && decoIdx === 2 && <><Flower    width={17} rotate={-35} style={{ position:'absolute', left:-8,   top:-9,    zIndex:10, pointerEvents:'none' }} /><LeafSmall width={13} rotate={70}  style={{ position:'absolute', left:'42%', top:-7,    zIndex:10, pointerEvents:'none' }} /><Mushroom  width={22} rotate={10}  style={{ position:'absolute', right:-9,  bottom:-9, zIndex:10, pointerEvents:'none' }} /></>}
+      {isCottagecore && decoIdx === 3 && <><LeafBig   width={24} rotate={-15} style={{ position:'absolute', right:-9,  top:-8,    zIndex:10, pointerEvents:'none' }} /><Flower    width={15} rotate={40}  style={{ position:'absolute', left:-7,   top:'22%', zIndex:10, pointerEvents:'none' }} /><LeafSmall width={14} rotate={100} style={{ position:'absolute', left:'44%', bottom:-7, zIndex:10, pointerEvents:'none' }} /></>}
       {/* Dropdown 3-dot */}
       {dotMenuOpen && (
         <>
@@ -719,11 +719,9 @@ export default function Expenses() {
         </button>
         {isCottagecore && <>
           <Mushroom  width={26} rotate={-15} style={{ position:'absolute', left:-7,    top:-12,   zIndex:11, pointerEvents:'none' }} />
-          <LeafSmall width={14} rotate={50}  style={{ position:'absolute', left:18,    top:-8,    zIndex:11, pointerEvents:'none' }} />
-          <Flower    width={17} rotate={-25} style={{ position:'absolute', left:'38%', top:-11,   zIndex:11, pointerEvents:'none' }} />
+          <Flower    width={17} rotate={-25} style={{ position:'absolute', left:'40%', top:-11,   zIndex:11, pointerEvents:'none' }} />
           <LeafBig   width={22} rotate={15}  style={{ position:'absolute', right:-6,   top:-10,   zIndex:11, pointerEvents:'none' }} />
-          <LeafSmall width={13} rotate={-55} style={{ position:'absolute', right:20,   top:-7,    zIndex:11, pointerEvents:'none' }} />
-          <Flower    width={14} rotate={40}  style={{ position:'absolute', left:'55%', bottom:-7, zIndex:11, pointerEvents:'none' }} />
+          <LeafSmall width={13} rotate={50}  style={{ position:'absolute', left:'54%', bottom:-7, zIndex:11, pointerEvents:'none' }} />
         </>}
       </div>
 

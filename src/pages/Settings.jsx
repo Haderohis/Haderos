@@ -28,20 +28,12 @@ export default function Settings() {
       <main className="absolute top-[92px] left-4 right-4 bottom-4">
         <div className={`bg-white/55 border backdrop-blur-md rounded-[20px] p-5 relative ${isCottagecore ? 'cc-border' : 'border-white/85'}`}>
           {isCottagecore && <>
-            {/* haut */}
             <LeafBig   width={28} rotate={-30} style={{ position:'absolute', left:-10,  top:-12,    zIndex:10, pointerEvents:'none' }} />
-            <Flower    width={18} rotate={20}  style={{ position:'absolute', left:'38%',top:-10,    zIndex:10, pointerEvents:'none' }} />
+            <Flower    width={18} rotate={20}  style={{ position:'absolute', left:'40%',top:-10,    zIndex:10, pointerEvents:'none' }} />
             <LeafSmall width={14} rotate={-50} style={{ position:'absolute', right:-6,  top:-8,     zIndex:10, pointerEvents:'none' }} />
-            {/* côté gauche */}
-            <Mushroom  width={24} rotate={15}  style={{ position:'absolute', left:-10,  top:'30%',  zIndex:10, pointerEvents:'none' }} />
-            <LeafSmall width={14} rotate={-40} style={{ position:'absolute', left:-6,   top:'60%',  zIndex:10, pointerEvents:'none' }} />
-            {/* côté droit */}
-            <Flower    width={18} rotate={-25} style={{ position:'absolute', right:-8,  top:'25%',  zIndex:10, pointerEvents:'none' }} />
-            <LeafBig   width={22} rotate={35}  style={{ position:'absolute', right:-9,  top:'55%',  zIndex:10, pointerEvents:'none' }} />
-            {/* bas */}
-            <Mushroom  width={20} rotate={-10} style={{ position:'absolute', left:-8,   bottom:-10, zIndex:10, pointerEvents:'none' }} />
-            <LeafSmall width={16} rotate={60}  style={{ position:'absolute', left:'40%',bottom:-8,  zIndex:10, pointerEvents:'none' }} />
-            <Flower    width={18} rotate={-40} style={{ position:'absolute', right:-8,  bottom:-9,  zIndex:10, pointerEvents:'none' }} />
+            <Mushroom  width={24} rotate={15}  style={{ position:'absolute', left:-10,  top:'40%',  zIndex:10, pointerEvents:'none' }} />
+            <Flower    width={18} rotate={-25} style={{ position:'absolute', right:-8,  top:'35%',  zIndex:10, pointerEvents:'none' }} />
+            <LeafSmall width={16} rotate={60}  style={{ position:'absolute', left:'42%',bottom:-8,  zIndex:10, pointerEvents:'none' }} />
           </>}
           <p className="text-[13px] font-semibold text-muted uppercase tracking-wider mb-4">Thème</p>
 

@@ -262,13 +262,12 @@ export default function Checklist() {
           ${isDragging ? 'opacity-50 z-50' : ''}`}
       >
         {isCottagecore && (() => {
-          const sid = String(task.id)
-          const d = (sid.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % 4
+          const d = (String(task.id).split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % 4
           const s = { pointerEvents:'none', position:'absolute', zIndex:10 }
-          if (d===0) return <><LeafBig   width={22} rotate={-20} style={{...s, left:2,    top:-8}}  /><Flower    width={14} rotate={25}  style={{...s, left:'40%', top:-8}}  /><LeafSmall width={13} rotate={-55} style={{...s, right:2,    bottom:-6}} /></>
-          if (d===1) return <><Mushroom  width={24} rotate={10}  style={{...s, right:2,    top:-9}}  /><LeafSmall width={13} rotate={60}  style={{...s, left:'45%', top:-7}}  /><Flower    width={14} rotate={-20} style={{...s, left:2,     bottom:-6}} /></>
-          if (d===2) return <><Flower    width={17} rotate={40}  style={{...s, left:2,     top:-9}}  /><LeafBig   width={20} rotate={-10} style={{...s, right:2,    top:-7}}  /><LeafSmall width={12} rotate={65}  style={{...s, left:'50%', bottom:-6}} /></>
-          return              <><LeafSmall width={13} rotate={80}  style={{...s, left:2,     top:-7}}  /><Mushroom  width={22} rotate={-5}  style={{...s, right:2,    bottom:-8}} /><Flower    width={14} rotate={30}  style={{...s, left:'42%', bottom:-7}} /></>
+          if (d===0) return <LeafSmall width={14} rotate={-20} style={{...s, right:2, top:-7}} />
+          if (d===1) return <Flower    width={13} rotate={25}  style={{...s, right:2, top:-6}} />
+          if (d===2) return <Mushroom  width={16} rotate={10}  style={{...s, right:2, top:-7}} />
+          return              <LeafBig   width={15} rotate={-35} style={{...s, right:2, top:-7}} />
         })()}
         {/* Drag handle */}
         {sortable && (
@@ -639,12 +638,10 @@ export default function Checklist() {
             Nouvelle tâche
           </button>
           {isCottagecore && <>
-            <LeafBig   width={22} rotate={20}   style={{ position:'absolute', left:-7,    top:-9,    zIndex:11, pointerEvents:'none' }} />
-            <Flower    width={16} rotate={-30}  style={{ position:'absolute', left:16,    top:-10,   zIndex:11, pointerEvents:'none' }} />
-            <LeafSmall width={14} rotate={50}   style={{ position:'absolute', left:'40%', top:-8,    zIndex:11, pointerEvents:'none' }} />
-            <Mushroom  width={24} rotate={-10}  style={{ position:'absolute', right:-6,   top:-12,   zIndex:11, pointerEvents:'none' }} />
-            <LeafSmall width={13} rotate={-60}  style={{ position:'absolute', right:18,   top:-7,    zIndex:11, pointerEvents:'none' }} />
-            <Flower    width={15} rotate={25}   style={{ position:'absolute', left:'52%', bottom:-7, zIndex:11, pointerEvents:'none' }} />
+            <LeafBig   width={22} rotate={20}  style={{ position:'absolute', left:-7,    top:-9,    zIndex:11, pointerEvents:'none' }} />
+            <Flower    width={16} rotate={-30} style={{ position:'absolute', left:'38%', top:-10,   zIndex:11, pointerEvents:'none' }} />
+            <Mushroom  width={24} rotate={-10} style={{ position:'absolute', right:-6,   top:-12,   zIndex:11, pointerEvents:'none' }} />
+            <LeafSmall width={13} rotate={60}  style={{ position:'absolute', left:'52%', bottom:-7, zIndex:11, pointerEvents:'none' }} />
           </>}
         </div>
       )}

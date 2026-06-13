@@ -700,7 +700,7 @@ export default function Expenses() {
                     onEdit={setEditingExpense}
                     onDelete={setDeletingExpense}
                     isCottagecore={isCottagecore}
-                    decoIdx={String(e.id).split('').reduce((a,c)=>a+c.charCodeAt(0),0) % 4}
+                    decoIdx={parseInt(String(e.id).replace(/-/g,'').slice(-2), 16) % 4}
                   />
                 ))}
               </div>

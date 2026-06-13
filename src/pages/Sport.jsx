@@ -387,7 +387,7 @@ export default function Sport() {
         next.splice(pendingIndex, 1)
         return { ...prev, [exo.id]: next }
       })
-      setRestTimer(true)
+      if (exo.type === 'strength') setRestTimer(true)
     }
   }
 

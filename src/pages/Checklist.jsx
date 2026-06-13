@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
@@ -6,6 +6,8 @@ import { toDateStr } from '../lib/date'
 import BottomSheet from '../components/BottomSheet'
 import { TextField, DateField, SubmitButton } from '../components/FormFields'
 import AppHeader from '../components/AppHeader'
+import { useTheme } from '../contexts/ThemeContext'
+import { LeafSmall, LeafBig, Flower, Mushroom } from '../components/CottageDecor'
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors,
 } from '@dnd-kit/core'
@@ -16,13 +18,13 @@ import { CSS } from '@dnd-kit/utilities'
 
 const EMPTY_FORM = { label: '', group: '', dueDate: '', tags: [], jiraUrl: '' }
 const TAG_TYPES = [
-  { value: 'personne', color: 'bg-[#e0f2fe] text-[#1c78ab]', icon: (
+  { value: 'personne', color: 'bg-primary text-white', icon: (
     <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2"/>
       <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
     </svg>
   )},
-  { value: 'contexte', color: 'bg-[#e9ebfd] text-[#7168ff]', icon: (
+  { value: 'contexte', color: 'bg-primary text-white', icon: (
     <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/>
       <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
@@ -67,6 +69,8 @@ export default function Checklist() {
   const dateRef   = useRef(null)
   const navigate = useNavigate()
   const { user, loading } = useAuth()
+  const { theme } = useTheme()
+  const isCottagecore = theme === 'cottagecore'
 
 
   useEffect(() => { if (!loading && !user) navigate('/login') }, [user, loading])
@@ -253,24 +257,33 @@ export default function Checklist() {
       <li
         ref={setNodeRef}
         style={sortable ? { transform: CSS.Transform.toString(transform), transition } : {}}
-        className={`border rounded-[8px] px-2 py-[6px] flex items-center gap-2
-          ${task.done ? 'bg-[#f0eef5]/80 border-[rgba(115,102,148,0.2)]' : 'bg-white/70 border-white/85'}
+        className={`border rounded-[8px] px-2 py-[6px] flex items-center gap-2 relative
+          ${task.done ? 'bg-[#f0eef5]/80 border-[rgba(115,102,148,0.2)]' : `bg-white/70 ${isCottagecore ? 'cc-border' : 'border-white/85'}`}
           ${isDragging ? 'opacity-50 z-50' : ''}`}
       >
+        {isCottagecore && (() => {
+          const sid = String(task.id)
+          const d = (sid.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % 4
+          const s = { pointerEvents:'none', position:'absolute', zIndex:10 }
+          if (d===0) return <><LeafBig   width={22} rotate={-20} style={{...s, left:2,    top:-8}}  /><Flower    width={14} rotate={25}  style={{...s, left:'40%', top:-8}}  /><LeafSmall width={13} rotate={-55} style={{...s, right:2,    bottom:-6}} /></>
+          if (d===1) return <><Mushroom  width={24} rotate={10}  style={{...s, right:2,    top:-9}}  /><LeafSmall width={13} rotate={60}  style={{...s, left:'45%', top:-7}}  /><Flower    width={14} rotate={-20} style={{...s, left:2,     bottom:-6}} /></>
+          if (d===2) return <><Flower    width={17} rotate={40}  style={{...s, left:2,     top:-9}}  /><LeafBig   width={20} rotate={-10} style={{...s, right:2,    top:-7}}  /><LeafSmall width={12} rotate={65}  style={{...s, left:'50%', bottom:-6}} /></>
+          return              <><LeafSmall width={13} rotate={80}  style={{...s, left:2,     top:-7}}  /><Mushroom  width={22} rotate={-5}  style={{...s, right:2,    bottom:-8}} /><Flower    width={14} rotate={30}  style={{...s, left:'42%', bottom:-7}} /></>
+        })()}
         {/* Drag handle */}
         {sortable && (
           <button {...attributes} {...listeners} className="w-4 h-4 flex items-center justify-center shrink-0 touch-none">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <circle cx="9" cy="5" r="1.5" fill="#c0befe"/><circle cx="15" cy="5" r="1.5" fill="#c0befe"/>
-              <circle cx="9" cy="12" r="1.5" fill="#c0befe"/><circle cx="15" cy="12" r="1.5" fill="#c0befe"/>
-              <circle cx="9" cy="19" r="1.5" fill="#c0befe"/><circle cx="15" cy="19" r="1.5" fill="#c0befe"/>
+              <circle cx="9" cy="5" r="1.5" fill="rgb(var(--color-accent))"/><circle cx="15" cy="5" r="1.5" fill="rgb(var(--color-accent))"/>
+              <circle cx="9" cy="12" r="1.5" fill="rgb(var(--color-accent))"/><circle cx="15" cy="12" r="1.5" fill="rgb(var(--color-accent))"/>
+              <circle cx="9" cy="19" r="1.5" fill="rgb(var(--color-accent))"/><circle cx="15" cy="19" r="1.5" fill="rgb(var(--color-accent))"/>
             </svg>
           </button>
         )}
         {/* Checkbox — toujours cliquable */}
         <button onClick={() => toggleTask(task.id, task.done)}
           style={{ minWidth: 0, minHeight: 0, width: 24, height: 24 }}
-          className={`rounded-[3px] border-2 flex items-center justify-center shrink-0 ${task.done ? 'border-[#736694] bg-[#736694]' : 'border-[#6c63ff]'}`}>
+          className={`rounded-[3px] border-2 flex items-center justify-center shrink-0 ${task.done ? 'border-muted bg-muted' : 'border-primary'}`}>
           {task.done && (
             <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
               <path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -286,8 +299,8 @@ export default function Checklist() {
                 onClick={e => e.stopPropagation()}
                 className="shrink-0" style={{ minWidth: 0, minHeight: 0 }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                  <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke={task.done ? '#9992a8' : '#6c63ff'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke={task.done ? '#9992a8' : '#6c63ff'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke={task.done ? '#9992a8' : 'rgb(var(--color-primary))'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke={task.done ? '#9992a8' : 'rgb(var(--color-primary))'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </a>
             )}
@@ -309,7 +322,7 @@ export default function Checklist() {
           {hasTags && (
             <div className="flex flex-wrap items-center gap-[3px]">
               {(task.tags ?? []).map((tag, i) => (
-                <span key={i} className={`flex items-center gap-[4px] text-[8px] px-[4px] py-[1px] rounded-full ${task.done ? 'bg-[#e8e5f0] text-[#9992a8]' : tagColor(tag.type)}`}>
+                <span key={i} className={`flex items-center gap-[4px] text-[8px] px-[4px] py-[1px] rounded-full ${task.done ? 'bg-muted/20 text-muted/70' : tagColor(tag.type)}`}>
                   {tagIcon(tag.type)}{tag.label}
                 </span>
               ))}
@@ -338,8 +351,8 @@ export default function Checklist() {
             ) : task.due_date ? (
               <div className="flex items-center gap-[6px]">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <rect x="3" y="4" width="18" height="18" rx="2" stroke={task.done ? '#9992a8' : '#736694'} strokeWidth="2"/>
-                  <path d="M16 2v4M8 2v4M3 10h18" stroke={task.done ? '#9992a8' : '#736694'} strokeWidth="2" strokeLinecap="round"/>
+                  <rect x="3" y="4" width="18" height="18" rx="2" stroke={task.done ? '#9992a8' : 'rgb(var(--color-muted))'} strokeWidth="2"/>
+                  <path d="M16 2v4M8 2v4M3 10h18" stroke={task.done ? '#9992a8' : 'rgb(var(--color-muted))'} strokeWidth="2" strokeLinecap="round"/>
                 </svg>
                 <span className={`text-[12px] whitespace-nowrap ${task.done ? 'text-[#9992a8]' : 'text-black'}`}>{formatDueDate(task.due_date)}</span>
               </div>
@@ -351,7 +364,7 @@ export default function Checklist() {
           onClick={() => !task.done && setDeleteConfirm(task)}
           className={`w-6 h-6 flex items-center justify-center shrink-0 ${task.done ? 'pointer-events-none opacity-0' : ''}`}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M18 6L6 18M6 6l12 12" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round"/>
+            <path d="M18 6L6 18M6 6l12 12" stroke="rgb(var(--color-accent))" strokeWidth="2" strokeLinecap="round"/>
           </svg>
         </button>
       </li>
@@ -375,7 +388,7 @@ export default function Checklist() {
       const isDoneGroup = grouped[group].every(t => t.done)
       return (
       <div key={group} className={`flex flex-col gap-2 ${i > 0 ? 'border-t border-[rgba(115,102,148,0.15)]' : ''} ${isDoneGroup && i > 0 ? 'pt-6' : i > 0 ? 'pt-4' : 'mt-4'}`}>
-        {group && <p className="text-[12px] font-semibold text-[#6c63ff] uppercase tracking-wider px-1">{group}</p>}
+        {group && <p className="text-[12px] font-semibold text-primary uppercase tracking-wider px-1">{group}</p>}
         <ul className="flex flex-col gap-2">
           {grouped[group].map(task => <SortableTask key={task.id} task={task} />)}
         </ul>
@@ -386,7 +399,7 @@ export default function Checklist() {
   const hasTasks = tasks.length > 0
 
   return (
-    <div className="relative w-full h-dvh overflow-hidden bg-[#f6f4f9]">
+    <div className="relative w-full h-dvh overflow-hidden bg-base">
 
       {/* Blobs */}
       <div className="absolute -left-16 -top-4 w-72 h-72 rounded-full bg-[#c4b5fd] opacity-30 blur-3xl pointer-events-none"/>
@@ -395,6 +408,14 @@ export default function Checklist() {
       <div className="absolute left-40 top-[461px] w-64 h-64 rounded-full bg-[#fed7aa] opacity-25 blur-3xl pointer-events-none"/>
 
       <AppHeader title="Worklist" />
+      {isCottagecore && <>
+        {/* Checklist — déco haute gauche et milieu-bas droite */}
+        <LeafSmall width={17} rotate={30}  style={{ position: 'absolute', top: 20,  left: '28%', zIndex: 30 }} />
+        <Mushroom  width={22} rotate={-15} style={{ position: 'absolute', top: 14,  right: '24%', zIndex: 30 }} />
+        <Flower    width={16} rotate={40}  style={{ position: 'absolute', top: 42,  right: '36%', zIndex: 30 }} />
+        <LeafBig   width={24} rotate={-25} style={{ position: 'absolute', top: 82,  right: 4,   zIndex: 20 }} />
+        <LeafSmall width={15} rotate={80}  style={{ position: 'absolute', top: 108, left: 6,   zIndex: 20 }} />
+      </>}
 
       {/* Barre recherche + jour */}
       <div className="absolute top-[76px] left-0 right-0 z-10 bg-white/55 backdrop-blur-md border-b border-white/80">
@@ -404,15 +425,15 @@ export default function Checklist() {
           <div className="relative flex-1">
             <div className="bg-white/70 border border-white/85 rounded-[8px] h-[44px] flex items-center px-3 gap-2">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="shrink-0">
-                <circle cx="11" cy="11" r="8" stroke="#ada7fd" strokeWidth="2"/>
-                <path d="M21 21l-4.35-4.35" stroke="#ada7fd" strokeWidth="2" strokeLinecap="round"/>
+                <circle cx="11" cy="11" r="8" stroke="rgb(var(--color-accent))" strokeWidth="2"/>
+                <path d="M21 21l-4.35-4.35" stroke="rgb(var(--color-accent))" strokeWidth="2" strokeLinecap="round"/>
               </svg>
               <input type="text" value={search}
                 onChange={e => setSearch(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Escape') setSearch('') }}
                 placeholder="Rechercher"
-                className="bg-transparent text-[14px] font-semibold text-[#211738] outline-none placeholder:text-[#ada7fd] flex-1"/>
-              {search && <button onClick={() => setSearch('')} style={{ minWidth: 0, minHeight: 0 }} className="text-[#a49ffe] leading-none text-lg">&times;</button>}
+                className="bg-transparent text-[14px] font-semibold text-dark outline-none placeholder:text-accent flex-1"/>
+              {search && <button onClick={() => setSearch('')} style={{ minWidth: 0, minHeight: 0 }} className="text-accent leading-none text-lg">&times;</button>}
             </div>
             {/* Autocomplete suggestions */}
             {search.length > 0 && (() => {
@@ -420,15 +441,15 @@ export default function Checklist() {
               const taskSuggestions = [...new Set(tasks.map(t => t.label).filter(l => l.toLowerCase().includes(q) && l.toLowerCase() !== q))]
               if (!taskSuggestions.length) return null
               return (
-                <ul className="absolute left-0 right-0 top-[50px] bg-white/95 backdrop-blur-md rounded-[10px] shadow-lg z-30 overflow-hidden border border-[#f2edfa]">
+                <ul className="absolute left-0 right-0 top-[50px] bg-white/95 backdrop-blur-md rounded-[10px] shadow-lg z-30 overflow-hidden border border-soft">
                   {taskSuggestions.slice(0, 5).map((label, i) => (
                     <li key={i}>
-                      <button className="w-full text-left px-4 py-3 text-[13px] text-[#211738] hover:bg-[#f2edfa] flex items-center gap-2"
+                      <button className="w-full text-left px-4 py-3 text-[13px] text-dark hover:bg-soft flex items-center gap-2"
                         style={{ minWidth: 0, minHeight: 0 }}
                         onClick={() => setSearch(label)}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="shrink-0">
-                          <circle cx="11" cy="11" r="8" stroke="#a49ffe" strokeWidth="2"/>
-                          <path d="M21 21l-4.35-4.35" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round"/>
+                          <circle cx="11" cy="11" r="8" stroke="rgb(var(--color-accent))" strokeWidth="2"/>
+                          <path d="M21 21l-4.35-4.35" stroke="rgb(var(--color-accent))" strokeWidth="2" strokeLinecap="round"/>
                         </svg>
                         {label}
                       </button>
@@ -442,7 +463,7 @@ export default function Checklist() {
           <div className="relative shrink-0" ref={filterRef}>
             <button onClick={() => setShowFilter(f => !f)}
               style={{ minWidth: 0, minHeight: 0, width: 44, height: 44 }}
-              className={`rounded-[8px] border border-white/85 flex items-center justify-center ${showFilter || filterTag || filterGroup ? 'bg-[#6c63ff] text-white' : 'bg-white/75 text-[#736694]'}`}>
+              className={`rounded-[8px] border border-white/85 flex items-center justify-center ${showFilter || filterTag || filterGroup ? 'bg-primary text-white' : 'bg-white/75 text-muted'}`}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
               </svg>
@@ -453,27 +474,27 @@ export default function Checklist() {
 
                 {/* Filtre groupe */}
                 <div className="flex flex-col gap-1">
-                  <p className="text-[10px] font-semibold text-[#736694] uppercase tracking-wider">Groupe</p>
+                  <p className="text-[10px] font-semibold text-muted uppercase tracking-wider">Groupe</p>
                   <div className="relative">
-                    <div className={`flex items-center gap-2 bg-[#f2edfa] rounded-[8px] px-3 h-9 ${filterGroup ? 'ring-2 ring-[#6c63ff]/40' : ''}`}>
+                    <div className={`flex items-center gap-2 bg-soft rounded-[8px] px-3 h-9 ${filterGroup ? 'ring-2 ring-primary/40' : ''}`}>
                       {filterGroup && (
-                        <span className="text-[12px] font-medium text-[#6c63ff] bg-[#6c63ff]/10 px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1">
+                        <span className="text-[12px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1">
                           {filterGroup}
-                          <button onClick={() => { setFilterGroup(null); setFilterGroupInput('') }} style={{ minWidth: 0, minHeight: 0 }} className="text-[#6c63ff] leading-none">&times;</button>
+                          <button onClick={() => { setFilterGroup(null); setFilterGroupInput('') }} style={{ minWidth: 0, minHeight: 0 }} className="text-primary leading-none">&times;</button>
                         </span>
                       )}
                       {!filterGroup && (
                         <input type="text" value={filterGroupInput}
                           onChange={e => setFilterGroupInput(e.target.value)}
                           placeholder="Filtrer par groupe..."
-                          className="bg-transparent text-[13px] text-[#211738] outline-none placeholder:text-[#a49ffe] flex-1 w-full"/>
+                          className="bg-transparent text-[13px] text-dark outline-none placeholder:text-accent flex-1 w-full"/>
                       )}
                     </div>
                     {!filterGroup && filterGroupInput && (
-                      <ul className="absolute left-0 right-0 top-[38px] bg-white rounded-[8px] shadow-lg z-10 overflow-hidden border border-[#f2edfa]">
+                      <ul className="absolute left-0 right-0 top-[38px] bg-white rounded-[8px] shadow-lg z-10 overflow-hidden border border-soft">
                         {allGroups.filter(g => g.toLowerCase().includes(filterGroupInput.toLowerCase())).map(g => (
                           <li key={g}>
-                            <button className="w-full text-left px-3 py-2 text-[13px] text-[#211738] hover:bg-[#f2edfa]"
+                            <button className="w-full text-left px-3 py-2 text-[13px] text-dark hover:bg-soft"
                               style={{ minWidth: 0, minHeight: 0 }}
                               onClick={() => { setFilterGroup(g); setFilterGroupInput('') }}>
                               {g}
@@ -487,9 +508,9 @@ export default function Checklist() {
 
                 {/* Filtre tag */}
                 <div className="flex flex-col gap-1">
-                  <p className="text-[10px] font-semibold text-[#736694] uppercase tracking-wider">Tag</p>
+                  <p className="text-[10px] font-semibold text-muted uppercase tracking-wider">Tag</p>
                   <div className="relative">
-                    <div className={`flex items-center gap-2 bg-[#f2edfa] rounded-[8px] px-3 h-9 ${filterTag ? 'ring-2 ring-[#6c63ff]/40' : ''}`}>
+                    <div className={`flex items-center gap-2 bg-soft rounded-[8px] px-3 h-9 ${filterTag ? 'ring-2 ring-primary/40' : ''}`}>
                       {filterTag && (
                         <span className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full shrink-0 ${tagColor(filterTag.type)}`}>
                           {tagIcon(filterTag.type)}{filterTag.label}
@@ -500,14 +521,14 @@ export default function Checklist() {
                         <input type="text" value={filterTagInput}
                           onChange={e => setFilterTagInput(e.target.value)}
                           placeholder="Filtrer par tag..."
-                          className="bg-transparent text-[13px] text-[#211738] outline-none placeholder:text-[#a49ffe] flex-1 w-full"/>
+                          className="bg-transparent text-[13px] text-dark outline-none placeholder:text-accent flex-1 w-full"/>
                       )}
                     </div>
                     {!filterTag && filterTagInput && (
-                      <ul className="absolute left-0 right-0 top-[38px] bg-white rounded-[8px] shadow-lg z-10 overflow-hidden border border-[#f2edfa]">
+                      <ul className="absolute left-0 right-0 top-[38px] bg-white rounded-[8px] shadow-lg z-10 overflow-hidden border border-soft">
                         {allTags.filter(t => t.label.toLowerCase().includes(filterTagInput.toLowerCase())).map((tag, i) => (
                           <li key={i}>
-                            <button className="w-full text-left px-3 py-2 text-[13px] hover:bg-[#f2edfa] flex items-center gap-2"
+                            <button className="w-full text-left px-3 py-2 text-[13px] hover:bg-soft flex items-center gap-2"
                               style={{ minWidth: 0, minHeight: 0 }}
                               onClick={() => { setFilterTag(tag); setFilterTagInput('') }}>
                               <span className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full ${tagColor(tag.type)}`}>
@@ -531,13 +552,13 @@ export default function Checklist() {
           <button onClick={prevDay} disabled={!hasPrev}
             className={`min-w-[44px] min-h-[44px] flex items-center justify-center ${!hasPrev ? 'opacity-20' : ''}`}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18l-6-6 6-6" stroke="#6c63ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M15 18l-6-6 6-6" stroke="rgb(var(--color-primary))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
-          <button className="flex items-center gap-1 text-[14px] font-semibold text-[#211738]"
+          <button className="flex items-center gap-1 text-[14px] font-semibold text-dark"
             onPointerDown={e => { e.preventDefault(); dayDateRef.current?.showPicker() }}>
             {formatDay(currentDay)}
-            {!isToday && <span className="text-[11px] font-normal text-[#736694] ml-1">← retour</span>}
+            {!isToday && <span className="text-[11px] font-normal text-muted ml-1">← retour</span>}
           </button>
           <input ref={dayDateRef} type="date" value={currentDay}
             onChange={e => e.target.value && setCurrentDay(e.target.value)}
@@ -545,20 +566,20 @@ export default function Checklist() {
           <button onClick={nextDay} disabled={!hasNext}
             className={`min-w-[44px] min-h-[44px] flex items-center justify-center ${!hasNext ? 'opacity-20' : ''}`}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M9 18l6-6-6-6" stroke="#6c63ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M9 18l6-6-6-6" stroke="rgb(var(--color-primary))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
         </div>
       </div>
 
       {/* Contenu */}
-      <main className={`absolute left-4 right-4 overflow-hidden flex flex-col top-[204px] ${isToday ? 'bottom-[76px]' : 'bottom-4'}`}>
+      <main className={`absolute left-4 right-4 flex flex-col top-[204px] ${isToday ? 'bottom-[76px]' : 'bottom-4'}`}>
         <div className="flex flex-col gap-3 overflow-y-auto flex-1">
 
           {!hasTasks && (
-            <div className="bg-white/60 border border-[#c0befe]/50 rounded-[12px] h-16 flex flex-col items-center justify-center mt-4">
-              <p className="text-[22px] font-bold text-[#6c63ff] leading-tight">Aucune tâche</p>
-              <p className="text-[11px] text-[#a49ffe]">pour le moment</p>
+            <div className="bg-white/60 border border-accent/50 rounded-[12px] h-16 flex flex-col items-center justify-center mt-4">
+              <p className="text-[22px] font-bold text-primary leading-tight">Aucune tâche</p>
+              <p className="text-[11px] text-accent">pour le moment</p>
             </div>
           )}
 
@@ -566,9 +587,9 @@ export default function Checklist() {
             <>
               {/* Stats */}
               <div className="flex gap-2 pt-4 shrink-0">
-                <div className="flex-1 bg-[rgba(247,237,250,0.6)] border border-[#c0befe] rounded-[8px] flex items-center justify-center gap-2 py-2">
-                  <span className="font-bold text-[#6c63ff] text-[22px] leading-none">{visibleTasks.length}</span>
-                  <span className="text-[#a49ffe] text-[11px]">Total</span>
+                <div className="flex-1 bg-soft/60 border border-accent rounded-[8px] flex items-center justify-center gap-2 py-2">
+                  <span className="font-bold text-primary text-[22px] leading-none">{visibleTasks.length}</span>
+                  <span className="text-accent text-[11px]">Total</span>
                 </div>
                 <div className="flex-1 bg-[rgba(220,252,231,0.6)] border border-[rgba(153,153,166,0.2)] rounded-[8px] flex items-center justify-center gap-2 py-2">
                   <span className="font-bold text-[#16a34a] text-[22px] leading-none">{visibleTasks.filter(t => t.done).length}</span>
@@ -606,8 +627,8 @@ export default function Checklist() {
 
                     {/* Rien après filtre */}
                     {filteredOverdue.length === 0 && regularTasks.length === 0 && (
-                      <div className="bg-white/60 border border-[#c0befe]/50 rounded-[12px] h-16 flex items-center justify-center">
-                        <p className="text-[14px] text-[#a49ffe]">Aucun résultat</p>
+                      <div className="bg-white/60 border border-accent/50 rounded-[12px] h-16 flex items-center justify-center">
+                        <p className="text-[14px] text-accent">Aucun résultat</p>
                       </div>
                     )}
                   </div>
@@ -620,20 +641,30 @@ export default function Checklist() {
 
       {/* Bouton Nouvelle tâche (fixe en bas) */}
       {isToday && (
-        <button onClick={openModal}
-          className="absolute bottom-4 left-4 right-4 bg-[#6c63ff] rounded-[12px] h-12 flex items-center justify-center z-10">
-          <span className="text-[14px] font-semibold text-white">Nouvelle tâche</span>
-        </button>
+        <div className="fixed bottom-4 left-4 right-4 z-10" style={{ height: 48 }}>
+          <button onClick={openModal}
+            className={`w-full h-full bg-primary rounded-[12px] text-white text-[14px] font-semibold${isCottagecore ? ' cc-border border-2' : ''}`}>
+            Nouvelle tâche
+          </button>
+          {isCottagecore && <>
+            <LeafBig   width={22} rotate={20}   style={{ position:'absolute', left:-7,    top:-9,    zIndex:11, pointerEvents:'none' }} />
+            <Flower    width={16} rotate={-30}  style={{ position:'absolute', left:16,    top:-10,   zIndex:11, pointerEvents:'none' }} />
+            <LeafSmall width={14} rotate={50}   style={{ position:'absolute', left:'40%', top:-8,    zIndex:11, pointerEvents:'none' }} />
+            <Mushroom  width={24} rotate={-10}  style={{ position:'absolute', right:-6,   top:-12,   zIndex:11, pointerEvents:'none' }} />
+            <LeafSmall width={13} rotate={-60}  style={{ position:'absolute', right:18,   top:-7,    zIndex:11, pointerEvents:'none' }} />
+            <Flower    width={15} rotate={25}   style={{ position:'absolute', left:'52%', bottom:-7, zIndex:11, pointerEvents:'none' }} />
+          </>}
+        </div>
       )}
 
       {/* Modal confirmation suppression */}
       {deleteConfirm && (
         <BottomSheet onClose={() => setDeleteConfirm(null)}>
-          <p className="text-[17px] font-semibold text-[#211738]">Supprimer la tâche ?</p>
-          <p className="text-[13px] text-[#736694] -mt-2">« {deleteConfirm.label} »</p>
+          <p className="text-[17px] font-semibold text-dark">Supprimer la tâche ?</p>
+          <p className="text-[13px] text-muted -mt-2">« {deleteConfirm.label} »</p>
           <div className="flex gap-3">
             <button onClick={() => setDeleteConfirm(null)}
-              className="flex-1 h-12 rounded-[12px] border border-[#736694]/30 text-[14px] font-semibold text-[#736694]">
+              className="flex-1 h-12 rounded-[12px] border border-muted/30 text-[14px] font-semibold text-muted">
               Annuler
             </button>
             <button onClick={async () => { await deleteTask(deleteConfirm.id); setDeleteConfirm(null) }}
@@ -655,19 +686,19 @@ export default function Checklist() {
               <path d="M5 12.5A3.5 3.5 0 018.5 9H12v7H8.5A3.5 3.5 0 015 12.5z" stroke="#a259ff" strokeWidth="1.5"/>
               <path d="M5 19.5A3.5 3.5 0 018.5 16H12v3.5a3.5 3.5 0 01-7 0z" stroke="#a259ff" strokeWidth="1.5"/>
             </svg>
-            <p className="text-[17px] font-semibold text-[#211738]">Lien Figma</p>
+            <p className="text-[17px] font-semibold text-dark">Lien Figma</p>
           </div>
-          <p className="text-[13px] text-[#736694] -mt-2">{figmaModal.label}</p>
-          <div className="relative bg-[#f2edfa] rounded-[10px] h-12 flex items-center px-4 gap-2">
+          <p className="text-[13px] text-muted -mt-2">{figmaModal.label}</p>
+          <div className="relative bg-soft rounded-[10px] h-12 flex items-center px-4 gap-2">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="shrink-0">
-              <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke="rgb(var(--color-accent))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke="rgb(var(--color-accent))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             <input autoFocus type="url" value={figmaUrl}
               onChange={e => setFigmaUrl(e.target.value)}
               placeholder="https://figma.com/..."
-              className="flex-1 bg-transparent text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe]"/>
-            {figmaUrl && <button onClick={() => setFigmaUrl('')} style={{ minWidth: 0, minHeight: 0 }} className="text-[#a49ffe] text-lg leading-none">&times;</button>}
+              className="flex-1 bg-transparent text-[14px] text-dark outline-none placeholder:text-accent"/>
+            {figmaUrl && <button onClick={() => setFigmaUrl('')} style={{ minWidth: 0, minHeight: 0 }} className="text-accent text-lg leading-none">&times;</button>}
           </div>
           <SubmitButton onClick={saveFigmaUrl} disabled={saving}>
             {saving ? 'Enregistrement...' : 'Enregistrer'}
@@ -678,45 +709,45 @@ export default function Checklist() {
       {/* Modal */}
       {showModal && (
         <BottomSheet onClose={() => setShowModal(false)}>
-          <p className="text-[17px] font-semibold text-[#211738]">{editingId ? 'Modifier la tâche' : 'Nouvelle tâche'}</p>
+          <p className="text-[17px] font-semibold text-dark">{editingId ? 'Modifier la tâche' : 'Nouvelle tâche'}</p>
 
           <TextField label="Nom" required autoFocus value={form.label} error={error}
             onChange={e => { setForm(f => ({ ...f, label: e.target.value })); setError('') }}
             placeholder="Nom de la tâche..." />
 
           <div className="flex flex-col gap-1">
-            <label className="text-[12px] font-medium text-[#736694]">Lien Jira</label>
-            <div className="relative bg-[#f2edfa] rounded-[10px] h-12 flex items-center px-4 gap-2">
+            <label className="text-[12px] font-medium text-muted">Lien Jira</label>
+            <div className="relative bg-soft rounded-[10px] h-12 flex items-center px-4 gap-2">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="shrink-0">
-                <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke="#a49ffe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke="rgb(var(--color-accent))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke="rgb(var(--color-accent))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
               <input type="url" value={form.jiraUrl}
                 onChange={e => setForm(f => ({ ...f, jiraUrl: e.target.value }))}
                 placeholder="https://..."
-                className="flex-1 bg-transparent text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe]"/>
+                className="flex-1 bg-transparent text-[14px] text-dark outline-none placeholder:text-accent"/>
             </div>
           </div>
 
           <div className="flex flex-col gap-1" ref={groupRef}>
-            <label className="text-[12px] font-medium text-[#736694]">Groupe</label>
+            <label className="text-[12px] font-medium text-muted">Groupe</label>
             <div className="relative">
               <input type="text" value={groupInput}
                 onChange={e => { setGroupInput(e.target.value); setForm(f => ({ ...f, group: e.target.value })); setGroupOpen(true) }}
                 onFocus={() => setGroupOpen(true)}
                 placeholder="Sélectionne ou crée un groupe..."
-                className="bg-[#f2edfa] rounded-[10px] h-12 px-4 text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe] w-full"/>
+                className="bg-soft rounded-[10px] h-12 px-4 text-[14px] text-dark outline-none placeholder:text-accent w-full"/>
               {groupOpen && (groupSuggestions.length > 0 || (groupInput.trim() && !allGroups.includes(groupInput.trim()))) && (
-                <ul className="absolute left-0 right-0 top-[52px] bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-[#f2edfa]">
+                <ul className="absolute left-0 right-0 top-[52px] bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-soft">
                   {groupSuggestions.map(g => (
                     <li key={g}>
-                      <button className="w-full text-left px-4 py-3 text-[13px] text-[#211738] hover:bg-[#f2edfa]"
+                      <button className="w-full text-left px-4 py-3 text-[13px] text-dark hover:bg-soft"
                         onClick={() => { setForm(f => ({ ...f, group: g })); setGroupInput(g); setGroupOpen(false) }}>{g}</button>
                     </li>
                   ))}
                   {groupInput.trim() && !allGroups.includes(groupInput.trim()) && (
                     <li>
-                      <button className="w-full text-left px-4 py-3 text-[13px] text-[#6c63ff] font-medium hover:bg-[#f2edfa]"
+                      <button className="w-full text-left px-4 py-3 text-[13px] text-primary font-medium hover:bg-soft"
                         onClick={() => { setForm(f => ({ ...f, group: groupInput.trim() })); setGroupOpen(false) }}>
                         + Créer "{groupInput.trim()}"
                       </button>
@@ -731,8 +762,8 @@ export default function Checklist() {
             onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} />
 
           <div className="flex flex-col gap-2">
-            <label className="text-[12px] font-medium text-[#736694]">Tags</label>
-            <div className="relative bg-[#f2edfa] rounded-[10px] min-h-12 px-3 py-2 flex flex-wrap gap-2 items-center">
+            <label className="text-[12px] font-medium text-muted">Tags</label>
+            <div className="relative bg-soft rounded-[10px] min-h-12 px-3 py-2 flex flex-wrap gap-2 items-center">
               {form.tags.map((tag, i) => (
                 <span key={i} className={`flex items-center gap-1 text-[12px] font-medium px-2 py-1 rounded-full shrink-0 ${tagColor(tag.type)}`}>
                   {tagIcon(tag.type)}{tag.label}
@@ -745,19 +776,19 @@ export default function Checklist() {
                   if (e.key === 'Backspace' && !tagInput && form.tags.length > 0) removeTag(form.tags.length - 1)
                 }}
                 placeholder={form.tags.length === 0 ? 'Ajouter un tag...' : ''}
-                className="bg-transparent text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe] min-w-[80px] flex-1"/>
+                className="bg-transparent text-[14px] text-dark outline-none placeholder:text-accent min-w-[80px] flex-1"/>
               <div className="flex gap-1 shrink-0">
                 {TAG_TYPES.map(t => (
                   <button key={t.value} onPointerDown={e => { e.preventDefault(); setTagType(t.value) }}
-                    className={`w-7 h-7 rounded-[6px] flex items-center justify-center transition-colors ${tagType === t.value ? t.color : 'text-[#a49ffe]'}`}
+                    className={`w-7 h-7 rounded-[6px] flex items-center justify-center transition-colors ${tagType === t.value ? t.color : 'bg-soft/60 text-muted'}`}
                     title={t.value}>{t.icon}</button>
                 ))}
               </div>
               {tagSuggestions.length > 0 && (
-                <ul className="absolute left-0 right-0 top-full mt-1 bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-[#f2edfa]">
+                <ul className="absolute left-0 right-0 top-full mt-1 bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-soft">
                   {tagSuggestions.map((s, i) => (
                     <li key={i}>
-                      <button className="w-full text-left px-4 py-3 text-[13px] hover:bg-[#f2edfa] flex items-center gap-2"
+                      <button className="w-full text-left px-4 py-3 text-[13px] hover:bg-soft flex items-center gap-2"
                         onClick={() => addTag(s.label, s.type)}>
                         <span className={`text-[11px] px-2 py-0.5 rounded-full ${tagColor(s.type)}`}>{s.type}</span>
                         {s.label}
@@ -767,7 +798,7 @@ export default function Checklist() {
                 </ul>
               )}
             </div>
-            <p className="text-[11px] text-[#a49ffe]">Entrée ou virgule pour valider, Retour arrière pour supprimer</p>
+            <p className="text-[11px] text-accent">Entrée ou virgule pour valider, Retour arrière pour supprimer</p>
           </div>
 
           <SubmitButton onClick={addTask} disabled={saving || !form.label.trim()}>

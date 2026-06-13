@@ -1,18 +1,22 @@
-import { useEffect } from 'react'
+﻿import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import AppHeader from '../components/AppHeader'
+import { useTheme, THEMES } from '../contexts/ThemeContext'
+import { LeafSmall, LeafBig, Flower, Mushroom } from '../components/CottageDecor'
 
 export default function Settings() {
   const { user, loading } = useAuth()
   const navigate = useNavigate()
+  const { theme, setTheme } = useTheme()
+  const isCottagecore = theme === 'cottagecore'
 
   useEffect(() => {
     if (!loading && !user) navigate('/login')
   }, [user, loading])
 
   return (
-    <div className="relative w-full h-dvh overflow-hidden bg-[#f6f4f9]">
+    <div className="relative w-full h-dvh overflow-hidden bg-base">
 
       <div className="absolute -left-16 -top-4 w-72 h-72 rounded-full bg-[#c4b5fd] opacity-30 blur-3xl pointer-events-none" />
       <div className="absolute left-32 top-14 w-64 h-64 rounded-full bg-[#a5f3fc] opacity-25 blur-3xl pointer-events-none" />
@@ -20,12 +24,64 @@ export default function Settings() {
       <div className="absolute left-40 top-[460px] w-64 h-64 rounded-full bg-[#fed7aa] opacity-25 blur-3xl pointer-events-none" />
 
       <AppHeader title="Paramètres" />
+      {isCottagecore && <>
+        {/* Settings — déco dans les coins hauts et autour du sélecteur */}
+        <LeafBig   width={28} rotate={-40} style={{ position: 'absolute', top: 82,  left: 4,   zIndex: 20 }} />
+        <Flower    width={18} rotate={15}  style={{ position: 'absolute', top: 112, left: 28,  zIndex: 20 }} />
+        <Mushroom  width={24} rotate={5}   style={{ position: 'absolute', top: 88,  right: 6,  zIndex: 20 }} />
+        <LeafSmall width={14} rotate={70}  style={{ position: 'absolute', top: 118, right: 32, zIndex: 20 }} />
+      </>}
 
-      <main className="absolute top-[92px] left-4 right-4 bottom-4 bg-white/55 border border-white/85 backdrop-blur-md rounded-[20px] flex flex-col items-center justify-center gap-2">
-        <p className="text-[22px] font-bold text-[rgba(33,23,56,0.9)]">Bientôt disponible</p>
-        <p className="text-[13px] text-[#736694] text-center leading-snug">
-          Les paramètres arrivent prochainement
-        </p>
+      <main className="absolute top-[92px] left-4 right-4 bottom-4 overflow-y-auto">
+        <div className="bg-white/55 border border-white/85 backdrop-blur-md rounded-[20px] p-5">
+          <p className="text-[13px] font-semibold text-muted uppercase tracking-wider mb-4">Thème</p>
+
+          <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1">
+            {THEMES.map(t => {
+              const active = theme === t.id
+              return (
+                <div
+                  key={t.id}
+                  onClick={() => setTheme(t.id)}
+                  className={`relative rounded-[12px] overflow-hidden cursor-pointer transition-all border-2 shrink-0 w-[110px] ${
+                    active ? 'border-primary shadow-md' : 'border-transparent'
+                  }`}
+                >
+                  {/* Preview */}
+                  <div
+                    className="h-[68px] flex flex-col justify-between p-2.5"
+                    style={{ backgroundColor: `rgb(${t.preview} / 0.1)` }}
+                  >
+                    <div className="flex items-center gap-1">
+                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: `rgb(${t.preview})` }} />
+                      <div className="h-1.5 rounded-full flex-1" style={{ backgroundColor: `rgb(${t.preview} / 0.3)` }} />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <div className="h-1.5 rounded-full w-3/4" style={{ backgroundColor: `rgb(${t.preview} / 0.25)` }} />
+                      <div className="h-1.5 rounded-full w-1/2" style={{ backgroundColor: `rgb(${t.preview} / 0.15)` }} />
+                    </div>
+                    <div className="h-4 rounded-[5px] flex items-center justify-center" style={{ backgroundColor: `rgb(${t.preview})` }}>
+                      <div className="w-6 h-1 rounded-full bg-white/60" />
+                    </div>
+                  </div>
+
+                  {/* Label */}
+                  <div className="px-2.5 py-1.5 flex items-center justify-between bg-white">
+                    <span className="text-[12px] font-semibold" style={{ color: `rgb(${t.preview})` }}>
+                      {t.label}
+                    </span>
+                    {active && (
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" fill={`rgb(${t.preview})`} />
+                        <path d="M8 12l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
       </main>
     </div>
   )

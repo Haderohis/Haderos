@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+﻿import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import { useMangaSearch } from '../hooks/useMangaSearch'
 import { useComicsSearch } from '../hooks/useComicsSearch'
 import AppHeader from '../components/AppHeader'
+import { useTheme } from '../contexts/ThemeContext'
+import { LeafSmall, LeafBig, Flower, Mushroom } from '../components/CottageDecor'
 import BottomSheet from '../components/BottomSheet'
 import { TextField, FieldLabel } from '../components/FormFields'
 
@@ -16,7 +18,7 @@ function formatOwnedLabel(ownedArr, total) {
 }
 
 // ─── MangaCard ────────────────────────────────────────────────────────────────
-function MangaCard({ item, onDelete, onUpdateOwned, onCreateOwned }) {
+function MangaCard({ item, onDelete, onUpdateOwned, onCreateOwned, isCottagecore = false }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [myOwned, setMyOwned] = useState(item.myOwned ?? [])
   const [displayMax, setDisplayMax] = useState(() => {
@@ -29,8 +31,8 @@ function MangaCard({ item, onDelete, onUpdateOwned, onCreateOwned }) {
   const chipStyle = (n) => {
     const mine = myOwned.includes(n)
     const theirs = item.theirOwned.includes(n)
-    if (mine && theirs) return 'bg-[#6c63ff] text-white'
-    if (mine) return 'bg-[#ada7fd] text-black'
+    if (mine && theirs) return 'bg-primary text-white'
+    if (mine) return 'bg-accent text-black'
     if (theirs) return 'bg-[#fbbf24] text-black'
     return 'bg-[#d5d3dc] text-black'
   }
@@ -54,12 +56,16 @@ function MangaCard({ item, onDelete, onUpdateOwned, onCreateOwned }) {
   }
 
   return (
-    <div className="bg-white/70 border border-white/85 rounded-[8px] p-2 flex flex-col gap-2">
+    <div className={`bg-white/70 border rounded-[8px] p-2 flex flex-col gap-2 relative ${isCottagecore ? 'cc-border' : 'border-white/85'}`}>
+      {isCottagecore && item._decoIdx === 0 && <><LeafBig   width={24} rotate={-25} style={{ position:'absolute', left:-10, top:-8,    zIndex:10, pointerEvents:'none' }} /><Flower    width={14} rotate={20}  style={{ position:'absolute', left:'45%',top:-9,    zIndex:10, pointerEvents:'none' }} /><LeafSmall width={13} rotate={80}  style={{ position:'absolute', right:-6,  bottom:-6, zIndex:10, pointerEvents:'none' }} /></>}
+      {isCottagecore && item._decoIdx === 1 && <><Mushroom  width={26} rotate={10}  style={{ position:'absolute', right:-10, top:-9,    zIndex:10, pointerEvents:'none' }} /><LeafSmall width={13} rotate={-50} style={{ position:'absolute', left:'40%', top:-7,    zIndex:10, pointerEvents:'none' }} /><Flower    width={16} rotate={-20} style={{ position:'absolute', left:-7,   bottom:-6, zIndex:10, pointerEvents:'none' }} /></>}
+      {isCottagecore && item._decoIdx === 2 && <><Flower    width={18} rotate={30}  style={{ position:'absolute', left:-8,   top:-8,    zIndex:10, pointerEvents:'none' }} /><LeafBig   width={20} rotate={-10} style={{ position:'absolute', right:-9,  top:-7,    zIndex:10, pointerEvents:'none' }} /><LeafSmall width={13} rotate={65}  style={{ position:'absolute', left:'50%', bottom:-7, zIndex:10, pointerEvents:'none' }} /></>}
+      {isCottagecore && item._decoIdx === 3 && <><LeafSmall width={15} rotate={50}  style={{ position:'absolute', left:-6,   top:-7,    zIndex:10, pointerEvents:'none' }} /><Mushroom  width={22} rotate={-15} style={{ position:'absolute', right:-9,  bottom:-8, zIndex:10, pointerEvents:'none' }} /><Flower    width={14} rotate={40}  style={{ position:'absolute', left:'42%', bottom:-8, zIndex:10, pointerEvents:'none' }} /></>}
       {/* Row 1 — title + ownership chips + "En cours" */}
       <div className="flex items-center gap-1.5 min-w-0">
-        <p className="text-[14px] font-bold text-[#211738] leading-snug truncate flex-1 min-w-0">{item.title}</p>
+        <p className="text-[14px] font-bold text-dark leading-snug truncate flex-1 min-w-0">{item.title}</p>
         {item.myItemId && (
-          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-[#e9ebfd] text-[#6c63ff] shrink-0 whitespace-nowrap">Moi</span>
+          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-soft text-primary shrink-0 whitespace-nowrap">Moi</span>
         )}
         {item.theirName && (
           <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-[#fef3c7] text-[#d97706] shrink-0 whitespace-nowrap">{item.theirName}</span>
@@ -70,7 +76,7 @@ function MangaCard({ item, onDelete, onUpdateOwned, onCreateOwned }) {
       <div className="flex items-center gap-3">
         {item.cover_url
           ? <img src={item.cover_url} alt={item.title} className="w-[34px] h-[48px] object-cover rounded-[4px] shrink-0" />
-          : <div className="w-[34px] h-[48px] bg-[#f2edfa] rounded-[4px] shrink-0" />
+          : <div className="w-[34px] h-[48px] bg-soft rounded-[4px] shrink-0" />
         }
 
         {/* Volume chips — horizontal scroll, centered when few */}
@@ -87,7 +93,7 @@ function MangaCard({ item, onDelete, onUpdateOwned, onCreateOwned }) {
             ))}
             <button
               onClick={() => changeDisplayMax(displayMax + 1)}
-              className="h-[32px] w-[32px] flex items-center justify-center rounded-[2px] text-[18px] font-semibold text-[#6c63ff] bg-[#f2edfa]"
+              className="h-[32px] w-[32px] flex items-center justify-center rounded-[2px] text-[18px] font-semibold text-primary bg-soft"
               aria-label="Ajouter un tome"
             >
               +
@@ -102,7 +108,7 @@ function MangaCard({ item, onDelete, onUpdateOwned, onCreateOwned }) {
             className="w-8 h-8 flex items-center justify-center"
             aria-label="Options"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="#736694">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="rgb(var(--color-muted))">
               <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
             </svg>
           </button>
@@ -110,7 +116,7 @@ function MangaCard({ item, onDelete, onUpdateOwned, onCreateOwned }) {
             <div className="absolute right-0 top-full mt-1 z-20 bg-white rounded-[10px] shadow-lg border border-[#f0ebfa] overflow-hidden min-w-[140px]">
               <button
                 onClick={() => { setMenuOpen(false); changeDisplayMax(Math.max(displayMax - 1, myOwned.length > 0 ? Math.max(...myOwned) : 0)) }}
-                className="w-full px-4 py-3 text-left text-[13px] text-[#211738] font-medium hover:bg-[#f2edfa] border-b border-[#f0ebfa]"
+                className="w-full px-4 py-3 text-left text-[13px] text-dark font-medium hover:bg-soft border-b border-[#f0ebfa]"
               >
                 Retirer le dernier tome
               </button>
@@ -149,7 +155,7 @@ function VolumeGrid({ owned, total, ongoing, onChange }) {
             key={n}
             onClick={() => toggle(n)}
             className={`w-9 h-9 rounded-[8px] text-[13px] font-semibold transition-colors ${
-              owned.includes(n) ? 'bg-[#6c63ff] text-white' : 'bg-[#f2edfa] text-[#736694]'
+              owned.includes(n) ? 'bg-primary text-white' : 'bg-soft text-muted'
             }`}
           >
             {n}
@@ -157,7 +163,7 @@ function VolumeGrid({ owned, total, ongoing, onChange }) {
         ))}
       </div>
       {(!total || ongoing) && (
-        <button onClick={() => setDisplayMax(d => d + 10)} className="text-[12px] text-[#6c63ff] font-medium self-start">
+        <button onClick={() => setDisplayMax(d => d + 10)} className="text-[12px] text-primary font-medium self-start">
           + Afficher 10 de plus
         </button>
       )}
@@ -260,7 +266,7 @@ function AddMangaSheet({ onClose, onSaved, category }) {
 
   return (
     <BottomSheet onClose={onClose}>
-      <h2 className="text-[17px] font-bold text-[#211738]">Ajouter un {label}</h2>
+      <h2 className="text-[17px] font-bold text-dark">Ajouter un {label}</h2>
       {!selected && (
         <>
           <TextField
@@ -270,20 +276,20 @@ function AddMangaSheet({ onClose, onSaved, category }) {
             onChange={e => setQuery(e.target.value)}
             autoFocus
           />
-          {searching && <p className="text-[13px] text-[#736694] text-center py-2">Recherche...</p>}
+          {searching && <p className="text-[13px] text-muted text-center py-2">Recherche...</p>}
           {searchError && <p className="text-[12px] text-red-500">{searchError}</p>}
           {!searching && results.length > 0 && (
-            <ul className="flex flex-col divide-y divide-[#f2edfa]">
+            <ul className="flex flex-col divide-y divide-soft">
               {results.map(m => (
                 <li key={m.mal_id}>
                   <button onClick={() => handleSelect(m)} className="flex items-center gap-3 w-full py-3 text-left">
                     {m.cover_url
                       ? <img src={m.cover_url} alt={m.title} className="w-10 h-14 object-cover rounded-[6px] shrink-0" />
-                      : <div className="w-10 h-14 bg-[#f2edfa] rounded-[6px] shrink-0" />
+                      : <div className="w-10 h-14 bg-soft rounded-[6px] shrink-0" />
                     }
                     <div>
-                      <p className="text-[14px] font-medium text-[#211738]">{m.title}</p>
-                      <p className="text-[12px] text-[#736694]">
+                      <p className="text-[14px] font-medium text-dark">{m.title}</p>
+                      <p className="text-[12px] text-muted">
                         {isComics
                           ? (m.author ?? 'Auteur inconnu')
                           : (m.volumes ? `${m.volumes} tome${m.volumes > 1 ? 's' : ''}${m.ongoing ? ' parus' : ''}` : m.ongoing ? 'En cours' : 'Terminé')
@@ -298,7 +304,7 @@ function AddMangaSheet({ onClose, onSaved, category }) {
           {!searching && query.trim() && (
             <button
               onClick={handleCreateManual}
-              className="w-full h-11 border border-dashed border-[#a49ffe] rounded-[12px] text-[13px] font-medium text-[#6c63ff]"
+              className="w-full h-11 border border-dashed border-accent rounded-[12px] text-[13px] font-medium text-primary"
             >
               Créer « {query} » manuellement
             </button>
@@ -307,12 +313,12 @@ function AddMangaSheet({ onClose, onSaved, category }) {
       )}
       {selected && (
         <>
-          <div className="flex items-center gap-4 p-3 bg-[#f2edfa] rounded-[12px]">
+          <div className="flex items-center gap-4 p-3 bg-soft rounded-[12px]">
             <label className="relative shrink-0 cursor-pointer group">
               {selected.cover_url
                 ? <img src={selected.cover_url} alt={selected.title} className="w-14 h-20 object-cover rounded-[8px]" />
-                : <div className="w-14 h-20 bg-white/70 border border-dashed border-[#a49ffe] rounded-[8px] flex items-center justify-center">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#a49ffe"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                : <div className="w-14 h-20 bg-white/70 border border-dashed border-accent rounded-[8px] flex items-center justify-center">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="rgb(var(--color-accent))"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
                   </div>
               }
               <div className="absolute inset-0 rounded-[8px] bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
@@ -324,18 +330,18 @@ function AddMangaSheet({ onClose, onSaved, category }) {
               <input
                 value={selected.title}
                 onChange={e => setSelected(prev => ({ ...prev, title: e.target.value }))}
-                className="w-full text-[15px] font-bold text-[#211738] bg-transparent outline-none border-b border-[#a49ffe] pb-0.5 truncate"
+                className="w-full text-[15px] font-bold text-dark bg-transparent outline-none border-b border-accent pb-0.5 truncate"
               />
-              <p className="text-[12px] text-[#6c63ff] mt-1">
+              <p className="text-[12px] text-primary mt-1">
                 {loadingDetail ? 'Récupération...'
                   : selected.volumes
                     ? `${selected.volumes} tome${selected.volumes > 1 ? 's' : ''} ${selected.ongoing ? 'parus' : 'au total'}`
                     : selected.ongoing ? 'Nombre de tomes inconnu' : 'Terminé'
                 }
               </p>
-              {!selected.cover_url && <p className="text-[11px] text-[#a49ffe] mt-0.5">Toucher pour ajouter une image</p>}
+              {!selected.cover_url && <p className="text-[11px] text-accent mt-0.5">Toucher pour ajouter une image</p>}
             </div>
-            <button onClick={() => setSelected(null)} className="text-[#736694] text-[12px] underline shrink-0">Changer</button>
+            <button onClick={() => setSelected(null)} className="text-muted text-[12px] underline shrink-0">Changer</button>
           </div>
           {!loadingDetail && (
             <VolumeGrid owned={owned} total={selected.volumes} ongoing={selected.ongoing} onChange={setOwned} />
@@ -344,7 +350,7 @@ function AddMangaSheet({ onClose, onSaved, category }) {
           <button
             onClick={handleSave}
             disabled={saving || owned.length === 0}
-            className="h-12 w-full bg-[#6c63ff] text-white font-semibold text-[15px] rounded-[12px] disabled:opacity-40"
+            className="h-12 w-full bg-primary text-white font-semibold text-[15px] rounded-[12px] disabled:opacity-40"
           >
             {saving ? 'Enregistrement...' : owned.length === 0 ? 'Sélectionne au moins un tome' : 'Ajouter à ma collection'}
           </button>
@@ -356,7 +362,7 @@ function AddMangaSheet({ onClose, onSaved, category }) {
 
 // ─── ShareSheet ───────────────────────────────────────────────────────────────
 const STATUS_LABEL = { pending: 'En attente', accepted: 'Accepté', declined: 'Refusé' }
-const STATUS_COLOR = { pending: 'text-[#f59e0b]', accepted: 'text-[#6c63ff]', declined: 'text-[#ef4444]' }
+const STATUS_COLOR = { pending: 'text-[#f59e0b]', accepted: 'text-primary', declined: 'text-[#ef4444]' }
 
 function ShareSheet({ onClose }) {
   const { user } = useAuth()
@@ -477,26 +483,26 @@ function ShareSheet({ onClose }) {
 
   return (
     <BottomSheet onClose={onClose}>
-      <h2 className="text-[17px] font-bold text-[#211738]">Partager la collection</h2>
+      <h2 className="text-[17px] font-bold text-dark">Partager la collection</h2>
 
       {/* Partages en cours */}
       {loadingShares ? (
-        <p className="text-[13px] text-[#736694]">Chargement...</p>
+        <p className="text-[13px] text-muted">Chargement...</p>
       ) : uniqueShares.length > 0 && (
         <div className="flex flex-col gap-1">
-          <p className="text-[12px] font-medium text-[#736694]">Partages en cours</p>
+          <p className="text-[12px] font-medium text-muted">Partages en cours</p>
           {uniqueShares.map(s => (
-            <div key={s.id} className="flex items-center justify-between bg-[#f2edfa] rounded-[10px] px-3 h-11">
+            <div key={s.id} className="flex items-center justify-between bg-soft rounded-[10px] px-3 h-11">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-[#e0d9ff] flex items-center justify-center shrink-0">
-                  <span className="text-[11px] font-bold text-[#6c63ff]">
+                <div className="w-7 h-7 rounded-full bg-soft flex items-center justify-center shrink-0">
+                  <span className="text-[11px] font-bold text-primary">
                     {((s.profile?.first_name?.[0] ?? '') + (s.profile?.last_name?.[0] ?? '')).toUpperCase() || '?'}
                   </span>
                 </div>
-                <p className="text-[13px] font-medium text-[#211738]">{displayName(s.profile)}</p>
+                <p className="text-[13px] font-medium text-dark">{displayName(s.profile)}</p>
               </div>
               <div className="flex items-center gap-2">
-                <span className={`text-[11px] font-medium ${STATUS_COLOR[s.status] ?? 'text-[#736694]'}`}>
+                <span className={`text-[11px] font-medium ${STATUS_COLOR[s.status] ?? 'text-muted'}`}>
                   {STATUS_LABEL[s.status] ?? s.status}
                 </span>
                 <button
@@ -516,10 +522,10 @@ function ShareSheet({ onClose }) {
 
       {/* Ajouter un partage */}
       <div className="flex flex-col gap-2">
-        <label className="text-[12px] font-medium text-[#736694]">Inviter quelqu'un</label>
-        <div className="relative bg-[#f2edfa] rounded-[10px] min-h-12 px-3 py-2 flex flex-wrap gap-2 items-center">
+        <label className="text-[12px] font-medium text-muted">Inviter quelqu'un</label>
+        <div className="relative bg-soft rounded-[10px] min-h-12 px-3 py-2 flex flex-wrap gap-2 items-center">
           {added.map(p => (
-            <span key={p.id} className="flex items-center gap-1 text-[12px] font-medium px-2 py-1 rounded-full shrink-0 bg-[#e0d9ff] text-[#6c63ff]">
+            <span key={p.id} className="flex items-center gap-1 text-[12px] font-medium px-2 py-1 rounded-full shrink-0 bg-soft text-primary">
               {displayName(p)}
               <button onPointerDown={e => { e.preventDefault(); toggle(p) }} className="leading-none min-w-0 min-h-0 w-4 h-4">&times;</button>
             </span>
@@ -529,25 +535,25 @@ function ShareSheet({ onClose }) {
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder={added.length === 0 ? 'Prénom, nom ou pseudo...' : ''}
-            className="bg-transparent text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe] min-w-[80px] flex-1"
+            className="bg-transparent text-[14px] text-dark outline-none placeholder:text-accent min-w-[80px] flex-1"
           />
-          {searching && <span className="text-[11px] text-[#a49ffe] shrink-0">Recherche...</span>}
+          {searching && <span className="text-[11px] text-accent shrink-0">Recherche...</span>}
           {!searching && results.length > 0 && (
-            <ul className="absolute left-0 right-0 bottom-full mb-1 bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-[#f2edfa]">
+            <ul className="absolute left-0 right-0 bottom-full mb-1 bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-soft">
               {results.map(p => (
                 <li key={p.id}>
                   <button
                     onPointerDown={e => { e.preventDefault(); toggle(p); setQuery('') }}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#f2edfa]"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-soft"
                   >
-                    <div className="w-8 h-8 rounded-full bg-[#f2edfa] flex items-center justify-center shrink-0">
-                      <span className="text-[12px] font-bold text-[#6c63ff]">
+                    <div className="w-8 h-8 rounded-full bg-soft flex items-center justify-center shrink-0">
+                      <span className="text-[12px] font-bold text-primary">
                         {((p.first_name?.[0] ?? '') + (p.last_name?.[0] ?? '')).toUpperCase() || '?'}
                       </span>
                     </div>
-                    <p className="flex-1 text-[13px] font-medium text-[#211738]">{displayName(p)}</p>
+                    <p className="flex-1 text-[13px] font-medium text-dark">{displayName(p)}</p>
                     {added.find(a => a.id === p.id) && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="#6c63ff">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="rgb(var(--color-primary))">
                         <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
                       </svg>
                     )}
@@ -563,7 +569,7 @@ function ShareSheet({ onClose }) {
         <button
           onClick={handleConfirm}
           disabled={saving}
-          className="h-12 w-full bg-[#6c63ff] text-white font-semibold text-[15px] rounded-[12px] disabled:opacity-60"
+          className="h-12 w-full bg-primary text-white font-semibold text-[15px] rounded-[12px] disabled:opacity-60"
         >
           {saving ? 'Envoi...' : `Envoyer ${added.length} invitation${added.length > 1 ? 's' : ''}`}
         </button>
@@ -582,8 +588,8 @@ function CategoryDropdown({ value, onChange }) {
         onClick={() => setOpen(o => !o)}
         className="flex items-center justify-between gap-2 bg-white/70 border border-white/85 rounded-[12px] px-4 h-11 w-full"
       >
-        <span className="text-[14px] font-semibold text-[#211738]">{value}</span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="#211738"
+        <span className="text-[14px] font-semibold text-dark">{value}</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="rgb(var(--color-dark))"
           className={`shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>
           <path d="M7 10l5 5 5-5H7z" />
         </svg>
@@ -595,12 +601,12 @@ function CategoryDropdown({ value, onChange }) {
               key={cat}
               onClick={() => { onChange(cat); setOpen(false) }}
               className={`flex items-center justify-between w-full px-4 h-11 text-[14px] font-medium ${
-                cat === value ? 'text-[#6c63ff] bg-[#f2edfa]' : 'text-[#211738]'
+                cat === value ? 'text-primary bg-soft' : 'text-dark'
               }`}
             >
               {cat}
               {cat === value && (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="#6c63ff">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="rgb(var(--color-primary))">
                   <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
                 </svg>
               )}
@@ -617,13 +623,13 @@ function ShareChip({ isShared, onClick }) {
   return (
     <div
       onClick={onClick}
-      className="flex items-center gap-[5px] bg-[#e9ebfd] rounded-full px-2.5 h-6 cursor-pointer"
+      className="flex items-center gap-[5px] bg-soft rounded-full px-2.5 h-6 cursor-pointer"
     >
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="#7168ff">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="rgb(var(--color-primary))">
         <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
       </svg>
-      <span className="text-[10px] font-medium leading-none text-[#7168ff]">{isShared ? 'Partagée' : 'Partager'}</span>
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="#7168ff">
+      <span className="text-[10px] font-medium leading-none text-primary">{isShared ? 'Partagée' : 'Partager'}</span>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="rgb(var(--color-primary))">
         <path d="M7 10l5 5 5-5H7z" />
       </svg>
     </div>
@@ -633,6 +639,8 @@ function ShareChip({ isShared, onClick }) {
 // ─── Collection (page) ────────────────────────────────────────────────────────
 export default function Collection() {
   const { user } = useAuth()
+  const { theme } = useTheme()
+  const isCottagecore = theme === 'cottagecore'
   const [mangas, setMangas] = useState([])
   const [loading, setLoading] = useState(true)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -744,28 +752,36 @@ export default function Collection() {
   )
 
   return (
-    <div className="relative min-h-dvh bg-[#f6f4f9] overflow-hidden">
+    <div className="relative min-h-dvh bg-base overflow-hidden">
       <div className="absolute -top-10 -left-10 w-64 h-64 rounded-full bg-[#c4b5fd] opacity-20 blur-3xl pointer-events-none" />
       <div className="absolute top-32 right-0 w-56 h-56 rounded-full bg-[#a5f3fc] opacity-10 blur-3xl pointer-events-none" />
 
       <AppHeader title="Collection" titleExtra={shareChip} />
+      {isCottagecore && <>
+        {/* Collection — déco asymétrique côté gauche et bas */}
+        <LeafBig   width={24} rotate={50}  style={{ position: 'absolute', top: 18,  left: '26%', zIndex: 30 }} />
+        <Mushroom  width={20} rotate={25}  style={{ position: 'absolute', top: 44,  left: '14%', zIndex: 30 }} />
+        <LeafSmall width={16} rotate={-35} style={{ position: 'absolute', top: 20,  right: '22%', zIndex: 30 }} />
+        <Flower    width={18} rotate={-50} style={{ position: 'absolute', top: 84,  right: 4,   zIndex: 20 }} />
+        <LeafSmall width={15} rotate={100} style={{ position: 'absolute', top: 110, left: 6,   zIndex: 20 }} />
+      </>}
 
       {/* Barre de recherche */}
       <div className="pt-[76px]">
         <div className="bg-white/55 backdrop-blur-sm border-b border-white/80 px-4 py-3 flex gap-2">
           <div className="flex-1 flex items-center gap-2 bg-white/70 border border-white/85 rounded-[8px] px-3 h-[44px]">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="#a49ffe">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="rgb(var(--color-accent))">
               <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
             </svg>
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Rechercher"
-              className="flex-1 bg-transparent text-[14px] font-semibold text-[#211738] placeholder:text-[#ada7fd] outline-none"
+              className="flex-1 bg-transparent text-[14px] font-semibold text-dark placeholder:text-accent outline-none"
             />
           </div>
           <button className="w-[44px] h-[44px] flex items-center justify-center bg-white/75 border border-white/85 rounded-[8px]">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="#736694">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="rgb(var(--color-muted))">
               <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" />
             </svg>
           </button>
@@ -777,18 +793,18 @@ export default function Collection() {
           </div>
 
           {loading ? (
-            <p className="text-[14px] text-[#736694] text-center mt-12">Chargement...</p>
+            <p className="text-[14px] text-muted text-center mt-12">Chargement...</p>
           ) : filtered.length === 0 ? (
-            <div className="bg-white/60 border border-[#c0befe]/50 rounded-[12px] h-[64px] flex flex-col items-center justify-center mt-2">
-              <p className="text-[22px] font-bold text-[#6c63ff] leading-tight">
+            <div className="bg-white/60 border border-accent/50 rounded-[12px] h-[64px] flex flex-col items-center justify-center mt-2">
+              <p className="text-[22px] font-bold text-primary leading-tight">
                 {search ? 'Aucun résultat' : `Aucun ${categoryLabel}`}
               </p>
-              <p className="text-[11px] text-[#a49ffe]">pour le moment</p>
+              <p className="text-[11px] text-accent">pour le moment</p>
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              {filtered.map(item => (
-                <MangaCard key={item.mal_id} item={item} onDelete={handleDelete} onUpdateOwned={handleUpdateOwned} onCreateOwned={handleCreateOwned} />
+              {filtered.map((item, _idx) => (
+                <MangaCard key={item.mal_id} item={{ ...item, _decoIdx: _idx % 4 }} onDelete={handleDelete} onUpdateOwned={handleUpdateOwned} onCreateOwned={handleCreateOwned} isCottagecore={isCottagecore} />
               ))}
             </div>
           )}
@@ -796,13 +812,21 @@ export default function Collection() {
       </div>
 
       {/* Bouton fixe en bas */}
-      <div className="fixed bottom-4 left-4 right-4 z-10">
+      <div className="fixed bottom-4 left-4 right-4 z-10" style={{ height: 48 }}>
         <button
           onClick={() => setSheetOpen(true)}
-          className="w-full h-12 bg-[#6c63ff] text-white font-semibold text-[14px] rounded-[12px]"
+          className={`w-full h-full bg-primary text-white font-semibold text-[14px] rounded-[12px]${isCottagecore ? ' cc-border border-2' : ''}`}
         >
           Ajouter un {categoryLabel}
         </button>
+        {isCottagecore && <>
+          <LeafSmall width={15} rotate={-40} style={{ position:'absolute', left:-6,    top:-8,    zIndex:11, pointerEvents:'none' }} />
+          <Flower    width={18} rotate={30}  style={{ position:'absolute', left:14,    top:-11,   zIndex:11, pointerEvents:'none' }} />
+          <LeafBig   width={24} rotate={-20} style={{ position:'absolute', left:'42%', top:-12,   zIndex:11, pointerEvents:'none' }} />
+          <Mushroom  width={22} rotate={5}   style={{ position:'absolute', right:14,   top:-10,   zIndex:11, pointerEvents:'none' }} />
+          <LeafSmall width={14} rotate={70}  style={{ position:'absolute', right:-5,   top:-7,    zIndex:11, pointerEvents:'none' }} />
+          <Flower    width={15} rotate={-35} style={{ position:'absolute', left:'28%', bottom:-7, zIndex:11, pointerEvents:'none' }} />
+        </>}
       </div>
 
       {sheetOpen && (

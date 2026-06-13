@@ -2,6 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Thèmes ─────────────────────────────────────────────── */
+:root,
+[data-theme="violet"] {
+  --color-primary: 108 99 255;
+  --color-dark:    33 23 56;
+  --color-base:    246 244 249;
+  --color-muted:   115 102 148;
+  --color-soft:    242 237 250;
+  --color-accent:  164 159 254;
+}
+
+[data-theme="cottagecore"] {
+  --color-primary: 163 98 82;
+  --color-dark:    72 40 28;
+  --color-base:    237 212 202;
+  --color-muted:   155 108 90;
+  --color-soft:    225 193 180;
+  --color-accent:  196 152 132;
+}
+
+[data-theme="cottagecore"] .cc-border {
+  border-color: #490D0D;
+  border-width: 2px;
+}
+
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
@@ -22,28 +47,28 @@
   }
 
   input[type="date"] {
-    color: #211738;
+    color: rgb(var(--color-dark));
   }
 
   input[type="date"]::-webkit-datetime-edit {
-    color: #211738;
+    color: rgb(var(--color-dark));
   }
 
   input[type="date"]::-webkit-datetime-edit-fields-wrapper {
-    color: #211738;
+    color: rgb(var(--color-dark));
   }
 
   input[type="date"]::-webkit-datetime-edit-text,
   input[type="date"]::-webkit-datetime-edit-day-field,
   input[type="date"]::-webkit-datetime-edit-month-field,
   input[type="date"]::-webkit-datetime-edit-year-field {
-    color: #a49ffe;
+    color: rgb(var(--color-accent));
   }
 
   input[type="date"]:not([value=""])::-webkit-datetime-edit-day-field,
   input[type="date"]:not([value=""])::-webkit-datetime-edit-month-field,
   input[type="date"]:not([value=""])::-webkit-datetime-edit-year-field {
-    color: #211738;
+    color: rgb(var(--color-dark));
   }
 
   /* Touch targets minimum 44px (WCAG 2.5.5) */

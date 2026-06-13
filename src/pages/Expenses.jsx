@@ -1,10 +1,12 @@
-import { useState, useEffect, useCallback } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import BottomSheet from '../components/BottomSheet'
 import { FieldLabel, TextField, DateField, SelectField, SegmentedControl, SubmitButton } from '../components/FormFields'
 import AppHeader from '../components/AppHeader'
+import { useTheme } from '../contexts/ThemeContext'
+import { LeafSmall, LeafBig, Flower, Mushroom } from '../components/CottageDecor'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -21,7 +23,7 @@ function statusLabel(expense) {
   const rem = remainingAmount(expense)
   if (rem === 0) return { label: 'Soldé', color: '#22c55e', bg: '#f0fdf4' }
   if (rem < Number(expense.amount)) return { label: 'Partiel', color: '#f59e0b', bg: '#fffbeb' }
-  return { label: 'En attente', color: '#6c63ff', bg: '#f2edfa' }
+  return { label: 'En attente', color: 'rgb(var(--color-primary))', bg: 'rgb(var(--color-soft))' }
 }
 
 // ─── Saisie de tags ──────────────────────────────────────────────────────────
@@ -46,10 +48,10 @@ function TagInput({ tags, onChange, input, onInputChange, suggestions = [] }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-[12px] font-medium text-[#736694]">Tags</label>
-      <div className="relative bg-[#f2edfa] rounded-[10px] min-h-12 px-3 py-2 flex flex-wrap gap-2 items-center">
+      <label className="text-[12px] font-medium text-muted">Tags</label>
+      <div className="relative bg-soft rounded-[10px] min-h-12 px-3 py-2 flex flex-wrap gap-2 items-center">
         {tags.map(t => (
-          <span key={t} className="flex items-center gap-1 bg-[#6c63ff]/20 text-[#6c63ff] text-[12px] font-medium px-2 py-1 rounded-full shrink-0">
+          <span key={t} className="flex items-center gap-1 bg-primary/20 text-primary text-[12px] font-medium px-2 py-1 rounded-full shrink-0">
             {t}
             <button type="button" onPointerDown={e => { e.preventDefault(); remove(t) }} className="leading-none min-w-0 min-h-0 w-4 h-4">×</button>
           </span>
@@ -60,13 +62,13 @@ function TagInput({ tags, onChange, input, onInputChange, suggestions = [] }) {
           onChange={e => onInputChange(e.target.value)}
           onKeyDown={handleKey}
           placeholder={tags.length === 0 ? 'Ajouter un tag...' : ''}
-          className="bg-transparent text-[14px] text-[#211738] outline-none placeholder:text-[#a49ffe] min-w-[80px] flex-1"
+          className="bg-transparent text-[14px] text-dark outline-none placeholder:text-accent min-w-[80px] flex-1"
         />
         {shown.length > 0 && (
-          <ul className="absolute left-0 right-0 top-full mt-1 bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-[#f2edfa]">
+          <ul className="absolute left-0 right-0 top-full mt-1 bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-soft">
             {shown.map(s => (
               <li key={s}>
-                <button type="button" className="w-full text-left px-4 py-3 text-[13px] hover:bg-[#f2edfa]"
+                <button type="button" className="w-full text-left px-4 py-3 text-[13px] hover:bg-soft"
                   onPointerDown={e => { e.preventDefault(); add(s) }}>
                   {s}
                 </button>
@@ -75,7 +77,7 @@ function TagInput({ tags, onChange, input, onInputChange, suggestions = [] }) {
           </ul>
         )}
       </div>
-      <p className="text-[11px] text-[#a49ffe]">Entrée ou virgule pour valider, Retour arrière pour supprimer</p>
+      <p className="text-[11px] text-accent">Entrée ou virgule pour valider, Retour arrière pour supprimer</p>
     </div>
   )
 }
@@ -165,7 +167,7 @@ function NewExpenseModal({ currentUserId, onClose, onSaved, initialExpense, allT
 
   return (
     <BottomSheet onClose={onClose}>
-      <p className="text-[17px] font-semibold text-[#211738]">{isEdit ? 'Modifier la dépense' : 'Nouvelle dépense'}</p>
+      <p className="text-[17px] font-semibold text-dark">{isEdit ? 'Modifier la dépense' : 'Nouvelle dépense'}</p>
       <TextField label="Description" required autoFocus value={description}
         onChange={e => setDescription(e.target.value)} placeholder="Ex : Resto, courses…" />
       <TextField label="Montant (€)" required type="number" inputMode="decimal" value={amount}
@@ -197,7 +199,7 @@ function ExpenseDetailModal({ expense, currentUserId, profiles, onClose, onSaved
   const isDone = remaining === 0
   const paid = Number(expense.amount) - remaining
   const pct = expense.amount > 0 ? Math.round((paid / Number(expense.amount)) * 100) : 0
-  const barColor = isDone ? '#22c55e' : pct > 0 ? '#f59e0b' : '#6c63ff'
+  const barColor = isDone ? '#22c55e' : pct > 0 ? '#f59e0b' : 'rgb(var(--color-primary))'
   const status = statusLabel(expense)
 
   const profileName = (id) => {
@@ -261,11 +263,11 @@ function ExpenseDetailModal({ expense, currentUserId, profiles, onClose, onSaved
       {/* En-tête dépense */}
       <div className="flex justify-between items-start gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-[17px] font-semibold text-[#211738] leading-tight">{expense.description}</p>
-          <p className="text-[12px] text-[#736694] mt-0.5">Payé par {profileName(expense.payer_id)}</p>
+          <p className="text-[17px] font-semibold text-dark leading-tight">{expense.description}</p>
+          <p className="text-[12px] text-muted mt-0.5">Payé par {profileName(expense.payer_id)}</p>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-[17px] font-bold text-[#211738]">{fmt(expense.amount)}</p>
+          <p className="text-[17px] font-bold text-dark">{fmt(expense.amount)}</p>
           <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
             style={{ color: status.color, background: status.bg }}>{status.label}</span>
         </div>
@@ -274,7 +276,7 @@ function ExpenseDetailModal({ expense, currentUserId, profiles, onClose, onSaved
       {/* Barre de progression */}
       <div className="flex flex-col gap-1 -mt-1">
         <div className="flex justify-between items-center">
-          <span className="text-[11px] text-[#736694]">{isDone ? 'Remboursé intégralement' : `${fmt(paid)} remboursé`}</span>
+          <span className="text-[11px] text-muted">{isDone ? 'Remboursé intégralement' : `${fmt(paid)} remboursé`}</span>
           <span className="text-[11px] font-semibold" style={{ color: barColor }}>{pct}%</span>
         </div>
         <div className="h-[4px] rounded-full bg-[#f0ebfa] overflow-hidden">
@@ -286,7 +288,7 @@ function ExpenseDetailModal({ expense, currentUserId, profiles, onClose, onSaved
       {/* Frise chronologique */}
       {sorted.length > 0 && (
         <div className="flex flex-col">
-          <p className="text-[11px] font-semibold text-[#736694] uppercase tracking-wide mb-3">Historique</p>
+          <p className="text-[11px] font-semibold text-muted uppercase tracking-wide mb-3">Historique</p>
           {sorted.map((r, i) => (
             <div key={r.id} className="flex gap-3">
               {/* Colonne timeline : dot centré, lignes au-dessus et en-dessous */}
@@ -297,9 +299,9 @@ function ExpenseDetailModal({ expense, currentUserId, profiles, onClose, onSaved
               </div>
               {/* Contenu */}
               <div className="flex items-center gap-2 py-1.5 flex-1 min-w-0">
-                <span className="text-[13px] font-medium text-[#211738] flex-1 min-w-0 truncate">{profileName(r.reimbursed_by)}</span>
+                <span className="text-[13px] font-medium text-dark flex-1 min-w-0 truncate">{profileName(r.reimbursed_by)}</span>
                 {fmtDate(r.reimbursement_date) && (
-                  <span className="text-[11px] text-[#a49ffe] shrink-0">{fmtDate(r.reimbursement_date)}</span>
+                  <span className="text-[11px] text-accent shrink-0">{fmtDate(r.reimbursement_date)}</span>
                 )}
                 <span className="text-[13px] font-semibold text-[#22c55e] shrink-0">+{fmt(r.amount)}</span>
                 <button
@@ -321,9 +323,9 @@ function ExpenseDetailModal({ expense, currentUserId, profiles, onClose, onSaved
       {!isDone && (
         <>
           {sorted.length > 0 && <div className="h-px bg-[#f0ebfa] -mt-2" />}
-          <p className="text-[14px] font-semibold text-[#211738]">
+          <p className="text-[14px] font-semibold text-dark">
             Ajouter un remboursement
-            <span className="text-[12px] font-normal text-[#736694] ml-2">Reste : {fmt(remaining)}</span>
+            <span className="text-[12px] font-normal text-muted ml-2">Reste : {fmt(remaining)}</span>
           </p>
           <TextField label="Montant (€)" required type="number" inputMode="decimal" value={amount}
             onChange={e => setAmount(e.target.value)} placeholder="0.00" />
@@ -340,14 +342,14 @@ function ExpenseDetailModal({ expense, currentUserId, profiles, onClose, onSaved
 
 // ─── Carte dépense ───────────────────────────────────────────────────────────
 
-function ExpenseCard({ expense, profiles, onOpen, onEdit, onDelete }) {
+function ExpenseCard({ expense, profiles, onOpen, onEdit, onDelete, isCottagecore = false, decoIdx = 0 }) {
   const [dotMenuOpen, setDotMenuOpen] = useState(false)
   const status = statusLabel(expense)
   const remaining = remainingAmount(expense)
   const isDone = remaining === 0
   const paid = Number(expense.amount) - remaining
   const pct = expense.amount > 0 ? Math.round((paid / Number(expense.amount)) * 100) : 0
-  const barColor = isDone ? '#22c55e' : pct > 0 ? '#f59e0b' : '#6c63ff'
+  const barColor = isDone ? '#22c55e' : pct > 0 ? '#f59e0b' : 'rgb(var(--color-primary))'
 
   const profileName = (id) => {
     const p = profiles[id]
@@ -356,7 +358,11 @@ function ExpenseCard({ expense, profiles, onOpen, onEdit, onDelete }) {
   }
 
   return (
-    <div className={`bg-white/70 border border-white/85 backdrop-blur-sm rounded-[16px] relative transition-all ${isDone ? 'opacity-50 grayscale' : ''}`}>
+    <div className={`bg-white/70 border backdrop-blur-sm rounded-[16px] relative transition-all ${isCottagecore ? 'cc-border' : 'border-white/85'} ${isDone ? 'opacity-50 grayscale' : ''}`}>
+      {isCottagecore && decoIdx === 0 && <><Mushroom  width={24} rotate={15}  style={{ position:'absolute', left:-10, top:-9,     zIndex:10, pointerEvents:'none' }} /><Flower    width={14} rotate={25}  style={{ position:'absolute', left:'42%',top:-8,     zIndex:10, pointerEvents:'none' }} /><LeafSmall width={14} rotate={-55} style={{ position:'absolute', right:-6,  bottom:-6,  zIndex:10, pointerEvents:'none' }} /><LeafBig   width={20} rotate={10}  style={{ position:'absolute', left:'30%',bottom:-10, zIndex:10, pointerEvents:'none' }} /></>}
+      {isCottagecore && decoIdx === 1 && <><LeafBig   width={26} rotate={-20} style={{ position:'absolute', right:-10, top:-8,    zIndex:10, pointerEvents:'none' }} /><LeafSmall width={13} rotate={60}  style={{ position:'absolute', left:'50%', top:-7,    zIndex:10, pointerEvents:'none' }} /><Flower    width={16} rotate={25}  style={{ position:'absolute', left:-7,   bottom:-7,  zIndex:10, pointerEvents:'none' }} /><Mushroom  width={18} rotate={-5}  style={{ position:'absolute', right:'25%',bottom:-9,  zIndex:10, pointerEvents:'none' }} /></>}
+      {isCottagecore && decoIdx === 2 && <><Flower    width={18} rotate={-35} style={{ position:'absolute', left:-8,   top:-9,    zIndex:10, pointerEvents:'none' }} /><LeafBig   width={22} rotate={20}  style={{ position:'absolute', right:-9,  top:-7,    zIndex:10, pointerEvents:'none' }} /><LeafSmall width={13} rotate={70}  style={{ position:'absolute', left:'55%', bottom:-6,  zIndex:10, pointerEvents:'none' }} /><Mushroom  width={20} rotate={10}  style={{ position:'absolute', left:-8,   bottom:-8,  zIndex:10, pointerEvents:'none' }} /></>}
+      {isCottagecore && decoIdx === 3 && <><LeafSmall width={15} rotate={100} style={{ position:'absolute', left:-6,   top:-6,    zIndex:10, pointerEvents:'none' }} /><Mushroom  width={22} rotate={-8}  style={{ position:'absolute', right:-9,  top:-9,    zIndex:10, pointerEvents:'none' }} /><Flower    width={15} rotate={-30} style={{ position:'absolute', left:'38%', bottom:-8,  zIndex:10, pointerEvents:'none' }} /><LeafBig   width={21} rotate={40}  style={{ position:'absolute', left:-8,   bottom:-9,  zIndex:10, pointerEvents:'none' }} /></>}
       {/* Dropdown 3-dot */}
       {dotMenuOpen && (
         <>
@@ -364,7 +370,7 @@ function ExpenseCard({ expense, profiles, onOpen, onEdit, onDelete }) {
           <div className="absolute top-10 right-3 z-20 bg-white rounded-[12px] shadow-lg border border-[#f0ebfa] overflow-hidden min-w-[140px]">
             <button
               onClick={() => { setDotMenuOpen(false); onEdit(expense) }}
-              className="flex items-center px-4 py-3 text-[14px] text-[#211738] w-full text-left active:bg-[#f2edfa]"
+              className="flex items-center px-4 py-3 text-[14px] text-dark w-full text-left active:bg-soft"
             >
               Modifier
             </button>
@@ -386,18 +392,18 @@ function ExpenseCard({ expense, profiles, onOpen, onEdit, onDelete }) {
       {/* Header */}
       <div className="flex items-center gap-2 p-4 pb-3">
         <button onClick={onOpen} className="flex-1 min-w-0 text-left">
-          <p className="text-[14px] font-semibold text-[#211738] truncate">{expense.description}</p>
-          <p className="text-[12px] text-[#736694] mt-0.5">Payé par {profileName(expense.payer_id)}</p>
+          <p className="text-[14px] font-semibold text-dark truncate">{expense.description}</p>
+          <p className="text-[12px] text-muted mt-0.5">Payé par {profileName(expense.payer_id)}</p>
         </button>
         {expense.tags?.length > 0 && (
           <div className="flex flex-wrap justify-end gap-1 shrink-0 max-w-[45%]">
             {expense.tags.map(t => (
-              <span key={t} className="text-[11px] font-semibold text-[#6c63ff] bg-[#6c63ff]/10 px-2 py-0.5 rounded-full">{t}</span>
+              <span key={t} className="text-[11px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{t}</span>
             ))}
           </div>
         )}
         <button onClick={() => setDotMenuOpen(o => !o)} className="shrink-0 w-8 h-8 flex items-center justify-center -mr-1">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="#736694">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="rgb(var(--color-muted))">
             <circle cx="12" cy="5" r="1.5" />
             <circle cx="12" cy="12" r="1.5" />
             <circle cx="12" cy="19" r="1.5" />
@@ -439,6 +445,8 @@ export default function Expenses() {
   const [loading, setLoading] = useState(true)
 
   const { user, loading: authLoading } = useAuth()
+  const { theme } = useTheme()
+  const isCottagecore = theme === 'cottagecore'
   const navigate = useNavigate()
 
 
@@ -496,7 +504,7 @@ export default function Expenses() {
     .filter(e => tagFilters.length === 0 || tagFilters.every(t => (e.tags ?? []).includes(t)))
 
   return (
-    <div className="relative w-full h-dvh overflow-hidden bg-[#f6f4f9]">
+    <div className="relative w-full h-dvh overflow-hidden bg-base">
 
       {/* Blobs */}
       <div className="absolute -left-16 -top-4 w-72 h-72 rounded-full bg-[#c4b5fd] opacity-30 blur-3xl pointer-events-none" />
@@ -505,11 +513,19 @@ export default function Expenses() {
       <div className="absolute left-40 top-[460px] w-64 h-64 rounded-full bg-[#fed7aa] opacity-25 blur-3xl pointer-events-none" />
 
       <AppHeader title="Dépenses" />
+      {isCottagecore && <>
+        {/* Expenses — déco en diagonale haut-droite → bas-gauche */}
+        <Flower    width={22} rotate={-30} style={{ position: 'absolute', top: 16,  left: '20%', zIndex: 30 }} />
+        <LeafSmall width={14} rotate={60}  style={{ position: 'absolute', top: 44,  left: '32%', zIndex: 30 }} />
+        <LeafBig   width={26} rotate={10}  style={{ position: 'absolute', top: 14,  right: '18%', zIndex: 30 }} />
+        <Mushroom  width={22} rotate={-8}  style={{ position: 'absolute', top: 84,  left: 4,   zIndex: 20 }} />
+        <LeafSmall width={15} rotate={-50} style={{ position: 'absolute', top: 112, right: 6,  zIndex: 20 }} />
+      </>}
 
       {/* Barre recherche */}
       <div className="absolute top-[76px] left-0 right-0 h-[66px] bg-white/55 border-b border-white/80 backdrop-blur-md z-10 flex items-center px-[14px] gap-2">
         <div className="flex-1 flex items-center gap-2 bg-white/70 border border-white/85 rounded-[8px] h-[44px] px-3">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="#ada7fd">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="rgb(var(--color-accent))">
             <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
           </svg>
           <input
@@ -517,7 +533,7 @@ export default function Expenses() {
             placeholder="Rechercher"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="flex-1 bg-transparent text-[14px] font-semibold text-[#6c63ff] placeholder-[#ada7fd] focus:outline-none"
+            className="flex-1 bg-transparent text-[14px] font-semibold text-primary placeholder-accent focus:outline-none"
           />
         </div>
         <div className="relative shrink-0">
@@ -525,15 +541,15 @@ export default function Expenses() {
             onClick={() => setFilterDropdownOpen(o => !o)}
             className={`w-[34px] h-[34px] rounded-[8px] flex items-center justify-center border transition-all relative ${
               filter === 'done' || tagFilters.length > 0
-                ? 'bg-[rgba(108,99,255,0.12)] border-[#a49ffe]'
+                ? 'bg-primary/[0.12] border-accent'
                 : 'bg-white/75 border-white/85'
             }`}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill={filter === 'done' || tagFilters.length > 0 ? '#6c63ff' : '#736694'}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill={filter === 'done' || tagFilters.length > 0 ? 'rgb(var(--color-primary))' : 'rgb(var(--color-muted))'}>
               <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" />
             </svg>
             {tagFilters.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#6c63ff] rounded-full text-white text-[9px] font-bold flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full text-white text-[9px] font-bold flex items-center justify-center">
                 {tagFilters.length}
               </span>
             )}
@@ -545,12 +561,12 @@ export default function Expenses() {
                 {/* Soldés */}
                 <button
                   onClick={() => { setFilter(f => f === 'done' ? null : 'done'); setFilterDropdownOpen(false) }}
-                  className="flex items-center gap-3 px-4 py-3 w-full text-left active:bg-[#f2edfa]"
+                  className="flex items-center gap-3 px-4 py-3 w-full text-left active:bg-soft"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill={filter === 'done' ? '#22c55e' : '#a0a0b0'}>
                     <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
                   </svg>
-                  <span className={`text-[13px] font-medium flex-1 ${filter === 'done' ? 'text-[#22c55e]' : 'text-[#211738]'}`}>
+                  <span className={`text-[13px] font-medium flex-1 ${filter === 'done' ? 'text-[#22c55e]' : 'text-dark'}`}>
                     Soldés {doneExpenses.length > 0 && `(${doneExpenses.length})`}
                   </span>
                   {filter === 'done' && (
@@ -564,11 +580,11 @@ export default function Expenses() {
                   <>
                     <div className="h-px bg-[#f0ebfa]" />
                     <div className="px-3 pt-2 pb-2">
-                      <p className="text-[10px] font-semibold text-[#736694] uppercase tracking-wider mb-2">Tags</p>
+                      <p className="text-[10px] font-semibold text-muted uppercase tracking-wider mb-2">Tags</p>
                       <div className="relative">
-                        <div className={`flex flex-wrap items-center gap-1.5 bg-[#f2edfa] rounded-[8px] px-3 min-h-9 py-1.5 ${tagFilters.length > 0 ? 'ring-2 ring-[#6c63ff]/40' : ''}`}>
+                        <div className={`flex flex-wrap items-center gap-1.5 bg-soft rounded-[8px] px-3 min-h-9 py-1.5 ${tagFilters.length > 0 ? 'ring-2 ring-primary/40' : ''}`}>
                           {tagFilters.map(t => (
-                            <span key={t} className="flex items-center gap-1 bg-[#6c63ff]/20 text-[#6c63ff] text-[11px] font-medium px-2 py-0.5 rounded-full shrink-0">
+                            <span key={t} className="flex items-center gap-1 bg-primary/20 text-primary text-[11px] font-medium px-2 py-0.5 rounded-full shrink-0">
                               {t}
                               <button onClick={() => setTagFilters(prev => prev.filter(x => x !== t))} style={{ minWidth: 0, minHeight: 0 }} className="leading-none">&times;</button>
                             </span>
@@ -578,21 +594,21 @@ export default function Expenses() {
                             value={filterTagInput}
                             onChange={e => setFilterTagInput(e.target.value)}
                             placeholder={tagFilters.length === 0 ? 'Filtrer par tag...' : ''}
-                            className="bg-transparent text-[13px] text-[#211738] outline-none placeholder:text-[#a49ffe] flex-1 min-w-[80px]"
+                            className="bg-transparent text-[13px] text-dark outline-none placeholder:text-accent flex-1 min-w-[80px]"
                           />
                         </div>
                         {filterTagInput && (
-                          <ul className="absolute left-0 right-0 top-[38px] bg-white rounded-[8px] shadow-lg z-30 overflow-hidden border border-[#f2edfa]">
+                          <ul className="absolute left-0 right-0 top-[38px] bg-white rounded-[8px] shadow-lg z-30 overflow-hidden border border-soft">
                             {allTags
                               .filter(t => t.includes(filterTagInput.toLowerCase()) && !tagFilters.includes(t))
                               .map(tag => (
                                 <li key={tag}>
                                   <button
-                                    className="w-full text-left px-3 py-2 text-[13px] hover:bg-[#f2edfa] flex items-center gap-2"
+                                    className="w-full text-left px-3 py-2 text-[13px] hover:bg-soft flex items-center gap-2"
                                     style={{ minWidth: 0, minHeight: 0 }}
                                     onClick={() => { setTagFilters(prev => [...prev, tag]); setFilterTagInput('') }}
                                   >
-                                    <span className="flex items-center gap-1 bg-[#6c63ff]/20 text-[#6c63ff] text-[11px] px-2 py-0.5 rounded-full">{tag}</span>
+                                    <span className="flex items-center gap-1 bg-primary/20 text-primary text-[11px] px-2 py-0.5 rounded-full">{tag}</span>
                                   </button>
                                 </li>
                               ))
@@ -603,7 +619,7 @@ export default function Expenses() {
                       {tagFilters.length > 0 && (
                         <button
                           onClick={() => setTagFilters([])}
-                          className="flex items-center justify-center gap-1 w-full mt-2 py-1 text-[12px] text-[#736694]"
+                          className="flex items-center justify-center gap-1 w-full mt-2 py-1 text-[12px] text-muted"
                         >
                           Effacer les tags
                         </button>
@@ -626,19 +642,19 @@ export default function Expenses() {
             onClick={() => setFilter(f => f === 'owed' ? null : 'owed')}
             className={`flex-1 flex items-center justify-between rounded-[8px] h-[43px] px-2 border transition-all ${
               filter === 'owed'
-                ? 'bg-[rgba(108,99,255,0.12)] border-[#a49ffe]'
-                : 'bg-[rgba(247,237,250,0.6)] border-[rgba(164,159,254,0.2)]'
+                ? 'bg-primary/[0.12] border-accent'
+                : 'bg-soft/60 border-[rgba(164,159,254,0.2)]'
             }`}
           >
             <span className="text-[12px] text-[#8883aa]">On me doit</span>
-            <span className="text-[14px] font-bold text-[#a49ffe]">{fmt(totalOwed)}</span>
+            <span className="text-[14px] font-bold text-accent">{fmt(totalOwed)}</span>
           </button>
           <button
             onClick={() => setFilter(f => f === 'due' ? null : 'due')}
             className={`flex-1 flex items-center justify-between rounded-[8px] h-[43px] px-2 border transition-all ${
               filter === 'due'
                 ? 'bg-[rgba(245,158,11,0.12)] border-[#f59e0b]'
-                : 'bg-[rgba(247,237,250,0.6)] border-[rgba(245,158,11,0.2)]'
+                : 'bg-soft/60 border-[rgba(245,158,11,0.2)]'
             }`}
           >
             <span className="text-[12px] text-[#8883aa]">Je dois</span>
@@ -649,12 +665,12 @@ export default function Expenses() {
         {/* Liste */}
         <div className="flex-1 overflow-y-auto px-[14px] pb-24 flex flex-col gap-3">
           {loading && (
-            <p className="text-center text-[13px] text-[#736694] mt-8">Chargement…</p>
+            <p className="text-center text-[13px] text-muted mt-8">Chargement…</p>
           )}
           {!loading && filtered.length === 0 && (
-            <div className="bg-white/60 border border-[#c0befe]/50 rounded-[12px] h-[64px] flex flex-col items-center justify-center mt-2">
-              <p className="text-[22px] font-bold text-[#6c63ff] leading-tight">Aucune dépense</p>
-              <p className="text-[11px] text-[#a49ffe]">pour le moment</p>
+            <div className="bg-white/60 border border-accent/50 rounded-[12px] h-[64px] flex flex-col items-center justify-center mt-2">
+              <p className="text-[22px] font-bold text-primary leading-tight">Aucune dépense</p>
+              <p className="text-[11px] text-accent">pour le moment</p>
             </div>
           )}
           {(() => {
@@ -680,10 +696,10 @@ export default function Expenses() {
             return groups.map(({ key, items }) => (
               <div key={key} className="flex flex-col gap-3">
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[11px] font-semibold text-[#a49ffe] whitespace-nowrap">{fmtLabel(key)}</span>
+                  <span className="text-[11px] font-semibold text-accent whitespace-nowrap">{fmtLabel(key)}</span>
                   <div className="flex-1 h-px bg-[#e8e0f5]" />
                 </div>
-                {items.map(e => (
+                {items.map((e, _ei) => (
                   <ExpenseCard
                     key={e.id}
                     expense={e}
@@ -691,6 +707,8 @@ export default function Expenses() {
                     onOpen={() => setDetailExpense(e)}
                     onEdit={setEditingExpense}
                     onDelete={setDeletingExpense}
+                    isCottagecore={isCottagecore}
+                    decoIdx={_ei % 4}
                   />
                 ))}
               </div>
@@ -700,12 +718,22 @@ export default function Expenses() {
       </main>
 
       {/* Bouton Nouvelle dépense */}
-      <button
-        onClick={() => setShowNew(true)}
-        className="absolute bottom-4 left-4 right-4 h-[48px] bg-[#6c63ff] rounded-[12px] text-white text-[14px] font-semibold z-10"
-      >
-        Nouvelle dépense
-      </button>
+      <div className="fixed bottom-4 left-4 right-4 z-10" style={{ height: 48 }}>
+        <button
+          onClick={() => setShowNew(true)}
+          className={`w-full h-full bg-primary rounded-[12px] text-white text-[14px] font-semibold${isCottagecore ? ' cc-border border-2' : ''}`}
+        >
+          Nouvelle dépense
+        </button>
+        {isCottagecore && <>
+          <Mushroom  width={26} rotate={-15} style={{ position:'absolute', left:-7,    top:-12,   zIndex:11, pointerEvents:'none' }} />
+          <LeafSmall width={14} rotate={50}  style={{ position:'absolute', left:18,    top:-8,    zIndex:11, pointerEvents:'none' }} />
+          <Flower    width={17} rotate={-25} style={{ position:'absolute', left:'38%', top:-11,   zIndex:11, pointerEvents:'none' }} />
+          <LeafBig   width={22} rotate={15}  style={{ position:'absolute', right:-6,   top:-10,   zIndex:11, pointerEvents:'none' }} />
+          <LeafSmall width={13} rotate={-55} style={{ position:'absolute', right:20,   top:-7,    zIndex:11, pointerEvents:'none' }} />
+          <Flower    width={14} rotate={40}  style={{ position:'absolute', left:'55%', bottom:-7, zIndex:11, pointerEvents:'none' }} />
+        </>}
+      </div>
 
       {/* Modals */}
       {showNew && (
@@ -727,8 +755,8 @@ export default function Expenses() {
       )}
       {deletingExpense && (
         <BottomSheet onClose={() => setDeletingExpense(null)}>
-          <p className="text-[17px] font-semibold text-[#211738]">Supprimer la dépense ?</p>
-          <p className="text-[13px] text-[#736694] -mt-2">
+          <p className="text-[17px] font-semibold text-dark">Supprimer la dépense ?</p>
+          <p className="text-[13px] text-muted -mt-2">
             « {deletingExpense.description} » sera définitivement supprimée ainsi que tous ses remboursements.
           </p>
           <button
@@ -747,7 +775,7 @@ export default function Expenses() {
           </button>
           <button
             onClick={() => setDeletingExpense(null)}
-            className="h-12 bg-[#f2edfa] text-[#736694] rounded-[12px] text-[14px] font-semibold"
+            className="h-12 bg-soft text-muted rounded-[12px] text-[14px] font-semibold"
           >
             Annuler
           </button>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useNotifications } from '../hooks/useNotifications'
 import Drawer from './Drawer'
@@ -11,7 +11,7 @@ export default function AppHeader({ title, titleExtra }) {
 
   return (
     <>
-      <header className="absolute top-0 left-0 right-0 h-[76px] bg-white/55 border-b border-white/80 backdrop-blur-md z-20 flex items-center px-4">
+      <header className="absolute top-0 left-0 right-0 h-[76px] bg-white/55 border-b border-white/80 backdrop-blur-md z-30 flex items-center px-4">
         <button
           onClick={() => setMenuOpen(true)}
           className="flex flex-col gap-[5px] p-2 min-w-[44px] min-h-[44px] justify-center"
@@ -22,7 +22,7 @@ export default function AppHeader({ title, titleExtra }) {
           <span className="block w-[22px] h-[2.5px] rounded-sm bg-[rgba(33,23,56,0.75)]" />
         </button>
         <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
-          <h1 className="text-[17px] font-semibold text-[#211738] whitespace-nowrap">{title}</h1>
+          <h1 className="text-[17px] font-semibold text-dark whitespace-nowrap">{title}</h1>
           {titleExtra}
         </div>
         <div className="ml-auto">

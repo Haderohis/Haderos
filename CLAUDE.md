@@ -268,3 +268,40 @@ Liste verticale. Chaque carte :
 - Hauteur viewport : `min-h-dvh` (dynamic viewport height pour mobile)
 - Padding top des pages (sous le header fixe) : `pt-[76px]`
 - iOS tap targets : utiliser `<div onClick>` (pas `<button>` ni `role="button"`) pour les chips décoratifs. Ajouter `min-w-0 min-h-0` aux boutons utilitaires à l'intérieur des chips.
+
+## Système de thèmes
+
+### ThemeContext (`src/contexts/ThemeContext.jsx`)
+- Expose `{ theme, setTheme }` + constante `THEMES` (liste des thèmes disponibles)
+- Persisté en `localStorage`, appliqué via `document.documentElement.setAttribute('data-theme', theme)`
+- Thèmes disponibles : `violet` (défaut) · `cottagecore`
+- Usage dans les pages : `const { theme } = useTheme()` + `const isCottagecore = theme === 'cottagecore'`
+
+### CSS variables (`src/styles/index.css`)
+- Tokens RGB sans virgule pour supporter l'opacité : `rgb(var(--color-primary) / 0.08)`
+- Tokens Tailwind sémantiques : `primary` · `dark` · `base` · `muted` · `soft` · `accent`
+- Classe `.cc-border` : active uniquement sur `[data-theme="cottagecore"]` → `border-color: #490D0D; border-width: 2px`
+
+### Thème cottagecore — règles de décoration
+
+#### Composants SVG (`src/components/CottageDecor.jsx`)
+Exporte 4 SVG inline réutilisables : `LeafSmall` · `LeafBig` · `Flower` · `Mushroom`
+- Props : `width` (défaut variable) · `rotate` (degrés) · `style` (objet style React)
+- Toujours `pointer-events-none select-none`
+- `LeafSmall` < `LeafBig` en taille ; `Mushroom` légèrement plus grand que les autres
+
+#### Placement des décorations
+- **Header** : éléments entre le burger et le titre, et entre le titre et la cloche — `position:absolute` par rapport au wrapper de page, `zIndex:35`
+- **Cards / items** : 3–4 décos par carte, positions variées (coins + haut-centre + bas-centre). Wrapper de la carte doit être `relative`
+- **Bouton d'action fixe** : wrapper `<div className="fixed bottom-4 left-4 right-4 z-10" style={{height:48}}>` avec `<button>` pleine taille dedans + décos en `position:absolute` autour (`zIndex:11`), 5–6 éléments sur haut et bas du bouton
+- **Home** : décos positionnées par rapport au wrapper de page (`relative`), réparties sur les 4 bords de la `<main>` card (haut, bas, côté gauche ~35/50/65%, côté droit ~32/50/66%)
+
+#### Règles overflow
+- Les pages avec `overflow-hidden` sur un conteneur intermédiaire (ex: Checklist `<main>`) clippent les décos à valeurs négatives → utiliser `position` sans valeurs négatives ou retirer le `overflow-hidden` si le scroll est géré par un enfant
+- Le wrapper racine des pages a `overflow-hidden` (pour les blobs) → les décos positionnées par rapport à lui ne doivent pas dépasser les bords de l'écran
+- Ne jamais combiner `absolute` et `relative` sur le même élément (Tailwind last-write-wins → casse le layout)
+
+#### Borders cottagecore
+- Ajouter `cc-border` sur toutes les cards/items et sur les boutons d'action principaux
+- Boutons d'action : ajouter aussi `border-2` pour que `cc-border` s'applique (la classe ne définit que la couleur+épaisseur)
+- Thème violet : garder les borders fins d'origine (`border-white/85` etc.), ne pas modifier

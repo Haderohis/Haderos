@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import AppHeader from '../components/AppHeader'
 import BottomSheet from '../components/BottomSheet'
 import RestTimer from '../components/RestTimer'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import { toDateStr } from '../lib/date'
+import { useTheme } from '../contexts/ThemeContext'
+import { LeafSmall, LeafBig, Flower, Mushroom } from '../components/CottageDecor'
 
 function getWeekStart(date) {
   const d = new Date(date)
@@ -133,7 +135,7 @@ function DumbbellIcon({ size = 18, color = 'white' }) {
 function CheckCircleFilled({ onClick }) {
   return (
     <button onClick={onClick} className="shrink-0 min-w-0 min-h-0">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="#6c63ff">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="rgb(var(--color-primary))">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
       </svg>
     </button>
@@ -146,7 +148,7 @@ function CheckCircleOutline({ onClick, disabled }) {
       <svg width="22" height="22" viewBox="0 0 24 24">
         <path
           d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.88-11.71L10 14.17l-1.88-1.88a.996.996 0 10-1.41 1.41l2.59 2.59c.39.39 1.02.39 1.41 0L17.3 9.7a.996.996 0 000-1.41c-.39-.39-1.03-.39-1.42 0z"
-          fill="#6c63ff"
+          fill="rgb(var(--color-primary))"
         />
       </svg>
     </button>
@@ -155,6 +157,8 @@ function CheckCircleOutline({ onClick, disabled }) {
 
 export default function Sport() {
   const { user } = useAuth()
+  const { theme } = useTheme()
+  const isCottagecore = theme === 'cottagecore'
   const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()))
   const [selectedDate, setSelectedDate] = useState(TODAY)
   const [weekSessions, setWeekSessions] = useState([])
@@ -397,11 +401,28 @@ export default function Sport() {
     : `${weekStart.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} – ${addDays(weekStart, 6).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`
 
   return (
-    <div className="relative min-h-dvh bg-[#f6f4f9] overflow-hidden">
+    <div className="relative min-h-dvh bg-base overflow-hidden">
       {/* Blobs décoratifs */}
       <div className="absolute top-[-80px] left-[-60px] w-[320px] h-[320px] rounded-full bg-[#c4b5fd] opacity-20 blur-3xl pointer-events-none" />
       <div className="absolute top-[200px] right-[-80px] w-[260px] h-[260px] rounded-full bg-[#a5f3fc] opacity-15 blur-3xl pointer-events-none" />
       <div className="absolute top-[460px] left-[40px] w-[240px] h-[240px] rounded-full bg-[#fde68a] opacity-15 blur-3xl pointer-events-none" />
+
+      {/* Décorations header — entre burger↔Sport et Sport↔cloche */}
+      {isCottagecore && <>
+        <LeafBig   width={22} rotate={-20} style={{ position: 'absolute', top: 18,  left: '22%', zIndex: 35 }} />
+        <Flower    width={16} rotate={30}  style={{ position: 'absolute', top: 36,  left: '30%', zIndex: 35 }} />
+        <Mushroom  width={20} rotate={10}  style={{ position: 'absolute', top: 14,  right: '22%', zIndex: 35 }} />
+        <LeafSmall width={14} rotate={-45} style={{ position: 'absolute', top: 42,  right: '28%', zIndex: 35 }} />
+      </>}
+
+      {/* Décorations calendrier */}
+      {isCottagecore && <>
+        <LeafBig   width={24} rotate={20}  style={{ position: 'absolute', top: 118, right: 4,  zIndex: 25 }} />
+        <LeafSmall width={17} rotate={-20} style={{ position: 'absolute', top: 148, right: 4,  zIndex: 25 }} />
+        <Mushroom  width={24} rotate={-12} style={{ position: 'absolute', top: 100, left: 2,   zIndex: 25 }} />
+        <Flower    width={18} rotate={30}  style={{ position: 'absolute', top: 148, left: 4,   zIndex: 25 }} />
+      </>}
+
 
       <AppHeader title="Sport" />
 
@@ -410,15 +431,15 @@ export default function Sport() {
       <div className="sticky top-[76px] z-20 bg-[rgba(255,255,255,0.55)] border-b border-[rgba(255,255,255,0.8)] backdrop-blur-md px-[14px] pt-[14px] pb-[12px] flex flex-col gap-[12px]">
         <div className="flex items-center justify-between">
           <button onClick={() => setWeekStart(prev => addDays(prev, -7))} className="w-8 h-8 flex items-center justify-center">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="#211738"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" /></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="rgb(var(--color-dark))"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" /></svg>
           </button>
-          <span className="text-[14px] font-semibold text-[#211738]">{weekLabel}</span>
+          <span className="text-[14px] font-semibold text-dark">{weekLabel}</span>
           <button
             onClick={() => canGoNext && setWeekStart(prev => addDays(prev, 7))}
             disabled={!canGoNext}
             className={`w-8 h-8 flex items-center justify-center ${!canGoNext ? 'opacity-20' : ''}`}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="#211738"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" /></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="rgb(var(--color-dark))"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" /></svg>
           </button>
         </div>
 
@@ -439,16 +460,16 @@ export default function Sport() {
                 onClick={() => !isFuture && setSelectedDate(dateStr)}
                 disabled={isFuture}
                 className={`flex flex-1 flex-col h-[40px] items-center justify-start pt-[7px] gap-[4px] overflow-hidden px-[8px] rounded-[4px] transition-colors ${
-                  isSelected ? 'bg-[#6c63ff]' : isToday ? 'border border-[#6c63ff]' : ''
+                  isSelected ? 'bg-primary' : isToday ? 'border border-primary' : ''
                 } ${isFuture ? 'cursor-default' : ''}`}
               >
-                <span className={`text-[10px] font-semibold leading-none ${isSelected ? 'text-white' : isFuture ? 'text-[#c0befe]' : 'text-[#8883aa]'}`}>
+                <span className={`text-[10px] font-semibold leading-none ${isSelected ? 'text-white' : isFuture ? 'text-accent' : 'text-[#8883aa]'}`}>
                   {DAY_LABELS[i]}
                 </span>
                 <div className="h-[14px] flex items-center justify-center">
                   {hasSession && (sessionType === 'cardio'
-                    ? <CardioIcon size={12} color={isSelected ? 'white' : '#6c63ff'} />
-                    : <DumbbellIcon size={12} color={isSelected ? 'white' : '#6c63ff'} />
+                    ? <CardioIcon size={12} color={isSelected ? 'white' : 'rgb(var(--color-primary))'} />
+                    : <DumbbellIcon size={12} color={isSelected ? 'white' : 'rgb(var(--color-primary))'} />
                   )}
                 </div>
               </button>
@@ -461,17 +482,17 @@ export default function Sport() {
       <div className="pb-28 px-[14px] flex flex-col gap-3 mt-3">
 
         {loading && (
-          <p className="text-center text-[13px] text-[#736694] mt-8">Chargement…</p>
+          <p className="text-center text-[13px] text-muted mt-8">Chargement…</p>
         )}
 
         {!loading && dayExercises.length === 0 && (
-          <div className="bg-white/60 border border-[#c0befe]/50 rounded-[12px] h-[64px] flex flex-col items-center justify-center mt-2">
-            <p className="text-[22px] font-bold text-[#6c63ff] leading-tight">Aucun exercice</p>
-            <p className="text-[11px] text-[#a49ffe]">pour le moment</p>
+          <div className="bg-white/60 border border-accent/50 cc-border rounded-[12px] h-[64px] flex flex-col items-center justify-center mt-2">
+            <p className="text-[22px] font-bold text-primary leading-tight">Aucun exercice</p>
+            <p className="text-[11px] text-accent">pour le moment</p>
           </div>
         )}
 
-        {!loading && dayExercises.map(exo => {
+        {!loading && dayExercises.map((exo, exoIdx) => {
           const perf = lastPerfs[exo.name]
           const pendingRows = addingSet[exo.id] ?? []
           const hasSets = exo.sport_sets.length > 0
@@ -479,14 +500,50 @@ export default function Sport() {
           const col2Label = exo.type === 'strength' ? 'KG' : 'Kcal'
           const col3Label = exo.type === 'strength' ? 'REPS' : 'Durée'
 
+          const Z = { zIndex: 20 }
+          const DECO = [
+            // champignon en haut à gauche, fleur centrée en haut, feuille en bas à droite
+            <>
+              <Mushroom   key="a1" width={22} rotate={-15}  style={{ position:'absolute', left:-9,   top:-6,   ...Z }} />
+              <Flower     key="a2" width={18} rotate={20}   style={{ position:'absolute', left:'42%', top:-10, ...Z }} />
+              <LeafSmall  key="a3" width={15} rotate={-60}  style={{ position:'absolute', right:-7,  bottom:10,...Z }} />
+            </>,
+            // feuille en haut à droite, petite feuille centrée en bas, fleur en bas à gauche
+            <>
+              <LeafBig    key="b1" width={26} rotate={200}  style={{ position:'absolute', right:-10, top:-8,   ...Z }} />
+              <LeafSmall  key="b2" width={14} rotate={130}  style={{ position:'absolute', left:'38%', bottom:-7,...Z }} />
+              <Flower     key="b3" width={17} rotate={-25}  style={{ position:'absolute', left:-8,   bottom:4, ...Z }} />
+            </>,
+            // fleur en haut à gauche, champignon centré en bas, feuille en haut à droite
+            <>
+              <Flower     key="c1" width={18} rotate={30}   style={{ position:'absolute', left:-8,   top:6,    ...Z }} />
+              <Mushroom   key="c2" width={24} rotate={8}    style={{ position:'absolute', left:'62%', bottom:-12,...Z }} />
+              <LeafBig    key="c3" width={22} rotate={-20}  style={{ position:'absolute', right:-9,  top:-6,   ...Z }} />
+            </>,
+            // feuille petite en haut à gauche, grande feuille centrée en haut, champignon en bas à droite
+            <>
+              <LeafSmall  key="d1" width={16} rotate={-80}  style={{ position:'absolute', left:-7,   top:8,    ...Z }} />
+              <LeafBig    key="d2" width={24} rotate={-10}  style={{ position:'absolute', left:'30%', top:-12, ...Z }} />
+              <Mushroom   key="d3" width={22} rotate={12}   style={{ position:'absolute', right:-9,  bottom:4, ...Z }} />
+            </>,
+            // fleur en bas à droite, petite feuille en haut centré, champignon en haut à gauche
+            <>
+              <Mushroom   key="e1" width={20} rotate={-5}   style={{ position:'absolute', left:-9,   top:-8,   ...Z }} />
+              <LeafSmall  key="e2" width={15} rotate={40}   style={{ position:'absolute', left:'58%', top:-8,  ...Z }} />
+              <Flower     key="e3" width={19} rotate={-20}  style={{ position:'absolute', right:-8,  bottom:6, ...Z }} />
+            </>,
+          ]
+
           return (
-            <div key={exo.id} className="bg-white/60 border border-[#c0befe]/50 rounded-[12px] overflow-hidden">
+            <div key={exo.id} className="relative" style={{ zIndex: dayExercises.length - exoIdx }}>
+              {isCottagecore && DECO[exoIdx % DECO.length]}
+            <div className="bg-white/60 border border-accent/50 cc-border rounded-[12px] overflow-hidden">
 
               {/* Exercise header */}
               <div className="flex items-center justify-between px-3 py-[13px]">
                 <div className="flex items-center gap-4">
                   <div className="relative w-[37px] h-[36px] shrink-0">
-                    <div className="absolute inset-0 bg-[#6c63ff] rounded-[4px]" />
+                    <div className="absolute inset-0 bg-primary rounded-[4px]" />
                     <div className="absolute inset-0 flex items-center justify-center">
                       <MuscleIcon muscleKey={exo.muscle} type={exo.type} size={18} color="white" />
                     </div>
@@ -498,12 +555,12 @@ export default function Sport() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={() => setEditingExercise({ id: exo.id, name: exo.name, muscle: exo.muscle ?? null })} className="shrink-0 w-6 h-6 flex items-center justify-center min-w-0 min-h-0">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="#a49ffe">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="rgb(var(--color-accent))">
                       <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
                     </svg>
                   </button>
                   <button onClick={() => handleDeleteExercise(exo.id)} className="shrink-0 w-6 h-6 flex items-center justify-center min-w-0 min-h-0">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#c0befe">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="rgb(var(--color-accent))">
                       <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
                     </svg>
                   </button>
@@ -526,10 +583,10 @@ export default function Sport() {
                 const precText = getPrecText(perf, set.set_number, exo.type)
                 const editing = editingSet[set.id]
                 return (
-                  <div key={set.id} className="flex items-center gap-1 px-4 py-[5px] bg-[rgba(108,99,255,0.08)]">
+                  <div key={set.id} className="flex items-center gap-1 px-4 py-[5px] bg-primary/[0.08]">
                     <span className="w-6 text-[14px] font-semibold text-black shrink-0">{set.set_number}</span>
                     <div className="flex-1 flex justify-center">
-                      <div className="bg-white/60 border border-[#c0befe] rounded-[4px] px-1 py-[5px] w-[51px] flex items-center justify-center">
+                      <div className="bg-white/60 border border-accent cc-border rounded-[4px] px-1 py-[5px] w-[51px] flex items-center justify-center">
                         <span className="text-[10px] text-[#8883aa]">{precText}</span>
                       </div>
                     </div>
@@ -540,18 +597,18 @@ export default function Sport() {
                             type="number" inputMode="decimal" min="0" placeholder="—"
                             value={editing.weight ?? ''}
                             onChange={e => setEditingSet(prev => ({ ...prev, [set.id]: { ...prev[set.id], weight: e.target.value } }))}
-                            className="w-[51px] bg-white/60 border border-[#6c63ff] rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
+                            className="w-[51px] bg-white/60 border border-primary cc-border rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
                           />
                         ) : (
                           <input
                             type="number" inputMode="numeric" min="0" placeholder="—"
                             value={editing.kcal ?? ''}
                             onChange={e => setEditingSet(prev => ({ ...prev, [set.id]: { ...prev[set.id], kcal: e.target.value } }))}
-                            className="w-[51px] bg-white/60 border border-[#6c63ff] rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
+                            className="w-[51px] bg-white/60 border border-primary cc-border rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
                           />
                         )
                       ) : (
-                        <div className="bg-white/60 border border-[#c0befe] rounded-[4px] px-1 py-[5px] w-[51px] flex items-center justify-center">
+                        <div className="bg-white/60 border border-accent cc-border rounded-[4px] px-1 py-[5px] w-[51px] flex items-center justify-center">
                           <span className="text-[10px] text-black">
                             {exo.type === 'strength' ? (set.weight_kg ?? '—') : (set.kcal ?? '—')}
                           </span>
@@ -565,18 +622,18 @@ export default function Sport() {
                             type="number" inputMode="numeric" min="0" placeholder="—"
                             value={editing.reps ?? ''}
                             onChange={e => setEditingSet(prev => ({ ...prev, [set.id]: { ...prev[set.id], reps: e.target.value } }))}
-                            className="w-[51px] bg-white/60 border border-[#6c63ff] rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
+                            className="w-[51px] bg-white/60 border border-primary cc-border rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
                           />
                         ) : (
                           <input
                             type="text" placeholder="min"
                             value={editing.duration ?? ''}
                             onChange={e => setEditingSet(prev => ({ ...prev, [set.id]: { ...prev[set.id], duration: e.target.value } }))}
-                            className="w-[51px] bg-white/60 border border-[#6c63ff] rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
+                            className="w-[51px] bg-white/60 border border-primary cc-border rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
                           />
                         )
                       ) : (
-                        <div className="bg-white/60 border border-[#c0befe] rounded-[4px] px-1 py-[5px] w-[51px] flex items-center justify-center">
+                        <div className="bg-white/60 border border-accent cc-border rounded-[4px] px-1 py-[5px] w-[51px] flex items-center justify-center">
                           <span className="text-[10px] text-black">
                             {exo.type === 'strength' ? (set.reps ?? '—') : formatDuration(set.duration_seconds)}
                           </span>
@@ -600,7 +657,7 @@ export default function Sport() {
                   <div key={pi} className="flex items-center gap-1 px-4 py-[5px]">
                     <span className="w-6 text-[14px] font-semibold text-black shrink-0">{displayNum}</span>
                     <div className="flex-1 flex justify-center">
-                      <div className="bg-white/60 border border-[#c0befe] rounded-[4px] px-1 py-[5px] w-[51px] flex items-center justify-center">
+                      <div className="bg-white/60 border border-accent cc-border rounded-[4px] px-1 py-[5px] w-[51px] flex items-center justify-center">
                         <span className="text-[10px] text-[#8883aa]">
                           {getPrecText(perf, displayNum, exo.type)}
                         </span>
@@ -620,7 +677,7 @@ export default function Sport() {
                               rows[pi] = { ...rows[pi], weight: e.target.value }
                               return { ...prev, [exo.id]: rows }
                             })}
-                            className="w-[51px] bg-white/60 border border-[#6c63ff] rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
+                            className="w-[51px] bg-white/60 border border-primary cc-border rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
                           />
                         </div>
                         <div className="flex-1 flex justify-center">
@@ -632,7 +689,7 @@ export default function Sport() {
                               rows[pi] = { ...rows[pi], reps: e.target.value }
                               return { ...prev, [exo.id]: rows }
                             })}
-                            className="w-[51px] bg-white/60 border border-[#6c63ff] rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
+                            className="w-[51px] bg-white/60 border border-primary cc-border rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
                           />
                         </div>
                       </>
@@ -647,7 +704,7 @@ export default function Sport() {
                               rows[pi] = { ...rows[pi], kcal: e.target.value }
                               return { ...prev, [exo.id]: rows }
                             })}
-                            className="w-[51px] bg-white/60 border border-[#6c63ff] rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
+                            className="w-[51px] bg-white/60 border border-primary cc-border rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
                           />
                         </div>
                         <div className="flex-1 flex justify-center">
@@ -659,7 +716,7 @@ export default function Sport() {
                               rows[pi] = { ...rows[pi], duration: e.target.value }
                               return { ...prev, [exo.id]: rows }
                             })}
-                            className="w-[51px] bg-white/60 border border-[#6c63ff] rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
+                            className="w-[51px] bg-white/60 border border-primary cc-border rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
                           />
                         </div>
                       </>
@@ -682,11 +739,12 @@ export default function Sport() {
                   ...prev,
                   [exo.id]: [...(prev[exo.id] ?? []), { weight: '', reps: '', duration: '' }]
                 }))}
-                className="w-full flex items-center justify-center gap-2 py-[8px] border-t border-[#6c63ff]/20 text-[#6c63ff] text-[14px] font-semibold"
+                className="w-full flex items-center justify-center gap-2 py-[8px] border-t border-primary/20 text-primary text-[14px] font-semibold"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="#6c63ff"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" /></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="rgb(var(--color-primary))"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" /></svg>
                 Ajouter une serie
               </button>
+            </div>
             </div>
           )
         })}
@@ -694,17 +752,28 @@ export default function Sport() {
       </div>{/* fin pt-[76px] */}
 
       {/* Bouton ajouter exercice */}
-      <button
-        onClick={() => setShowAddExercise(true)}
-        className="fixed bottom-4 left-4 right-4 h-[48px] bg-[#6c63ff] rounded-[12px] text-white text-[14px] font-semibold z-10"
-      >
-        Ajouter un exercice
-      </button>
+      <div className="fixed bottom-4 left-4 right-4 z-10" style={{ height: 48 }}>
+        <button
+          onClick={() => setShowAddExercise(true)}
+          className={`w-full h-full bg-primary rounded-[12px] text-white text-[14px] font-semibold${isCottagecore ? ' border-2 cc-border' : ''}`}
+        >
+          Ajouter un exercice
+        </button>
+        {isCottagecore && <>
+          <LeafBig    width={24} rotate={-30} style={{ position:'absolute', left:-6,    top:-10,    zIndex:11, pointerEvents:'none' }} />
+          <LeafSmall  width={16} rotate={140} style={{ position:'absolute', left:14,    top:-12,    zIndex:11, pointerEvents:'none' }} />
+          <Flower     width={18} rotate={20}  style={{ position:'absolute', left:'35%', top:-11,    zIndex:11, pointerEvents:'none' }} />
+          <LeafSmall  width={14} rotate={-20} style={{ position:'absolute', left:'55%', top:-9,     zIndex:11, pointerEvents:'none' }} />
+          <Mushroom   width={26} rotate={10}  style={{ position:'absolute', right:-6,   top:-14,    zIndex:11, pointerEvents:'none' }} />
+          <Flower     width={18} rotate={-15} style={{ position:'absolute', right:18,   top:-10,    zIndex:11, pointerEvents:'none' }} />
+          <LeafSmall  width={14} rotate={60}  style={{ position:'absolute', left:'45%', bottom:-8,  zIndex:11, pointerEvents:'none' }} />
+        </>}
+      </div>
 
       {/* BottomSheet — Nouvel exercice */}
       {showAddExercise && (
         <BottomSheet onClose={() => { setShowAddExercise(false); setNewExerciseName(''); setNewExerciseType('strength'); setNewExerciseMuscle(null); setFilterMuscle(null) }} innerClassName="overflow-visible">
-          <h2 className="text-[17px] font-bold text-[#211738]">Nouvel exercice</h2>
+          <h2 className="text-[17px] font-bold text-dark">Nouvel exercice</h2>
 
           {/* Nom autocomplete */}
           <div className="relative flex flex-col">
@@ -716,7 +785,7 @@ export default function Sport() {
               onFocus={() => setShowSuggestions(true)}
               onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
               autoFocus
-              className="h-12 w-full px-4 bg-[#f2edfa] rounded-[10px] text-[14px] text-[#211738] placeholder-[#a49ffe] outline-none"
+              className="h-12 w-full px-4 bg-soft rounded-[10px] text-[14px] text-dark placeholder-accent outline-none"
             />
             {showSuggestions && (() => {
               const suggestions = allExercises
@@ -727,7 +796,7 @@ export default function Sport() {
                 })
                 .slice(0, 6)
               return suggestions.length > 0 ? (
-                <ul className="absolute left-0 right-0 bottom-full mb-1 bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-[#f2edfa]">
+                <ul className="absolute left-0 right-0 bottom-full mb-1 bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-soft">
                   {suggestions.map(({ name, muscle }) => (
                     <li key={name}>
                       <button
@@ -738,11 +807,11 @@ export default function Sport() {
                           if (muscle) { setNewExerciseMuscle(muscle); setFilterMuscle(muscle) }
                           setShowSuggestions(false)
                         }}
-                        className="w-full text-left px-4 py-3 text-[13px] text-[#211738] hover:bg-[#f2edfa] flex items-center gap-2"
+                        className="w-full text-left px-4 py-3 text-[13px] text-dark hover:bg-soft flex items-center gap-2"
                       >
-                        <span className="text-[#6c63ff]">{muscle ? MUSCLES.find(m => m.key === muscle)?.icon('#6c63ff') : <DumbbellIcon size={14} color="#a49ffe" />}</span>
+                        <span className="text-primary">{muscle ? MUSCLES.find(m => m.key === muscle)?.icon('rgb(var(--color-primary))') : <DumbbellIcon size={14} color="rgb(var(--color-accent))" />}</span>
                         <span className="flex-1">{name}</span>
-                        {muscle && <span className="text-[11px] text-[#a49ffe]">{MUSCLES.find(m => m.key === muscle)?.label}</span>}
+                        {muscle && <span className="text-[11px] text-accent">{MUSCLES.find(m => m.key === muscle)?.label}</span>}
                       </button>
                     </li>
                   ))}
@@ -759,9 +828,9 @@ export default function Sport() {
                 <button
                   key={m.key}
                   onPointerDown={e => { e.preventDefault(); setFilterMuscle(active ? null : m.key); if (!active) setNewExerciseMuscle(m.key); else setNewExerciseMuscle(null) }}
-                  className={`shrink-0 flex items-center gap-1.5 px-3 h-9 rounded-[20px] text-[12px] font-semibold transition-colors ${active ? 'bg-[#6c63ff] text-white' : 'bg-[#f2edfa] text-[#736694]'}`}
+                  className={`shrink-0 flex items-center gap-1.5 px-3 h-9 rounded-[20px] text-[12px] font-semibold transition-colors ${active ? 'bg-primary text-white' : 'bg-soft text-muted'}`}
                 >
-                  <span>{m.icon(active ? 'white' : '#6c63ff')}</span>
+                  <span>{m.icon(active ? 'white' : 'rgb(var(--color-primary))')}</span>
                   {m.label}
                 </button>
               )
@@ -769,13 +838,13 @@ export default function Sport() {
           </div>
 
           {/* Toggle muscu / cardio */}
-          <div className="flex bg-[#f2edfa] rounded-[10px] p-1 gap-1">
+          <div className="flex bg-soft rounded-[10px] p-1 gap-1">
             {[
               ['strength', 'Musculation', <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z"/></svg>],
               ['cardio', 'Cardio', <CardioIcon color="currentColor" />],
             ].map(([val, label, icon]) => (
               <button key={val} onClick={() => setNewExerciseType(val)}
-                className={`flex-1 h-10 rounded-[8px] text-[13px] font-semibold transition-colors flex items-center justify-center gap-1.5 ${newExerciseType === val ? 'bg-[#6c63ff] text-white' : 'text-[#736694]'}`}>
+                className={`flex-1 h-10 rounded-[8px] text-[13px] font-semibold transition-colors flex items-center justify-center gap-1.5 ${newExerciseType === val ? 'bg-primary text-white' : 'text-muted'}`}>
                 {icon}
                 {label}
               </button>
@@ -785,7 +854,7 @@ export default function Sport() {
           <button
             onClick={handleAddExercise}
             disabled={!newExerciseName.trim() || saving}
-            className="h-12 w-full bg-[#6c63ff] disabled:opacity-50 text-white font-semibold rounded-[12px]">
+            className="h-12 w-full bg-primary disabled:opacity-50 text-white font-semibold rounded-[12px]">
             {saving ? 'Ajout…' : 'Ajouter'}
           </button>
         </BottomSheet>
@@ -794,14 +863,14 @@ export default function Sport() {
       {/* BottomSheet — Édition exercice */}
       {editingExercise && (
         <BottomSheet onClose={() => setEditingExercise(null)} innerClassName="overflow-visible">
-          <h2 className="text-[17px] font-bold text-[#211738]">Modifier l'exercice</h2>
+          <h2 className="text-[17px] font-bold text-dark">Modifier l'exercice</h2>
           <input
             type="text"
             placeholder="Nom de l'exercice"
             value={editingExercise.name}
             onChange={e => setEditingExercise(prev => ({ ...prev, name: e.target.value }))}
             autoFocus
-            className="h-12 w-full px-4 bg-[#f2edfa] rounded-[10px] text-[14px] text-[#211738] placeholder-[#a49ffe] outline-none"
+            className="h-12 w-full px-4 bg-soft rounded-[10px] text-[14px] text-dark placeholder-accent outline-none"
           />
           <div className="flex flex-wrap gap-2">
             {MUSCLES.map(m => {
@@ -810,9 +879,9 @@ export default function Sport() {
                 <button
                   key={m.key}
                   onPointerDown={e => { e.preventDefault(); setEditingExercise(prev => ({ ...prev, muscle: active ? null : m.key })) }}
-                  className={`shrink-0 flex items-center gap-1.5 px-3 h-9 rounded-[20px] text-[12px] font-semibold transition-colors ${active ? 'bg-[#6c63ff] text-white' : 'bg-[#f2edfa] text-[#736694]'}`}
+                  className={`shrink-0 flex items-center gap-1.5 px-3 h-9 rounded-[20px] text-[12px] font-semibold transition-colors ${active ? 'bg-primary text-white' : 'bg-soft text-muted'}`}
                 >
-                  <span>{m.icon(active ? 'white' : '#6c63ff')}</span>
+                  <span>{m.icon(active ? 'white' : 'rgb(var(--color-primary))')}</span>
                   {m.label}
                 </button>
               )
@@ -821,7 +890,7 @@ export default function Sport() {
           <button
             onClick={handleSaveExercise}
             disabled={!editingExercise.name.trim()}
-            className="h-12 w-full bg-[#6c63ff] disabled:opacity-50 text-white font-semibold rounded-[12px]">
+            className="h-12 w-full bg-primary disabled:opacity-50 text-white font-semibold rounded-[12px]">
             Enregistrer
           </button>
         </BottomSheet>

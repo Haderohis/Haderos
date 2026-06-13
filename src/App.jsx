@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { ThemeProvider } from './contexts/ThemeContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import Home from './pages/Home'
 import Login from './pages/Login'
@@ -11,6 +12,7 @@ import Sport from './pages/Sport'
 
 export default function App() {
   return (
+    <ThemeProvider>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
@@ -30,5 +32,6 @@ export default function App() {
         />
       </Routes>
     </BrowserRouter>
+    </ThemeProvider>
   )
 }

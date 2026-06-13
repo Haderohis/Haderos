@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 
 const DEFAULT_SECONDS = 90
 
@@ -51,14 +51,14 @@ export default function RestTimer({ onClose }) {
 
   return (
     <div className="fixed top-6 left-4 right-4 z-50">
-      <div className="bg-[#211738]/90 backdrop-blur-md rounded-[16px] px-5 py-4 flex items-center gap-4 shadow-xl">
+      <div className="bg-dark/90 backdrop-blur-md rounded-[16px] px-5 py-4 flex items-center gap-4 shadow-xl">
         <div className="relative w-[68px] h-[68px] shrink-0">
           <svg width="68" height="68" viewBox="0 0 68 68">
             <circle cx="34" cy="34" r={radius} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="4" />
             <circle
               cx="34" cy="34" r={radius}
               fill="none"
-              stroke="#6c63ff"
+              stroke="rgb(var(--color-primary))"
               strokeWidth="4"
               strokeLinecap="round"
               strokeDasharray={circumference}

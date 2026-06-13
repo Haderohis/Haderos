@@ -569,7 +569,7 @@ export default function Checklist() {
         <div className="flex flex-col gap-3 overflow-y-auto flex-1">
 
           {!hasTasks && (
-            <div className="bg-white/60 border border-accent/50 rounded-[12px] h-16 flex flex-col items-center justify-center mt-4">
+            <div className={`bg-white/60 border rounded-[12px] h-16 flex flex-col items-center justify-center mt-4 ${isCottagecore ? "cc-border" : "border-accent/50"}`}>
               <p className="text-[22px] font-bold text-primary leading-tight">Aucune tâche</p>
               <p className="text-[11px] text-accent">pour le moment</p>
             </div>
@@ -579,7 +579,7 @@ export default function Checklist() {
             <>
               {/* Stats */}
               <div className="flex gap-2 pt-4 shrink-0">
-                <div className="flex-1 bg-soft/60 border border-accent rounded-[8px] flex items-center justify-center gap-2 py-2">
+                <div className={`flex-1 bg-soft/60 border rounded-[8px] flex items-center justify-center gap-2 py-2 ${isCottagecore ? "cc-border" : "border-accent"}`}>
                   <span className="font-bold text-primary text-[22px] leading-none">{visibleTasks.length}</span>
                   <span className="text-accent text-[11px]">Total</span>
                 </div>
@@ -619,7 +619,7 @@ export default function Checklist() {
 
                     {/* Rien après filtre */}
                     {filteredOverdue.length === 0 && regularTasks.length === 0 && (
-                      <div className="bg-white/60 border border-accent/50 rounded-[12px] h-16 flex items-center justify-center">
+                      <div className={`bg-white/60 border rounded-[12px] h-16 flex items-center justify-center ${isCottagecore ? "cc-border" : "border-accent/50"}`}>
                         <p className="text-[14px] text-accent">Aucun résultat</p>
                       </div>
                     )}

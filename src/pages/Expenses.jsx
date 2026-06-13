@@ -660,7 +660,7 @@ export default function Expenses() {
             <p className="text-center text-[13px] text-muted mt-8">Chargement…</p>
           )}
           {!loading && filtered.length === 0 && (
-            <div className="bg-white/60 border border-accent/50 rounded-[12px] h-[64px] flex flex-col items-center justify-center mt-2">
+            <div className={`bg-white/60 border rounded-[12px] h-[64px] flex flex-col items-center justify-center mt-2 ${isCottagecore ? "cc-border" : "border-accent/50"}`}>
               <p className="text-[22px] font-bold text-primary leading-tight">Aucune dépense</p>
               <p className="text-[11px] text-accent">pour le moment</p>
             </div>

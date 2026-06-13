@@ -226,7 +226,8 @@ Liste verticale. Chaque carte :
 - Session auto-créée au premier `handleAddSet` via `ensureSession()`
 - Exercice ajouté → ligne de saisie ouverte automatiquement
 - Plusieurs lignes en attente simultanées possibles ("Ajouter une serie" toujours visible)
-- Validation d'une série → suppression de la ligne + déclenchement du `RestTimer`
+- Validation d'une série musculation → suppression de la ligne + déclenchement du `RestTimer`
+- Validation d'une série cardio → suppression de la ligne uniquement (pas de RestTimer)
 
 ### Édition exercice
 - Bouton crayon dans le header de la carte → BottomSheet avec nom pré-rempli + chips muscle

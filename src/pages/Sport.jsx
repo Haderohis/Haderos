@@ -23,9 +23,16 @@ function addDays(date, n) {
 
 function formatDuration(secs) {
   if (secs == null) return '—'
-  const m = Math.floor(secs / 60).toString().padStart(2, '0')
-  const s = (secs % 60).toString().padStart(2, '0')
-  return `${m}:${s}`
+  const m = Math.floor(secs / 60)
+  const s = secs % 60
+  return s === 0 ? `${m}` : `${m},${s.toString().padStart(2, '0')}`
+}
+
+function parseDuration(str) {
+  if (!str) return null
+  const parts = str.split(',')
+  if (parts.length === 2) return parseInt(parts[0]) * 60 + parseInt(parts[1])
+  return parseInt(str) * 60
 }
 
 function getPrecText(lastPerf, setNumber, type) {
@@ -311,7 +318,7 @@ export default function Sport() {
   const handleUncheckSet = (exo, set) => {
     const row = exo.type === 'strength'
       ? { weight: set.weight_kg ?? '', reps: set.reps ?? '', duration: '' }
-      : { weight: '', reps: '', duration: set.duration_seconds != null ? `${Math.floor(set.duration_seconds / 60).toString().padStart(2, '0')}:${(set.duration_seconds % 60).toString().padStart(2, '0')}` : '', kcal: set.kcal ?? '' }
+      : { weight: '', reps: '', duration: set.duration_seconds != null ? formatDuration(set.duration_seconds) : '', kcal: set.kcal ?? '' }
     setEditingSet(prev => ({ ...prev, [set.id]: row }))
   }
 
@@ -322,10 +329,7 @@ export default function Sport() {
       patch.reps = parseInt(inputs.reps) || null
       patch.weight_kg = parseFloat(inputs.weight) || null
     } else {
-      const parts = (inputs.duration ?? '').split(':')
-      patch.duration_seconds = parts.length === 2
-        ? parseInt(parts[0]) * 60 + parseInt(parts[1])
-        : parseInt(inputs.duration) || null
+      patch.duration_seconds = parseDuration(inputs.duration)
       patch.kcal = parseInt(inputs.kcal) || null
     }
     await supabase.from('sport_sets').update(patch).eq('id', set.id)
@@ -357,11 +361,8 @@ export default function Sport() {
       payload.reps = parseInt(inputs.reps) || null
       payload.weight_kg = parseFloat(inputs.weight) || null
     } else {
-      const parts = (inputs.duration ?? '').split(':')
-      payload.duration_seconds = parts.length === 2
-        ? parseInt(parts[0]) * 60 + parseInt(parts[1])
-        : parseInt(inputs.duration) || null
-      payload.kcal = parseInt(inputs.kcal) || null
+      payload.duration_seconds = parseDuration(pending.duration)
+      payload.kcal = parseInt(pending.kcal) || null
     }
     setSaving(true)
     const { data: newSet } = await supabase.from('sport_sets').insert(payload).select().single()
@@ -550,7 +551,7 @@ export default function Sport() {
                           />
                         ) : (
                           <input
-                            type="text" placeholder="mm:ss"
+                            type="text" placeholder="min"
                             value={editing.duration ?? ''}
                             onChange={e => setEditingSet(prev => ({ ...prev, [set.id]: { ...prev[set.id], duration: e.target.value } }))}
                             className="w-[51px] bg-white/60 border border-[#6c63ff] rounded-[4px] text-[10px] text-black text-center outline-none py-[5px]"
@@ -633,7 +634,7 @@ export default function Sport() {
                         </div>
                         <div className="flex-1 flex justify-center">
                           <input
-                            type="text" placeholder="mm:ss"
+                            type="text" placeholder="min"
                             value={pending.duration ?? ''}
                             onChange={e => setAddingSet(prev => {
                               const rows = [...(prev[exo.id] ?? [])]

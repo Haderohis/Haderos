@@ -513,14 +513,6 @@ export default function Expenses() {
       <div className="absolute left-40 top-[460px] w-64 h-64 rounded-full bg-[#fed7aa] opacity-25 blur-3xl pointer-events-none" />
 
       <AppHeader title="Dépenses" />
-      {isCottagecore && <>
-        {/* Expenses — déco en diagonale haut-droite → bas-gauche */}
-        <Flower    width={22} rotate={-30} style={{ position: 'absolute', top: 16,  left: '20%', zIndex: 30 }} />
-        <LeafSmall width={14} rotate={60}  style={{ position: 'absolute', top: 44,  left: '32%', zIndex: 30 }} />
-        <LeafBig   width={26} rotate={10}  style={{ position: 'absolute', top: 14,  right: '18%', zIndex: 30 }} />
-        <Mushroom  width={22} rotate={-8}  style={{ position: 'absolute', top: 84,  left: 4,   zIndex: 20 }} />
-        <LeafSmall width={15} rotate={-50} style={{ position: 'absolute', top: 112, right: 6,  zIndex: 20 }} />
-      </>}
 
       {/* Barre recherche */}
       <div className="absolute top-[76px] left-0 right-0 h-[66px] bg-white/55 border-b border-white/80 backdrop-blur-md z-10 flex items-center px-[14px] gap-2">
@@ -699,7 +691,7 @@ export default function Expenses() {
                   <span className="text-[11px] font-semibold text-accent whitespace-nowrap">{fmtLabel(key)}</span>
                   <div className="flex-1 h-px bg-[#e8e0f5]" />
                 </div>
-                {items.map((e, _ei) => (
+                {items.map((e) => (
                   <ExpenseCard
                     key={e.id}
                     expense={e}
@@ -708,7 +700,7 @@ export default function Expenses() {
                     onEdit={setEditingExpense}
                     onDelete={setDeletingExpense}
                     isCottagecore={isCottagecore}
-                    decoIdx={_ei % 4}
+                    decoIdx={String(e.id).split('').reduce((a,c)=>a+c.charCodeAt(0),0) % 4}
                   />
                 ))}
               </div>

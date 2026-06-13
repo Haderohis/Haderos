@@ -25,11 +25,20 @@ export default function Settings() {
 
       <AppHeader title="Paramètres" />
       {isCottagecore && <>
-        {/* Settings — déco dans les coins hauts et autour du sélecteur */}
-        <LeafBig   width={28} rotate={-40} style={{ position: 'absolute', top: 82,  left: 4,   zIndex: 20 }} />
-        <Flower    width={18} rotate={15}  style={{ position: 'absolute', top: 112, left: 28,  zIndex: 20 }} />
-        <Mushroom  width={24} rotate={5}   style={{ position: 'absolute', top: 88,  right: 6,  zIndex: 20 }} />
-        <LeafSmall width={14} rotate={70}  style={{ position: 'absolute', top: 118, right: 32, zIndex: 20 }} />
+        {/* bord haut de la card (top≈92px) */}
+        <LeafBig   width={28} rotate={-30} style={{ position:'absolute', top:80,  left:4,     zIndex:20, pointerEvents:'none' }} />
+        <Flower    width={18} rotate={20}  style={{ position:'absolute', top:80,  left:'38%', zIndex:20, pointerEvents:'none' }} />
+        <LeafSmall width={14} rotate={-50} style={{ position:'absolute', top:84,  right:6,    zIndex:20, pointerEvents:'none' }} />
+        {/* côté gauche */}
+        <Mushroom  width={24} rotate={15}  style={{ position:'absolute', top:'40%', left:4,   zIndex:20, pointerEvents:'none' }} />
+        <LeafSmall width={15} rotate={-40} style={{ position:'absolute', top:'60%', left:5,   zIndex:20, pointerEvents:'none' }} />
+        {/* côté droit */}
+        <Flower    width={18} rotate={-25} style={{ position:'absolute', top:'38%', right:4,  zIndex:20, pointerEvents:'none' }} />
+        <LeafBig   width={22} rotate={35}  style={{ position:'absolute', top:'58%', right:4,  zIndex:20, pointerEvents:'none' }} />
+        {/* bord bas (bottom≈16px) */}
+        <Mushroom  width={20} rotate={-10} style={{ position:'absolute', bottom:6,  left:4,    zIndex:20, pointerEvents:'none' }} />
+        <LeafSmall width={16} rotate={60}  style={{ position:'absolute', bottom:4,  left:'40%',zIndex:20, pointerEvents:'none' }} />
+        <Flower    width={18} rotate={-40} style={{ position:'absolute', bottom:6,  right:4,   zIndex:20, pointerEvents:'none' }} />
       </>}
 
       <main className="absolute top-[92px] left-4 right-4 bottom-4 overflow-y-auto">

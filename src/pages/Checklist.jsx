@@ -408,14 +408,6 @@ export default function Checklist() {
       <div className="absolute left-40 top-[461px] w-64 h-64 rounded-full bg-[#fed7aa] opacity-25 blur-3xl pointer-events-none"/>
 
       <AppHeader title="Worklist" />
-      {isCottagecore && <>
-        {/* Checklist — déco haute gauche et milieu-bas droite */}
-        <LeafSmall width={17} rotate={30}  style={{ position: 'absolute', top: 20,  left: '28%', zIndex: 30 }} />
-        <Mushroom  width={22} rotate={-15} style={{ position: 'absolute', top: 14,  right: '24%', zIndex: 30 }} />
-        <Flower    width={16} rotate={40}  style={{ position: 'absolute', top: 42,  right: '36%', zIndex: 30 }} />
-        <LeafBig   width={24} rotate={-25} style={{ position: 'absolute', top: 82,  right: 4,   zIndex: 20 }} />
-        <LeafSmall width={15} rotate={80}  style={{ position: 'absolute', top: 108, left: 6,   zIndex: 20 }} />
-      </>}
 
       {/* Barre recherche + jour */}
       <div className="absolute top-[76px] left-0 right-0 z-10 bg-white/55 backdrop-blur-md border-b border-white/80">

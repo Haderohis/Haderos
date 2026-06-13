@@ -407,22 +407,6 @@ export default function Sport() {
       <div className="absolute top-[200px] right-[-80px] w-[260px] h-[260px] rounded-full bg-[#a5f3fc] opacity-15 blur-3xl pointer-events-none" />
       <div className="absolute top-[460px] left-[40px] w-[240px] h-[240px] rounded-full bg-[#fde68a] opacity-15 blur-3xl pointer-events-none" />
 
-      {/* Décorations header — entre burger↔Sport et Sport↔cloche */}
-      {isCottagecore && <>
-        <LeafBig   width={22} rotate={-20} style={{ position: 'absolute', top: 18,  left: '22%', zIndex: 35 }} />
-        <Flower    width={16} rotate={30}  style={{ position: 'absolute', top: 36,  left: '30%', zIndex: 35 }} />
-        <Mushroom  width={20} rotate={10}  style={{ position: 'absolute', top: 14,  right: '22%', zIndex: 35 }} />
-        <LeafSmall width={14} rotate={-45} style={{ position: 'absolute', top: 42,  right: '28%', zIndex: 35 }} />
-      </>}
-
-      {/* Décorations calendrier */}
-      {isCottagecore && <>
-        <LeafBig   width={24} rotate={20}  style={{ position: 'absolute', top: 118, right: 4,  zIndex: 25 }} />
-        <LeafSmall width={17} rotate={-20} style={{ position: 'absolute', top: 148, right: 4,  zIndex: 25 }} />
-        <Mushroom  width={24} rotate={-12} style={{ position: 'absolute', top: 100, left: 2,   zIndex: 25 }} />
-        <Flower    width={18} rotate={30}  style={{ position: 'absolute', top: 148, left: 4,   zIndex: 25 }} />
-      </>}
-
 
       <AppHeader title="Sport" />
 

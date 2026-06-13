@@ -757,14 +757,6 @@ export default function Collection() {
       <div className="absolute top-32 right-0 w-56 h-56 rounded-full bg-[#a5f3fc] opacity-10 blur-3xl pointer-events-none" />
 
       <AppHeader title="Collection" titleExtra={shareChip} />
-      {isCottagecore && <>
-        {/* Collection — déco asymétrique côté gauche et bas */}
-        <LeafBig   width={24} rotate={50}  style={{ position: 'absolute', top: 18,  left: '26%', zIndex: 30 }} />
-        <Mushroom  width={20} rotate={25}  style={{ position: 'absolute', top: 44,  left: '14%', zIndex: 30 }} />
-        <LeafSmall width={16} rotate={-35} style={{ position: 'absolute', top: 20,  right: '22%', zIndex: 30 }} />
-        <Flower    width={18} rotate={-50} style={{ position: 'absolute', top: 84,  right: 4,   zIndex: 20 }} />
-        <LeafSmall width={15} rotate={100} style={{ position: 'absolute', top: 110, left: 6,   zIndex: 20 }} />
-      </>}
 
       {/* Barre de recherche */}
       <div className="pt-[76px]">

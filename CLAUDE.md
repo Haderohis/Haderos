@@ -191,9 +191,10 @@ Liste verticale. Chaque carte :
 ### Calendrier semaine
 - Sous-header `sticky top-[76px]` (dans `pt-[76px]` wrapper, même pattern que Collection)
 - Navigation semaine passée/courante uniquement (pas de futur)
-- Cellules : lettre du jour + icône altère si session avec exercices ce jour-là
+- Cellules : lettre du jour + icône selon majorité des exercices du jour (altère musculation, coureur cardio)
+- Icône calendrier : `sport_exercises(type)` chargé → si `cardioCount > total/2` → `CardioIcon`, sinon `DumbbellIcon`
 - Jour sélectionné : `bg-[#6c63ff] rounded-[4px]` · Jour actuel : `border border-[#6c63ff]`
-- L'icône altère ne s'affiche que si `sport_exercises.count > 0` (pas de session vide)
+- L'icône ne s'affiche que si au moins 1 exercice (pas de session vide)
 - `toDateStr()` définie dans `src/lib/date.js`, importée par Sport et Checklist — utilise `getFullYear/Month/Date` (pas `toISOString`) pour éviter le décalage timezone
 - Les perfs précédentes sont chargées en parallèle (`Promise.all`) au lieu de séquentiellement
 - Autocomplete exercices : 1 seule requête via join `!inner` sur `sport_sessions`, s'ouvre vers le haut (`bottom-full`)
@@ -201,6 +202,7 @@ Liste verticale. Chaque carte :
 ### Cartes exercice
 - Header : icône du **muscle ciblé** (stroke SVG) sur fond violet `rounded-[4px]` (37×36px) + nom + muscle label + crayon édition + × supprimer
 - Colonnes **PREC / KG / REPS** (musculation) ou **PREC / Kcal / Durée** (cardio)
+- Durée cardio : format `M` (minutes entières) ou `M,SS` (ex: `60` = 60min, `1,30` = 1min30) — `parseDuration()` / `formatDuration()` dans Sport.jsx
 - PREC = données de la session précédente pour ce numéro de série exact
 - Toutes les séries validées : `bg-[rgba(108,99,255,0.08)]`
 - ✓ rempli cliquable → remet la série en édition inline (UPDATE en DB à la revalidation)
@@ -209,16 +211,18 @@ Liste verticale. Chaque carte :
 - Valeurs min="0" sur tous les champs numériques
 
 ### Muscles (`sport_exercises.muscle`)
-- 6 groupes : `pectoraux` · `biceps` · `triceps` · `dos` · `jambes` · `epaules`
-- Icônes SVG style stroke (fill:none, strokeWidth:1.8) dans la constante `MUSCLES`
+- 7 groupes : `pectoraux` · `biceps` · `triceps` · `dos` · `jambes` · `epaules` · `abdos`
+- Icônes SVG style stroke (fill:none, strokeWidth:1.8) dans la constante `MUSCLES` — abdos : grille 3×2 rectangles
 - Migration : `supabase/sport_add_muscle.sql` (ALTER TABLE sport_exercises ADD COLUMN muscle text)
-- Sélecteur chips dans le formulaire d'ajout/édition, filtre l'autocomplete par muscle
+- Chips sur **une seule ligne scrollable horizontalement** (`overflow-x-auto`, `shrink-0` sur chaque chip)
+- Chips masquées si type `cardio` sélectionné dans la modal
 - Sélectionner un chip pré-sélectionne aussi `newExerciseMuscle`
 - Choisir une suggestion autocomplete hérite du muscle de l'exercice existant
 
 ### Flow d'ajout exercice
 - BottomSheet avec `innerClassName="overflow-visible"` pour que l'autocomplete ne soit pas clippé
-- Formulaire : input nom (autocomplete) → chips muscle → toggle muscu/cardio → bouton Ajouter
+- Formulaire : input nom (autocomplete) → chips muscle (masquées si cardio) → toggle muscu/cardio → bouton Ajouter
+- Icône cardio : `CardioIcon` (coureur filled) — même composant dans la modal et les cartes exercice
 - Session auto-créée au premier `handleAddSet` via `ensureSession()`
 - Exercice ajouté → ligne de saisie ouverte automatiquement
 - Plusieurs lignes en attente simultanées possibles ("Ajouter une serie" toujours visible)

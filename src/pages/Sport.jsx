@@ -93,11 +93,22 @@ const MUSCLES = [
       <path d="M7 14 L7 21 L17 21 L17 14"/>
     </svg>
   )},
+  { key: 'abdos', label: 'Abdos', icon: (color = 'white') => (
+    <svg width="18" height="18" viewBox="0 0 24 24" {...S} stroke={color}>
+      {/* Grille abdominale — 3 rangées de 2 blocs */}
+      <rect x="5" y="3" width="5" height="4" rx="1"/>
+      <rect x="14" y="3" width="5" height="4" rx="1"/>
+      <rect x="5" y="10" width="5" height="4" rx="1"/>
+      <rect x="14" y="10" width="5" height="4" rx="1"/>
+      <rect x="5" y="17" width="5" height="4" rx="1"/>
+      <rect x="14" y="17" width="5" height="4" rx="1"/>
+    </svg>
+  )},
 ]
 
-function CardioIcon({ color = 'white' }) {
+function CardioIcon({ color = 'white', size = 18 }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill={color}>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
       <path d="M13.49 5.48c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3.6 13.9l1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3c1.3 1.5 3.3 2.5 5.5 2.5v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1l-5.2 2.2v4.7h2v-3.4l1.8-.7-1.6 8.1-4.9-1-.4 2 7 1.4z"/>
     </svg>
   )
@@ -174,7 +185,7 @@ export default function Sport() {
     const weekEnd = addDays(weekStart, 6)
     supabase
       .from('sport_sessions')
-      .select('id, session_date, sport_exercises(count)')
+      .select('id, session_date, sport_exercises(type)')
       .eq('user_id', user.id)
       .gte('session_date', toDateStr(weekStart))
       .lte('session_date', toDateStr(weekEnd))
@@ -416,7 +427,11 @@ export default function Sport() {
             const dateStr = toDateStr(day)
             const isSelected = dateStr === selectedDate
             const isToday = dateStr === TODAY
-            const hasSession = weekSessions.some(s => s.session_date === dateStr && (s.sport_exercises?.[0]?.count ?? 0) > 0)
+            const session = weekSessions.find(s => s.session_date === dateStr)
+            const exoTypes = session?.sport_exercises ?? []
+            const hasSession = exoTypes.length > 0
+            const cardioCount = exoTypes.filter(e => e.type === 'cardio').length
+            const sessionType = hasSession ? (cardioCount > exoTypes.length / 2 ? 'cardio' : 'strength') : null
             const isFuture = dateStr > TODAY
             return (
               <button
@@ -431,7 +446,10 @@ export default function Sport() {
                   {DAY_LABELS[i]}
                 </span>
                 <div className="h-[14px] flex items-center justify-center">
-                  {hasSession && <DumbbellIcon size={12} color={isSelected ? 'white' : '#6c63ff'} />}
+                  {hasSession && (sessionType === 'cardio'
+                    ? <CardioIcon size={12} color={isSelected ? 'white' : '#6c63ff'} />
+                    : <DumbbellIcon size={12} color={isSelected ? 'white' : '#6c63ff'} />
+                  )}
                 </div>
               </button>
             )
@@ -734,14 +752,14 @@ export default function Sport() {
           </div>
 
           {/* Filtre muscle */}
-          <div className="flex flex-wrap gap-2">
+          <div className={`flex gap-2 overflow-x-auto pb-1 ${newExerciseType === 'cardio' ? 'hidden' : ''}`}>
             {MUSCLES.map(m => {
               const active = filterMuscle === m.key
               return (
                 <button
                   key={m.key}
                   onPointerDown={e => { e.preventDefault(); setFilterMuscle(active ? null : m.key); if (!active) setNewExerciseMuscle(m.key); else setNewExerciseMuscle(null) }}
-                  className={`flex items-center gap-1.5 px-3 h-9 rounded-[20px] text-[12px] font-semibold transition-colors ${active ? 'bg-[#6c63ff] text-white' : 'bg-[#f2edfa] text-[#736694]'}`}
+                  className={`shrink-0 flex items-center gap-1.5 px-3 h-9 rounded-[20px] text-[12px] font-semibold transition-colors ${active ? 'bg-[#6c63ff] text-white' : 'bg-[#f2edfa] text-[#736694]'}`}
                 >
                   <span>{m.icon(active ? 'white' : '#6c63ff')}</span>
                   {m.label}
@@ -792,7 +810,7 @@ export default function Sport() {
                 <button
                   key={m.key}
                   onPointerDown={e => { e.preventDefault(); setEditingExercise(prev => ({ ...prev, muscle: active ? null : m.key })) }}
-                  className={`flex items-center gap-1.5 px-3 h-9 rounded-[20px] text-[12px] font-semibold transition-colors ${active ? 'bg-[#6c63ff] text-white' : 'bg-[#f2edfa] text-[#736694]'}`}
+                  className={`shrink-0 flex items-center gap-1.5 px-3 h-9 rounded-[20px] text-[12px] font-semibold transition-colors ${active ? 'bg-[#6c63ff] text-white' : 'bg-[#f2edfa] text-[#736694]'}`}
                 >
                   <span>{m.icon(active ? 'white' : '#6c63ff')}</span>
                   {m.label}

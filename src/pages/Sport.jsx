@@ -372,8 +372,8 @@ export default function Sport() {
       payload.reps = parseInt(inputs.reps) || null
       payload.weight_kg = parseFloat(inputs.weight) || null
     } else {
-      payload.duration_seconds = parseDuration(pending.duration)
-      payload.kcal = parseInt(pending.kcal) || null
+      payload.duration_seconds = parseDuration(inputs.duration)
+      payload.kcal = parseInt(inputs.kcal) || null
     }
     setSaving(true)
     const { data: newSet } = await supabase.from('sport_sets').insert(payload).select().single()

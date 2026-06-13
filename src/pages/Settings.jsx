@@ -24,25 +24,25 @@ export default function Settings() {
       <div className="absolute left-40 top-[460px] w-64 h-64 rounded-full bg-[#fed7aa] opacity-25 blur-3xl pointer-events-none" />
 
       <AppHeader title="Paramètres" />
-      {isCottagecore && <>
-        {/* bord haut de la card (top≈92px) */}
-        <LeafBig   width={28} rotate={-30} style={{ position:'absolute', top:80,  left:4,     zIndex:20, pointerEvents:'none' }} />
-        <Flower    width={18} rotate={20}  style={{ position:'absolute', top:80,  left:'38%', zIndex:20, pointerEvents:'none' }} />
-        <LeafSmall width={14} rotate={-50} style={{ position:'absolute', top:84,  right:6,    zIndex:20, pointerEvents:'none' }} />
-        {/* côté gauche */}
-        <Mushroom  width={24} rotate={15}  style={{ position:'absolute', top:'40%', left:4,   zIndex:20, pointerEvents:'none' }} />
-        <LeafSmall width={15} rotate={-40} style={{ position:'absolute', top:'60%', left:5,   zIndex:20, pointerEvents:'none' }} />
-        {/* côté droit */}
-        <Flower    width={18} rotate={-25} style={{ position:'absolute', top:'38%', right:4,  zIndex:20, pointerEvents:'none' }} />
-        <LeafBig   width={22} rotate={35}  style={{ position:'absolute', top:'58%', right:4,  zIndex:20, pointerEvents:'none' }} />
-        {/* bord bas (bottom≈16px) */}
-        <Mushroom  width={20} rotate={-10} style={{ position:'absolute', bottom:6,  left:4,    zIndex:20, pointerEvents:'none' }} />
-        <LeafSmall width={16} rotate={60}  style={{ position:'absolute', bottom:4,  left:'40%',zIndex:20, pointerEvents:'none' }} />
-        <Flower    width={18} rotate={-40} style={{ position:'absolute', bottom:6,  right:4,   zIndex:20, pointerEvents:'none' }} />
-      </>}
 
       <main className="absolute top-[92px] left-4 right-4 bottom-4 overflow-y-auto">
-        <div className="bg-white/55 border border-white/85 backdrop-blur-md rounded-[20px] p-5">
+        <div className={`bg-white/55 border backdrop-blur-md rounded-[20px] p-5 relative ${isCottagecore ? 'cc-border' : 'border-white/85'}`}>
+          {isCottagecore && <>
+            {/* haut */}
+            <LeafBig   width={28} rotate={-30} style={{ position:'absolute', left:-10,  top:-12,    zIndex:10, pointerEvents:'none' }} />
+            <Flower    width={18} rotate={20}  style={{ position:'absolute', left:'38%',top:-10,    zIndex:10, pointerEvents:'none' }} />
+            <LeafSmall width={14} rotate={-50} style={{ position:'absolute', right:-6,  top:-8,     zIndex:10, pointerEvents:'none' }} />
+            {/* côté gauche */}
+            <Mushroom  width={24} rotate={15}  style={{ position:'absolute', left:-10,  top:'30%',  zIndex:10, pointerEvents:'none' }} />
+            <LeafSmall width={14} rotate={-40} style={{ position:'absolute', left:-6,   top:'60%',  zIndex:10, pointerEvents:'none' }} />
+            {/* côté droit */}
+            <Flower    width={18} rotate={-25} style={{ position:'absolute', right:-8,  top:'25%',  zIndex:10, pointerEvents:'none' }} />
+            <LeafBig   width={22} rotate={35}  style={{ position:'absolute', right:-9,  top:'55%',  zIndex:10, pointerEvents:'none' }} />
+            {/* bas */}
+            <Mushroom  width={20} rotate={-10} style={{ position:'absolute', left:-8,   bottom:-10, zIndex:10, pointerEvents:'none' }} />
+            <LeafSmall width={16} rotate={60}  style={{ position:'absolute', left:'40%',bottom:-8,  zIndex:10, pointerEvents:'none' }} />
+            <Flower    width={18} rotate={-40} style={{ position:'absolute', right:-8,  bottom:-9,  zIndex:10, pointerEvents:'none' }} />
+          </>}
           <p className="text-[13px] font-semibold text-muted uppercase tracking-wider mb-4">Thème</p>
 
           <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1">

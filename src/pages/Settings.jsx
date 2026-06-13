@@ -25,7 +25,7 @@ export default function Settings() {
 
       <AppHeader title="Paramètres" />
 
-      <main className="absolute top-[92px] left-4 right-4 bottom-4 overflow-y-auto">
+      <main className="absolute top-[92px] left-4 right-4 bottom-4">
         <div className={`bg-white/55 border backdrop-blur-md rounded-[20px] p-5 relative ${isCottagecore ? 'cc-border' : 'border-white/85'}`}>
           {isCottagecore && <>
             {/* haut */}

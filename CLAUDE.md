@@ -28,7 +28,7 @@
 |---|---|---|
 | `/` | Home | Non |
 | `/login` | Login | Non |
-| `/checklist` | Worklist | Non |
+| `/checklist` | Checklist | Non |
 | `/expenses` | Dépenses | Non |
 | `/settings` | Paramètres | Non |
 | `/collection` | Collection | Oui |
@@ -44,7 +44,7 @@ src/
 ├── pages/
 │   ├── Home.jsx
 │   ├── Login.jsx
-│   ├── Checklist.jsx        # Gestion de tâches (DnD, filtres, groupes, tags)
+│   ├── Checklist.jsx        # Deux modes : Worklist (DnD, filtres, tags, liens) + Checklist (groupes simples, persistant)
 │   ├── Expenses.jsx         # Dépenses partagées + remboursements
 │   ├── Settings.jsx         # Placeholder
 │   ├── Dashboard.jsx
@@ -76,7 +76,8 @@ supabase/
 ├── collection_shares_migration.sql     # Table collection_shares + policy shared_collection_read
 ├── collection_shares_recipient_delete.sql  # Policy: recipient peut supprimer un partage
 ├── sport_migration.sql                 # Tables sport_sessions, sport_exercises, sport_sets + RLS
-└── sport_add_muscle.sql                # ALTER sport_exercises ADD COLUMN muscle text
+├── sport_add_muscle.sql                # ALTER sport_exercises ADD COLUMN muscle text
+└── checklist_items_migration.sql       # Table checklist_items (mode Checklist de /checklist)
 ```
 
 ## Schéma base de données (Supabase)
@@ -86,6 +87,12 @@ supabase/
 
 ### `tasks`
 `id` · `label` · `group_name` · `tags` (JSON) · `due_date` · `done` · `completed_at` · `position` · `jira_url` · `figma_url`
+
+### `checklist_items`
+`id` · `user_id` · `label` · `group_name` · `done` (bool) · `item_date` (date, stocké mais non filtré) · `position` (int) · `created_at`
+RLS : CRUD par `user_id`.
+- Tâches persistantes (pas de filtre par date) — disparaissent uniquement à la suppression manuelle
+- Suppression de groupe disponible uniquement quand tous les éléments du groupe sont cochés
 
 ### `expenses`
 `id` · `amount` · `description` · `payer_id` · `debtor_id` · `created_by` · `expense_date` (date) · `tags` (text[]) · `created_at`
@@ -161,10 +168,30 @@ Utilisé en interne par `AppHeader`. Gère `collection_share_request` (boutons A
 - `<SubmitButton disabled onClick>`
 - `<FieldLabel required>`
 
+## Page Checklist (`/checklist`)
+
+### Switch Checklist / Worklist
+Switch compact pleine largeur (`h-8`, `bg-soft`, `rounded-[8px]`) persisté dans `localStorage('ck_viewMode')`.
+- `viewMode` state : `'checklist'` | `'worklist'`
+
+### Mode Worklist
+- Stats (Total / Faites / En retard), navigation par jour, filtres, tags, liens Jira/Figma, DnD
+- Barre de recherche + filtre visible
+- Tâches du jour courant uniquement ; les non-faites restent sur today
+- `top-[248px]` pour le contenu (header 76px + switch + search + date nav)
+
+### Mode Checklist
+- Pas de stats, pas de date, pas de tags ni liens
+- Tâches persistantes (chargées sans filtre de date) — supprimées uniquement manuellement
+- Groupes avec ajout à la volée inline (Entrée = valider, Échap = fermer)
+- Suppression de groupe via modal de confirmation — uniquement si tous les éléments sont cochés
+- `top-[188px]` pour le contenu (header 76px + switch + search, sans date nav)
+- La navigation de jour est masquée (`hidden`) en mode checklist
+
 ## Page Collection
 
 ### Vues
-Switch compact (32px) **Collection / Envies** au-dessus du sélecteur de catégorie.
+Switch compact pleine largeur (`h-8`, `bg-soft`) **Collection / Envies** au-dessus du sélecteur de catégorie.
 - `viewMode` state : `'collection'` | `'envies'`
 - Le sélecteur Mangas/Comics s'applique aux deux vues
 
@@ -292,6 +319,9 @@ Liste de souhaits sans notion de tomes ni de partage.
 - Blobs décoratifs en fond de page : `absolute rounded-full blur-3xl opacity-20 pointer-events-none`
 - Hauteur viewport : `min-h-dvh` (dynamic viewport height pour mobile)
 - Padding top des pages (sous le header fixe) : `pt-[76px]`
+- **AppHeader** : `h-[76px]`, `items-center` — burger et titre centrés verticalement. Ne pas utiliser `items-end pb-4`.
+- **Switch de vue** (Checklist/Worklist, Collection/Envies) : `flex bg-soft rounded-[8px] p-[3px] h-8`, boutons avec `flex-1 text-[12px] font-semibold rounded-[6px]`, actif = `bg-white text-primary shadow-sm`, inactif = `text-muted`. Toujours pleine largeur.
+- **Version dans le Drawer** : "HadeTools v0.1"
 - iOS tap targets : utiliser `<div onClick>` (pas `<button>` ni `role="button"`) pour les chips décoratifs. Ajouter `min-w-0 min-h-0` aux boutons utilitaires à l'intérieur des chips.
 
 ## Système de thèmes

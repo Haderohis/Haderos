@@ -427,7 +427,7 @@ export default function Sport() {
           </button>
         </div>
 
-        <div className="flex gap-[8px] items-center">
+        <div className="flex gap-[4px] items-center">
           {weekDays.map((day, i) => {
             const dateStr = toDateStr(day)
             const isSelected = dateStr === selectedDate
@@ -443,7 +443,7 @@ export default function Sport() {
                 key={dateStr}
                 onClick={() => !isFuture && setSelectedDate(dateStr)}
                 disabled={isFuture}
-                className={`flex flex-1 flex-col h-[40px] items-center justify-start pt-[7px] gap-[4px] overflow-hidden px-[8px] rounded-[4px] transition-colors ${
+                className={`flex flex-1 flex-col h-[40px] items-center justify-start pt-[7px] gap-[4px] overflow-hidden px-[2px] rounded-[4px] transition-colors ${
                   isSelected ? 'bg-primary' : isToday ? 'border border-primary' : ''
                 } ${isFuture ? 'cursor-default' : ''}`}
               >

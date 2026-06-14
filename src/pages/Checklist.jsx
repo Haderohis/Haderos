@@ -67,6 +67,9 @@ export default function Checklist() {
   const [ckGroups, setCkGroups] = useState(() => {
     try { return JSON.parse(localStorage.getItem('ck_groups') || '[]') } catch { return [] }
   })
+  const [ckGroupShares, setCkGroupShares] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('ck_group_shares') || '{}') } catch { return {} }
+  })
   const [partnerName, setPartnerName] = useState(null)
 
   // Jour courant
@@ -291,24 +294,31 @@ export default function Checklist() {
     setCkGroups(groups)
     localStorage.setItem('ck_groups', JSON.stringify(groups))
   }
+  const saveGroupShare = (group, shared) => {
+    const next = { ...ckGroupShares, [group]: shared }
+    setCkGroupShares(next)
+    localStorage.setItem('ck_group_shares', JSON.stringify(next))
+  }
   const addCkGroup = (name) => {
     if (name && !ckGroups.includes(name)) saveCkGroups([...ckGroups, name])
   }
 
   const toggleGroupShare = async (group) => {
+    const newShared = !ckGroupShares[group]
+    saveGroupShare(group, newShared)
     const groupItems = checklistItems.filter(t => t.group_name === group && t.user_id === user.id)
-    const newShared = !groupItems.some(t => t.is_shared)
-    setChecklistItems(prev => prev.map(t =>
-      t.group_name === group && t.user_id === user.id ? { ...t, is_shared: newShared } : t
-    ))
-    await supabase.from('checklist_items').update({ is_shared: newShared })
-      .in('id', groupItems.map(t => t.id))
+    if (groupItems.length > 0) {
+      setChecklistItems(prev => prev.map(t =>
+        t.group_name === group && t.user_id === user.id ? { ...t, is_shared: newShared } : t
+      ))
+      await supabase.from('checklist_items').update({ is_shared: newShared })
+        .in('id', groupItems.map(t => t.id))
+    }
   }
 
   const addCkItemInline = async (group) => {
     if (!ckQuickAddLabel.trim()) return
-    const ownGroupItems = checklistItems.filter(t => t.group_name === group && t.user_id === user.id)
-    const isShared = ownGroupItems.some(t => t.is_shared)
+    const isShared = ckGroupShares[group] ?? false
     const { data } = await supabase.from('checklist_items').insert({
       user_id: user.id, label: ckQuickAddLabel.trim(),
       group_name: group || null, done: false, is_shared: isShared, item_date: todayStr(),
@@ -323,7 +333,11 @@ export default function Checklist() {
       user_id: user.id, label: ckForm.label.trim(),
       group_name: ckForm.group || null, done: false, is_shared: ckForm.isShared, item_date: todayStr(),
     }).select().single()
-    if (data) { setChecklistItems(prev => [...prev, data]); addCkGroup(ckForm.group) }
+    if (data) {
+      setChecklistItems(prev => [...prev, data])
+      addCkGroup(ckForm.group)
+      if (ckForm.group) saveGroupShare(ckForm.group, ckForm.isShared)
+    }
     setShowCkModal(false)
     setCkForm({ label: '', group: '', isShared: false }); setCkGroupInput('')
   }
@@ -348,7 +362,7 @@ export default function Checklist() {
       if (a === '') return -1; if (b === '') return 1; return a.localeCompare(b)
     })
     return keys.map((group, i) => {
-      const groupIsShared = grouped[group].some(t => t.is_shared)
+      const groupIsShared = ckGroupShares[group] ?? grouped[group].some(t => t.is_shared)
       return (
       <div key={`${isPartner ? 'p' : 'o'}-${group}`} className={`flex flex-col gap-2 ${i > 0 ? 'pt-3 border-t border-[rgba(115,102,148,0.15)]' : 'mt-4'}`}>
         {group && (
@@ -994,6 +1008,8 @@ export default function Checklist() {
                 const ids = checklistItems.filter(t => t.group_name === ckDeleteGroup).map(t => t.id)
                 setChecklistItems(prev => prev.filter(t => t.group_name !== ckDeleteGroup))
                 saveCkGroups(ckGroups.filter(g => g !== ckDeleteGroup))
+                const { [ckDeleteGroup]: _, ...restShares } = ckGroupShares
+                setCkGroupShares(restShares); localStorage.setItem('ck_group_shares', JSON.stringify(restShares))
                 await supabase.from('checklist_items').delete().in('id', ids)
                 setCkDeleteGroup(null)
               }}

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
@@ -56,13 +56,14 @@ export default function Checklist() {
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('ck_viewMode') || 'worklist')
   const [checklistItems, setChecklistItems] = useState([])
   const [showCkModal, setShowCkModal] = useState(false)
-  const [ckForm, setCkForm] = useState({ label: '', group: '' })
+  const [ckForm, setCkForm] = useState({ label: '', group: '', isShared: false })
   const [ckGroupInput, setCkGroupInput] = useState('')
   const [ckGroupOpen, setCkGroupOpen] = useState(false)
   const ckGroupRef = useRef(null)
   const [ckQuickAddGroup, setCkQuickAddGroup] = useState(null)
   const [ckQuickAddLabel, setCkQuickAddLabel] = useState('')
   const [ckDeleteGroup, setCkDeleteGroup] = useState(null)
+  const [partnerName, setPartnerName] = useState(null)
 
   // Jour courant
   const [currentDay, setCurrentDay] = useState(todayStr())
@@ -89,7 +90,7 @@ export default function Checklist() {
 
   useEffect(() => {
     if (!user) return
-    supabase.from('tasks').select('*').eq('user_id', user.id)
+    supabase.from('tasks').select('id, user_id, label, group_name, done, position, tags, due_date, completed_at, jira_url, figma_url').eq('user_id', user.id)
       .order('position', { ascending: true })
       .then(({ data }) => { if (data) setTasks(data) })
   }, [user])
@@ -101,10 +102,25 @@ export default function Checklist() {
   useEffect(() => {
     if (!user || viewMode !== 'checklist') return
     supabase.from('checklist_items').select('*')
-      .eq('user_id', user.id)
       .order('position', { ascending: true })
       .then(({ data }) => { if (data) setChecklistItems(data) })
-  }, [user, viewMode, currentDay])
+  }, [user, viewMode])
+
+  useEffect(() => {
+    if (!user) return
+    supabase.from('collection_shares')
+      .select('owner_id, shared_with_id')
+      .or(`owner_id.eq.${user.id},shared_with_id.eq.${user.id}`)
+      .eq('status', 'accepted')
+      .limit(1)
+      .single()
+      .then(({ data: share }) => {
+        if (!share) return
+        const partnerId = share.owner_id === user.id ? share.shared_with_id : share.owner_id
+        supabase.from('profiles').select('first_name, display_name').eq('id', partnerId).single()
+          .then(({ data: p }) => { if (p) setPartnerName(p.first_name || p.display_name) })
+      })
+  }, [user])
 
   useEffect(() => {
     const handler = (e) => {
@@ -119,16 +135,16 @@ export default function Checklist() {
   // ── Logique jour ──────────────────────────────────────────────
   const isToday = currentDay === todayStr()
 
-  const visibleTasks = tasks.filter(task => {
+  const visibleTasks = useMemo(() => tasks.filter(task => {
     if (!task.done) return isToday
     const completedDay = task.completed_at ? toDateStr(task.completed_at) : todayStr()
     return completedDay === currentDay
-  })
+  }), [tasks, isToday, currentDay])
 
   // Jours avec tâches terminées (pour navigation)
-  const daysWithTasks = [...new Set(
+  const daysWithTasks = useMemo(() => [...new Set(
     tasks.filter(t => t.done && t.completed_at).map(t => toDateStr(t.completed_at))
-  )].sort()
+  )].sort(), [tasks])
 
   const prevDay = () => {
     const d = new Date(currentDay + 'T12:00:00')
@@ -161,10 +177,10 @@ export default function Checklist() {
   const overdueIds = new Set(overdueTasks.map(t => t.id))
 
   // ── Filtres/recherche ──────────────────────────────────────
-  const allTags   = tasks.flatMap(t => t.tags ?? []).filter((t, i, arr) =>
+  const allTags = useMemo(() => tasks.flatMap(t => t.tags ?? []).filter((t, i, arr) =>
     arr.findIndex(x => x.label === t.label && x.type === t.type) === i
-  )
-  const allGroups = [...new Set(tasks.map(t => t.group_name).filter(Boolean))]
+  ), [tasks])
+  const allGroups = useMemo(() => [...new Set(tasks.map(t => t.group_name).filter(Boolean))], [tasks])
 
   const applyFilters = (list) => list.filter(task => {
     if (search && !task.label.toLowerCase().includes(search.toLowerCase())) return false
@@ -174,9 +190,11 @@ export default function Checklist() {
   })
 
   // Quand une recherche est active, chercher dans toutes les tâches (pas seulement le jour courant)
-  const searchBase = search ? tasks : visibleTasks.filter(t => !overdueIds.has(t.id))
-  const regularTasks    = applyFilters(searchBase)
-  const filteredOverdue = applyFilters(overdueTasks)
+  const regularTasks = useMemo(() => {
+    const base = search ? tasks : visibleTasks.filter(t => !overdueIds.has(t.id))
+    return applyFilters(base)
+  }, [tasks, visibleTasks, overdueIds, search, filterGroup, filterTag]) // eslint-disable-line react-hooks/exhaustive-deps
+  const filteredOverdue = useMemo(() => applyFilters(overdueTasks), [overdueTasks, search, filterGroup, filterTag]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Tags form ───────────────────────────────────────────────
   const tagSuggestions = tagInput.length > 0
@@ -256,11 +274,23 @@ export default function Checklist() {
   // ── Checklist CRUD ──────────────────────────────────────────
   const ckAllGroups = [...new Set(checklistItems.map(t => t.group_name).filter(Boolean))]
 
+  const toggleGroupShare = async (group) => {
+    const groupItems = checklistItems.filter(t => t.group_name === group && t.user_id === user.id)
+    const newShared = !groupItems.some(t => t.is_shared)
+    setChecklistItems(prev => prev.map(t =>
+      t.group_name === group && t.user_id === user.id ? { ...t, is_shared: newShared } : t
+    ))
+    await supabase.from('checklist_items').update({ is_shared: newShared })
+      .in('id', groupItems.map(t => t.id))
+  }
+
   const addCkItemInline = async (group) => {
     if (!ckQuickAddLabel.trim()) return
+    const ownGroupItems = checklistItems.filter(t => t.group_name === group && t.user_id === user.id)
+    const isShared = ownGroupItems.some(t => t.is_shared)
     const { data } = await supabase.from('checklist_items').insert({
       user_id: user.id, label: ckQuickAddLabel.trim(),
-      group_name: group || null, done: false, item_date: todayStr(),
+      group_name: group || null, done: false, is_shared: isShared, item_date: todayStr(),
     }).select().single()
     if (data) setChecklistItems(prev => [...prev, data])
     setCkQuickAddLabel('')
@@ -270,11 +300,11 @@ export default function Checklist() {
     if (!ckForm.label.trim()) return
     const { data } = await supabase.from('checklist_items').insert({
       user_id: user.id, label: ckForm.label.trim(),
-      group_name: ckForm.group || null, done: false, item_date: todayStr(),
+      group_name: ckForm.group || null, done: false, is_shared: ckForm.isShared, item_date: todayStr(),
     }).select().single()
     if (data) setChecklistItems(prev => [...prev, data])
     setShowCkModal(false)
-    setCkForm({ label: '', group: '' }); setCkGroupInput('')
+    setCkForm({ label: '', group: '', isShared: false }); setCkGroupInput('')
   }
   const toggleCkItem = async (id, done) => {
     setChecklistItems(prev => prev.map(t => t.id === id ? { ...t, done: !done } : t))
@@ -285,7 +315,7 @@ export default function Checklist() {
     await supabase.from('checklist_items').delete().eq('id', id)
   }
 
-  const renderCkGrouped = (items) => {
+  const renderCkGrouped = (items, isPartner = false) => {
     const grouped = items.reduce((acc, item) => {
       const key = item.group_name ?? ''
       if (!acc[key]) acc[key] = []
@@ -295,13 +325,35 @@ export default function Checklist() {
     const keys = Object.keys(grouped).sort((a, b) => {
       if (a === '') return -1; if (b === '') return 1; return a.localeCompare(b)
     })
-    return keys.map((group, i) => (
-      <div key={group} className={`flex flex-col gap-2 ${i > 0 ? 'pt-3 border-t border-[rgba(115,102,148,0.15)]' : 'mt-4'}`}>
+    return keys.map((group, i) => {
+      const groupIsShared = grouped[group].some(t => t.is_shared)
+      return (
+      <div key={`${isPartner ? 'p' : 'o'}-${group}`} className={`flex flex-col gap-2 ${i > 0 ? 'pt-3 border-t border-[rgba(115,102,148,0.15)]' : 'mt-4'}`}>
         {group && (
           <div className="flex items-center justify-between px-1">
-            <p className="text-[12px] font-semibold text-primary uppercase tracking-wider">{group}</p>
-            <button onClick={() => setCkDeleteGroup(group)}
-              disabled={!grouped[group].every(t => t.done)}
+            <div className="flex items-center gap-2 min-w-0">
+              <p className="text-[12px] font-semibold text-primary uppercase tracking-wider truncate">{group}</p>
+              {isPartner && partnerName && (
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-[#fef3c7] text-[#d97706] shrink-0">{partnerName}</span>
+              )}
+            </div>
+            {!isPartner && (
+              <div className="flex items-center gap-2 shrink-0">
+                {/* Toggle partage */}
+                <button onClick={() => toggleGroupShare(group)}
+                  style={{ minWidth: 0, minHeight: 0 }}
+                  title={groupIsShared ? 'Arrêter le partage' : 'Partager ce groupe'}
+                  className={`flex items-center gap-1 text-[11px] font-medium transition-colors ${groupIsShared ? 'text-primary' : 'text-muted/40 hover:text-muted'}`}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                    <circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="2"/>
+                    <circle cx="6" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
+                    <circle cx="18" cy="19" r="3" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" stroke="currentColor" strokeWidth="2"/>
+                  </svg>
+                </button>
+                {/* Supprimer groupe */}
+                <button onClick={() => setCkDeleteGroup(group)}
+                  disabled={!grouped[group].every(t => t.done)}
               style={{ minWidth: 0, minHeight: 0 }}
               className="flex items-center gap-1 text-[11px] text-muted/60 hover:text-red-400 transition-colors">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
@@ -309,6 +361,8 @@ export default function Checklist() {
               </svg>
               Supprimer le groupe
             </button>
+          </div>
+            )}
           </div>
         )}
         <ul className="flex flex-col gap-2">
@@ -333,8 +387,8 @@ export default function Checklist() {
               </button>
             </li>
           ))}
-          {/* Ajout à la volée */}
-          {ckQuickAddGroup === group ? (
+          {/* Ajout à la volée — uniquement pour ses propres groupes */}
+          {!isPartner && ckQuickAddGroup === group ? (
             <li className="border border-dashed border-primary/30 rounded-[8px] px-2 py-[6px] flex items-center gap-2 bg-white/40">
               <div style={{ width: 24, height: 24 }} className="shrink-0 rounded-[3px] border-2 border-primary/30"/>
               <input autoFocus type="text" value={ckQuickAddLabel}
@@ -347,7 +401,7 @@ export default function Checklist() {
                 placeholder="Nouvelle tâche..."
                 className="flex-1 bg-transparent text-[12px] font-bold text-dark outline-none placeholder:text-accent"/>
             </li>
-          ) : (
+          ) : !isPartner ? (
             <li>
               <button onClick={() => { setCkQuickAddGroup(group); setCkQuickAddLabel('') }}
                 style={{ minWidth: 0, minHeight: 0 }}
@@ -358,7 +412,7 @@ export default function Checklist() {
                 Ajouter
               </button>
             </li>
-          )}
+          ) : null}
         </ul>
       </div>
     ))
@@ -725,7 +779,14 @@ export default function Checklist() {
                   <p className="text-[11px] text-accent">pour le moment</p>
                 </div>
               )}
-              {checklistItems.length > 0 && renderCkGrouped(checklistItems)}
+              {checklistItems.length > 0 && (() => {
+                const ownCkItems = checklistItems.filter(t => t.user_id === user?.id)
+                const partnerCkItems = checklistItems.filter(t => t.user_id !== user?.id)
+                return <>
+                  {renderCkGrouped(ownCkItems)}
+                  {partnerCkItems.length > 0 && renderCkGrouped(partnerCkItems, true)}
+                </>
+              })()}
               <div className="pb-2"/>
             </>
           )}
@@ -909,13 +970,27 @@ export default function Checklist() {
                     <li key={g}>
                       <button className="w-full text-left px-4 py-3 text-[13px] text-dark hover:bg-soft"
                         style={{ minWidth: 0, minHeight: 0 }}
-                        onClick={() => { setCkForm(f => ({ ...f, group: g })); setCkGroupInput(g); setCkGroupOpen(false) }}>{g}</button>
+                        onClick={() => {
+                          const groupIsShared = checklistItems.filter(t => t.user_id === user?.id && t.group_name === g).some(t => t.is_shared)
+                          setCkForm(f => ({ ...f, group: g, isShared: groupIsShared }))
+                          setCkGroupInput(g); setCkGroupOpen(false)
+                        }}>{g}</button>
                     </li>
                   ))}
                 </ul>
               )}
             </div>
           </div>
+          {partnerName && (
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] text-dark font-medium">Partager avec {partnerName}</span>
+              <button onClick={() => setCkForm(f => ({ ...f, isShared: !f.isShared }))}
+                style={{ minWidth: 0, minHeight: 0 }}
+                className={`w-10 h-6 rounded-full transition-colors relative ${ckForm.isShared ? 'bg-primary' : 'bg-[#e2dff0]'}`}>
+                <span className={`absolute top-[3px] w-[18px] h-[18px] bg-white rounded-full shadow transition-transform ${ckForm.isShared ? 'translate-x-[18px]' : 'translate-x-[3px]'}`}/>
+              </button>
+            </div>
+          )}
           <SubmitButton onClick={addCkItem} disabled={!ckForm.label.trim()}>
             Ajouter
           </SubmitButton>

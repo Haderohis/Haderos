@@ -50,7 +50,16 @@ export default function Checklist() {
   const [saving, setSaving] = useState(false)
   const [figmaModal, setFigmaModal]     = useState(null)
   const [figmaUrl, setFigmaUrl]         = useState('')
-  const [deleteConfirm, setDeleteConfirm] = useState(null) // task object
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
+
+  // Mode Checklist/Worklist
+  const [viewMode, setViewMode] = useState(() => localStorage.getItem('ck_viewMode') || 'worklist')
+  const [checklistItems, setChecklistItems] = useState([])
+  const [showCkModal, setShowCkModal] = useState(false)
+  const [ckForm, setCkForm] = useState({ label: '', group: '' })
+  const [ckGroupInput, setCkGroupInput] = useState('')
+  const [ckGroupOpen, setCkGroupOpen] = useState(false)
+  const ckGroupRef = useRef(null)
 
   // Jour courant
   const [currentDay, setCurrentDay] = useState(todayStr())
@@ -83,9 +92,22 @@ export default function Checklist() {
   }, [user])
 
   useEffect(() => {
+    localStorage.setItem('ck_viewMode', viewMode)
+  }, [viewMode])
+
+  useEffect(() => {
+    if (!user || viewMode !== 'checklist') return
+    supabase.from('checklist_items').select('*')
+      .eq('user_id', user.id).eq('item_date', currentDay)
+      .order('position', { ascending: true })
+      .then(({ data }) => { if (data) setChecklistItems(data) })
+  }, [user, viewMode, currentDay])
+
+  useEffect(() => {
     const handler = (e) => {
       if (groupRef.current && !groupRef.current.contains(e.target)) setGroupOpen(false)
       if (filterRef.current && !filterRef.current.contains(e.target)) setShowFilter(false)
+      if (ckGroupRef.current && !ckGroupRef.current.contains(e.target)) setCkGroupOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -226,6 +248,68 @@ export default function Checklist() {
   const deleteTask = async (id) => {
     setTasks(prev => prev.filter(t => t.id !== id))
     await supabase.from('tasks').delete().eq('id', id)
+  }
+
+  // ── Checklist CRUD ──────────────────────────────────────────
+  const ckAllGroups = [...new Set(checklistItems.map(t => t.group_name).filter(Boolean))]
+
+  const addCkItem = async () => {
+    if (!ckForm.label.trim()) return
+    const { data } = await supabase.from('checklist_items').insert({
+      user_id: user.id, label: ckForm.label.trim(),
+      group_name: ckForm.group || null, done: false, item_date: currentDay,
+    }).select().single()
+    if (data) setChecklistItems(prev => [...prev, data])
+    setShowCkModal(false)
+    setCkForm({ label: '', group: '' }); setCkGroupInput('')
+  }
+  const toggleCkItem = async (id, done) => {
+    setChecklistItems(prev => prev.map(t => t.id === id ? { ...t, done: !done } : t))
+    await supabase.from('checklist_items').update({ done: !done }).eq('id', id)
+  }
+  const deleteCkItem = async (id) => {
+    setChecklistItems(prev => prev.filter(t => t.id !== id))
+    await supabase.from('checklist_items').delete().eq('id', id)
+  }
+
+  const renderCkGrouped = (items) => {
+    const grouped = items.reduce((acc, item) => {
+      const key = item.group_name ?? ''
+      if (!acc[key]) acc[key] = []
+      acc[key].push(item)
+      return acc
+    }, {})
+    const keys = Object.keys(grouped).sort((a, b) => {
+      if (a === '') return -1; if (b === '') return 1; return a.localeCompare(b)
+    })
+    return keys.map((group, i) => (
+      <div key={group} className={`flex flex-col gap-2 ${i > 0 ? 'pt-3 border-t border-[rgba(115,102,148,0.15)]' : 'mt-4'}`}>
+        {group && <p className="text-[12px] font-semibold text-primary uppercase tracking-wider px-1">{group}</p>}
+        <ul className="flex flex-col gap-2">
+          {grouped[group].map(item => (
+            <li key={item.id} className={`border rounded-[8px] px-2 py-[6px] flex items-center gap-2 ${item.done ? 'bg-[#f0eef5]/80 border-[rgba(115,102,148,0.2)]' : `bg-white/70 ${isCottagecore ? 'cc-border' : 'border-white/85'}`}`}>
+              <button onClick={() => toggleCkItem(item.id, item.done)}
+                style={{ minWidth: 0, minHeight: 0, width: 24, height: 24 }}
+                className={`rounded-[3px] border-2 flex items-center justify-center shrink-0 ${item.done ? 'border-muted bg-muted' : 'border-primary'}`}>
+                {item.done && (
+                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+                    <path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </button>
+              <span className={`flex-1 text-[12px] font-bold leading-tight ${item.done ? 'line-through text-[#9992a8]' : 'text-black'}`}>{item.label}</span>
+              <button onClick={() => deleteCkItem(item.id)}
+                style={{ minWidth: 0, minHeight: 0 }}
+                className={`w-6 h-6 flex items-center justify-center shrink-0 ${item.done ? 'opacity-0 pointer-events-none' : ''}`}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="rgb(var(--color-accent))" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))
   }
 
   // ── DnD ────────────────────────────────────────────────────
@@ -411,8 +495,21 @@ export default function Checklist() {
       {/* Barre recherche + jour */}
       <div className="absolute top-[76px] left-0 right-0 z-10 bg-white/55 backdrop-blur-md border-b border-white/80">
 
+        {/* Switch Checklist / Worklist */}
+        <div className="px-4 pt-3 flex">
+          <div className="flex bg-soft rounded-[8px] p-[3px] gap-[2px] h-8">
+            {[['checklist','Checklist'],['worklist','Worklist']].map(([mode, label]) => (
+              <button key={mode} onClick={() => setViewMode(mode)}
+                style={{ minWidth: 0, minHeight: 0 }}
+                className={`px-3 text-[12px] font-semibold rounded-[6px] transition-colors ${viewMode === mode ? 'bg-white text-primary shadow-sm' : 'text-muted'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Barre recherche + filtres */}
-        <div className="px-4 pt-4 flex gap-2">
+        <div className="px-4 pt-3 flex gap-2">
           <div className="relative flex-1">
             <div className="bg-white/70 border border-white/85 rounded-[8px] h-[44px] flex items-center px-3 gap-2">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="shrink-0">
@@ -564,67 +661,86 @@ export default function Checklist() {
       </div>
 
       {/* Contenu */}
-      <main className={`absolute left-4 right-4 flex flex-col top-[204px] ${isToday ? 'bottom-[76px]' : 'bottom-4'}`}>
+      <main className={`absolute left-4 right-4 flex flex-col top-[248px] ${isToday ? 'bottom-[76px]' : 'bottom-4'}`}>
         <div className="flex flex-col gap-3 overflow-y-auto flex-1">
 
-          {!hasTasks && (
-            <div className={`bg-white/60 border rounded-[12px] h-16 flex flex-col items-center justify-center mt-4 ${isCottagecore ? "cc-border" : "border-accent/50"}`}>
-              <p className="text-[22px] font-bold text-primary leading-tight">Aucune tâche</p>
-              <p className="text-[11px] text-accent">pour le moment</p>
-            </div>
+          {/* ── Mode Checklist ── */}
+          {viewMode === 'checklist' && (
+            <>
+              {checklistItems.length === 0 && (
+                <div className={`bg-white/60 border rounded-[12px] h-16 flex flex-col items-center justify-center mt-4 ${isCottagecore ? 'cc-border' : 'border-accent/50'}`}>
+                  <p className="text-[22px] font-bold text-primary leading-tight">Aucune tâche</p>
+                  <p className="text-[11px] text-accent">pour le moment</p>
+                </div>
+              )}
+              {checklistItems.length > 0 && renderCkGrouped(checklistItems)}
+              <div className="pb-2"/>
+            </>
           )}
 
-          {hasTasks && (
+          {/* ── Mode Worklist ── */}
+          {viewMode === 'worklist' && (
             <>
-              {/* Stats */}
-              <div className="flex gap-2 pt-4 shrink-0">
-                <div className={`flex-1 bg-soft/60 border rounded-[8px] flex items-center justify-center gap-2 py-2 ${isCottagecore ? "cc-border" : "border-accent"}`}>
-                  <span className="font-bold text-primary text-[22px] leading-none">{visibleTasks.length}</span>
-                  <span className="text-accent text-[11px]">Total</span>
+              {!hasTasks && (
+                <div className={`bg-white/60 border rounded-[12px] h-16 flex flex-col items-center justify-center mt-4 ${isCottagecore ? "cc-border" : "border-accent/50"}`}>
+                  <p className="text-[22px] font-bold text-primary leading-tight">Aucune tâche</p>
+                  <p className="text-[11px] text-accent">pour le moment</p>
                 </div>
-                <div className="flex-1 bg-[rgba(220,252,231,0.6)] border border-[rgba(153,153,166,0.2)] rounded-[8px] flex items-center justify-center gap-2 py-2">
-                  <span className="font-bold text-[#16a34a] text-[22px] leading-none">{visibleTasks.filter(t => t.done).length}</span>
-                  <span className="text-[#16a34a] text-[11px]">Faites</span>
-                </div>
-                <div className="flex-1 bg-[rgba(254,228,229,0.6)] border border-[rgba(153,153,166,0.2)] rounded-[8px] flex items-center justify-center gap-2 py-2">
-                  <span className="font-bold text-[#b91c1c] text-[22px] leading-none">{overdueTasks.length}</span>
-                  <span className="text-[#b91c1c] text-[11px]">En retard</span>
-                </div>
-              </div>
+              )}
 
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                  <div className="flex flex-col gap-4 pb-2">
-
-                    {/* En retard */}
-                    {filteredOverdue.length > 0 && (
-                      <div className="flex flex-col gap-2 mt-4">
-                        <p className="text-[12px] font-semibold text-red-500 uppercase tracking-wider px-1 flex items-center gap-1">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/>
-                            <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                          </svg>
-                          En retard
-                        </p>
-                        <ul className="flex flex-col gap-2">
-                          {filteredOverdue.map(task => <TaskItem key={task.id} task={task} overdue />)}
-                        </ul>
-                        {regularTasks.length > 0 && <div className="h-px bg-[rgba(115,102,148,0.15)] mt-2"/>}
-                      </div>
-                    )}
-
-                    {/* Tâches normales groupées */}
-                    {regularTasks.length > 0 && renderGrouped(regularTasks)}
-
-                    {/* Rien après filtre */}
-                    {filteredOverdue.length === 0 && regularTasks.length === 0 && (
-                      <div className={`bg-white/60 border rounded-[12px] h-16 flex items-center justify-center ${isCottagecore ? "cc-border" : "border-accent/50"}`}>
-                        <p className="text-[14px] text-accent">Aucun résultat</p>
-                      </div>
-                    )}
+              {hasTasks && (
+                <>
+                  {/* Stats */}
+                  <div className="flex gap-2 pt-4 shrink-0">
+                    <div className={`flex-1 bg-soft/60 border rounded-[8px] flex items-center justify-center gap-2 py-2 ${isCottagecore ? "cc-border" : "border-accent"}`}>
+                      <span className="font-bold text-primary text-[22px] leading-none">{visibleTasks.length}</span>
+                      <span className="text-accent text-[11px]">Total</span>
+                    </div>
+                    <div className="flex-1 bg-[rgba(220,252,231,0.6)] border border-[rgba(153,153,166,0.2)] rounded-[8px] flex items-center justify-center gap-2 py-2">
+                      <span className="font-bold text-[#16a34a] text-[22px] leading-none">{visibleTasks.filter(t => t.done).length}</span>
+                      <span className="text-[#16a34a] text-[11px]">Faites</span>
+                    </div>
+                    <div className="flex-1 bg-[rgba(254,228,229,0.6)] border border-[rgba(153,153,166,0.2)] rounded-[8px] flex items-center justify-center gap-2 py-2">
+                      <span className="font-bold text-[#b91c1c] text-[22px] leading-none">{overdueTasks.length}</span>
+                      <span className="text-[#b91c1c] text-[11px]">En retard</span>
+                    </div>
                   </div>
-                </SortableContext>
-              </DndContext>
+
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                      <div className="flex flex-col gap-4 pb-2">
+
+                        {/* En retard */}
+                        {filteredOverdue.length > 0 && (
+                          <div className="flex flex-col gap-2 mt-4">
+                            <p className="text-[12px] font-semibold text-red-500 uppercase tracking-wider px-1 flex items-center gap-1">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/>
+                                <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                              </svg>
+                              En retard
+                            </p>
+                            <ul className="flex flex-col gap-2">
+                              {filteredOverdue.map(task => <TaskItem key={task.id} task={task} overdue />)}
+                            </ul>
+                            {regularTasks.length > 0 && <div className="h-px bg-[rgba(115,102,148,0.15)] mt-2"/>}
+                          </div>
+                        )}
+
+                        {/* Tâches normales groupées */}
+                        {regularTasks.length > 0 && renderGrouped(regularTasks)}
+
+                        {/* Rien après filtre */}
+                        {filteredOverdue.length === 0 && regularTasks.length === 0 && (
+                          <div className={`bg-white/60 border rounded-[12px] h-16 flex items-center justify-center ${isCottagecore ? "cc-border" : "border-accent/50"}`}>
+                            <p className="text-[14px] text-accent">Aucun résultat</p>
+                          </div>
+                        )}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                </>
+              )}
             </>
           )}
         </div>
@@ -633,7 +749,7 @@ export default function Checklist() {
       {/* Bouton Nouvelle tâche (fixe en bas) */}
       {isToday && (
         <div className="fixed bottom-4 left-4 right-4 z-10" style={{ height: 48 }}>
-          <button onClick={openModal}
+          <button onClick={viewMode === 'checklist' ? () => setShowCkModal(true) : openModal}
             className={`w-full h-full bg-primary rounded-[12px] text-white text-[14px] font-semibold${isCottagecore ? ' cc-border border-2' : ''}`}>
             Nouvelle tâche
           </button>
@@ -693,6 +809,40 @@ export default function Checklist() {
           </div>
           <SubmitButton onClick={saveFigmaUrl} disabled={saving}>
             {saving ? 'Enregistrement...' : 'Enregistrer'}
+          </SubmitButton>
+        </BottomSheet>
+      )}
+
+      {/* Modal Checklist */}
+      {showCkModal && (
+        <BottomSheet onClose={() => { setShowCkModal(false); setCkForm({ label: '', group: '' }); setCkGroupInput('') }}>
+          <p className="text-[17px] font-semibold text-dark">Nouvelle tâche</p>
+          <TextField label="Nom" required autoFocus value={ckForm.label}
+            onChange={e => setCkForm(f => ({ ...f, label: e.target.value }))}
+            placeholder="Nom de la tâche..." />
+          <div className="flex flex-col gap-1" ref={ckGroupRef}>
+            <label className="text-[12px] font-medium text-muted">Groupe</label>
+            <div className="relative">
+              <input type="text" value={ckGroupInput}
+                onChange={e => { setCkGroupInput(e.target.value); setCkForm(f => ({ ...f, group: e.target.value })); setCkGroupOpen(true) }}
+                onFocus={() => setCkGroupOpen(true)}
+                placeholder="Sélectionne ou crée un groupe..."
+                className="bg-soft rounded-[10px] h-12 px-4 text-[14px] text-dark outline-none placeholder:text-accent w-full"/>
+              {ckGroupOpen && ckAllGroups.filter(g => g.toLowerCase().includes(ckGroupInput.toLowerCase())).length > 0 && (
+                <ul className="absolute left-0 right-0 top-[52px] bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-soft">
+                  {ckAllGroups.filter(g => g.toLowerCase().includes(ckGroupInput.toLowerCase())).map(g => (
+                    <li key={g}>
+                      <button className="w-full text-left px-4 py-3 text-[13px] text-dark hover:bg-soft"
+                        style={{ minWidth: 0, minHeight: 0 }}
+                        onClick={() => { setCkForm(f => ({ ...f, group: g })); setCkGroupInput(g); setCkGroupOpen(false) }}>{g}</button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+          <SubmitButton onClick={addCkItem} disabled={!ckForm.label.trim()}>
+            Ajouter
           </SubmitButton>
         </BottomSheet>
       )}

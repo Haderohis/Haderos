@@ -545,32 +545,24 @@ export default function Calendar() {
             const weekFirstDs = firstNonNullIdx >= 0 ? dayStr(week[firstNonNullIdx]) : null
             const weekLastDs = lastNonNullIdx <= 6 ? dayStr(week[lastNonNullIdx]) : null
 
-            // Barres multi-jours (end_date défini et > event_date)
-            const multiDayBars = events
-              .filter(e => e.end_date && e.end_date > e.event_date)
-              .filter(e => weekFirstDs && weekLastDs && e.event_date <= weekLastDs && e.end_date >= weekFirstDs)
+            // Toutes les barres (1 jour ou plusieurs)
+            const allBars = events
+              .filter(e => {
+                const endDs = e.end_date ?? e.event_date
+                return weekFirstDs && weekLastDs && e.event_date <= weekLastDs && endDs >= weekFirstDs
+              })
               .map(e => {
+                const endDs = e.end_date ?? e.event_date
                 const startsInWeek = e.event_date >= weekFirstDs
-                const endsInWeek = e.end_date <= weekLastDs
+                const endsInWeek = endDs <= weekLastDs
                 const startCol = startsInWeek
                   ? week.findIndex(d => d !== null && dayStr(d) === e.event_date)
                   : firstNonNullIdx
                 const endCol = endsInWeek
-                  ? week.findIndex(d => d !== null && dayStr(d) === e.end_date)
+                  ? week.findIndex(d => d !== null && dayStr(d) === endDs)
                   : lastNonNullIdx
                 return { ...e, startCol: Math.max(0, startCol), endCol: Math.min(6, endCol), startsInWeek, endsInWeek }
               })
-
-            // Dots pour les events d'un seul jour
-            const singleDots = week.map(d => {
-              if (!d) return []
-              const ds = dayStr(d)
-              const dayEvts = events.filter(e => (!e.end_date || e.end_date === e.event_date) && e.event_date === ds)
-              return [
-                ...dayEvts.filter(e => e.isMine).slice(0, 2).map(() => 'mine'),
-                ...dayEvts.filter(e => !e.isMine).slice(0, 1).map(() => 'theirs'),
-              ].slice(0, 3)
-            })
 
             return (
               <div key={weekIdx}>
@@ -590,50 +582,45 @@ export default function Calendar() {
                             {d}
                           </span>
                         </div>
-                        {singleDots[di].length > 0 && (
-                          <div className="flex gap-[3px] mt-[2px] h-[5px]">
-                            {singleDots[di].map((type, ti) => (
-                              <div key={ti} className="w-[5px] h-[5px] rounded-full shrink-0"
-                                style={{ background: type === 'mine' ? '#6c63ff' : '#fbbf24' }} />
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                        </div>
                     )
                   })}
                 </div>
 
-                {/* Barres multi-jours */}
-                {multiDayBars.length > 0 && (
-                  <div className="relative mb-1" style={{ height: multiDayBars.length * 20 }}>
-                    {multiDayBars.map((e, bi) => (
-                      <div
-                        key={e.id}
-                        className="absolute h-5 flex items-center cursor-pointer overflow-hidden"
-                        style={{
-                          top: bi * 20,
-                          left: `calc(${e.startCol} / 7 * 100% + ${e.startsInWeek ? 3 : 0}px)`,
-                          right: `calc((6 - ${e.endCol}) / 7 * 100% + ${e.endsInWeek ? 3 : 0}px)`,
-                        }}
-                        onClick={() => {
-                          const d = week.find(d => d !== null && dayStr(d) >= e.event_date && dayStr(d) <= e.end_date)
-                          if (d) handleDayTap(d)
-                        }}
-                      >
+                {/* Barres (tous les events) */}
+                {allBars.length > 0 && (
+                  <div className="relative mb-1" style={{ height: allBars.length * 20 }}>
+                    {allBars.map((e, bi) => {
+                      const endDs = e.end_date ?? e.event_date
+                      return (
                         <div
-                          className="h-[16px] w-full flex items-center px-2 overflow-hidden"
+                          key={e.id}
+                          className="absolute h-5 flex items-center cursor-pointer overflow-hidden"
                           style={{
-                            background: e.isMine ? 'rgba(108,99,255,0.82)' : 'rgba(251,191,36,0.85)',
-                            borderRadius: `${e.startsInWeek ? 4 : 0}px ${e.endsInWeek ? 4 : 0}px ${e.endsInWeek ? 4 : 0}px ${e.startsInWeek ? 4 : 0}px`,
+                            top: bi * 20,
+                            left: `calc(${e.startCol} / 7 * 100% + ${e.startsInWeek ? 3 : 0}px)`,
+                            right: `calc((6 - ${e.endCol}) / 7 * 100% + ${e.endsInWeek ? 3 : 0}px)`,
+                          }}
+                          onClick={() => {
+                            const d = week.find(d => d !== null && dayStr(d) >= e.event_date && dayStr(d) <= endDs)
+                            if (d) handleDayTap(d)
                           }}
                         >
-                          <span className="text-[10px] font-semibold truncate leading-none"
-                            style={{ color: e.isMine ? 'white' : '#78350f' }}>
-                            {e.title}
-                          </span>
+                          <div
+                            className="h-[16px] w-full flex items-center px-2 overflow-hidden"
+                            style={{
+                              background: e.isMine ? 'rgba(108,99,255,0.82)' : 'rgba(251,191,36,0.85)',
+                              borderRadius: `${e.startsInWeek ? 4 : 0}px ${e.endsInWeek ? 4 : 0}px ${e.endsInWeek ? 4 : 0}px ${e.startsInWeek ? 4 : 0}px`,
+                            }}
+                          >
+                            <span className="text-[10px] font-semibold truncate leading-none"
+                              style={{ color: e.isMine ? 'white' : '#78350f' }}>
+                              {e.title}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>

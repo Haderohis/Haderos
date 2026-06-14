@@ -847,7 +847,7 @@ export default function Calendar() {
           onClick={openAddEvent}
           className={`w-full h-full bg-primary text-white font-semibold text-[15px] rounded-[12px] ${isCottagecore ? 'cc-border border-2' : ''}`}
         >
-          + Ajouter un événement
+          Ajouter un événement
         </button>
         {isCottagecore && <>
           <Mushroom width={26} rotate={-15} style={{ position:'absolute', left:-7, top:-12, zIndex:11, pointerEvents:'none' }} />

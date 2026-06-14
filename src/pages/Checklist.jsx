@@ -62,6 +62,7 @@ export default function Checklist() {
   const ckGroupRef = useRef(null)
   const [ckQuickAddGroup, setCkQuickAddGroup] = useState(null)
   const [ckQuickAddLabel, setCkQuickAddLabel] = useState('')
+  const [ckDeleteGroup, setCkDeleteGroup] = useState(null)
 
   // Jour courant
   const [currentDay, setCurrentDay] = useState(todayStr())
@@ -299,11 +300,7 @@ export default function Checklist() {
         {group && (
           <div className="flex items-center justify-between px-1">
             <p className="text-[12px] font-semibold text-primary uppercase tracking-wider">{group}</p>
-            <button onClick={async () => {
-                const ids = grouped[group].map(t => t.id)
-                setChecklistItems(prev => prev.filter(t => !ids.includes(t.id)))
-                await supabase.from('checklist_items').delete().in('id', ids)
-              }}
+            <button onClick={() => setCkDeleteGroup(group)}
               style={{ minWidth: 0, minHeight: 0 }}
               className="flex items-center gap-1 text-[11px] text-muted/60 hover:text-red-400 transition-colors">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
@@ -864,6 +861,29 @@ export default function Checklist() {
           <SubmitButton onClick={saveFigmaUrl} disabled={saving}>
             {saving ? 'Enregistrement...' : 'Enregistrer'}
           </SubmitButton>
+        </BottomSheet>
+      )}
+
+      {/* Modal suppression groupe checklist */}
+      {ckDeleteGroup !== null && (
+        <BottomSheet onClose={() => setCkDeleteGroup(null)}>
+          <p className="text-[17px] font-semibold text-dark">Supprimer le groupe ?</p>
+          <p className="text-[13px] text-muted -mt-2">Toutes les tâches de « {ckDeleteGroup} » seront supprimées.</p>
+          <div className="flex gap-3">
+            <button onClick={() => setCkDeleteGroup(null)}
+              className="flex-1 h-12 rounded-[12px] border border-muted/30 text-[14px] font-semibold text-muted">
+              Annuler
+            </button>
+            <button onClick={async () => {
+                const ids = checklistItems.filter(t => t.group_name === ckDeleteGroup).map(t => t.id)
+                setChecklistItems(prev => prev.filter(t => t.group_name !== ckDeleteGroup))
+                await supabase.from('checklist_items').delete().in('id', ids)
+                setCkDeleteGroup(null)
+              }}
+              className="flex-1 h-12 rounded-[12px] bg-red-500 text-[14px] font-semibold text-white">
+              Supprimer
+            </button>
+          </div>
         </BottomSheet>
       )}
 

@@ -401,6 +401,7 @@ export default function Calendar() {
       start_time: newTime || null,
       is_shared: newShared,
     })
+    await fetchEvents()
     setSaving(false)
     setShowAddEvent(false)
   }

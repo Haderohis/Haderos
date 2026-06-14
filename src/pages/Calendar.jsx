@@ -336,8 +336,9 @@ export default function Calendar() {
     const byDate = {}
     for (const s of sessions) {
       const exos = (exercises ?? []).filter(e => e.session_id === s.id)
+      if (exos.length === 0) continue
       const cardioCount = exos.filter(e => e.type === 'cardio').length
-      byDate[s.session_date] = exos.length === 0 ? 'strength' : cardioCount > exos.length / 2 ? 'cardio' : 'strength'
+      byDate[s.session_date] = cardioCount > exos.length / 2 ? 'cardio' : 'strength'
     }
     setSportDays(byDate)
   }, [user, currentMonth])

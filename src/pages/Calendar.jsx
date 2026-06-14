@@ -29,26 +29,32 @@ function getEventColor(colorKey, isMine, isCottagecore) {
   return { bar: c.bar, card: c.card, text: c.text, cardText: null }
 }
 
-function ColorPicker({ value, onChange }) {
+function ColorBubble({ value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const current = EVENT_COLORS.find(c => c.key === value) ?? EVENT_COLORS[0]
   return (
-    <div className="flex flex-col gap-2">
-      <label className="text-[12px] font-medium text-muted">Couleur</label>
-      <div className="flex gap-2 flex-wrap">
-        {EVENT_COLORS.map(c => (
-          <div
-            key={c.key}
-            onClick={() => onChange(c.key)}
-            className="w-8 h-8 rounded-full cursor-pointer flex items-center justify-center shrink-0"
-            style={{ background: c.bar, boxShadow: value === c.key ? `0 0 0 2px white, 0 0 0 4px ${c.bar}` : 'none' }}
-          >
-            {value === c.key && (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
-                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
-              </svg>
-            )}
+    <div className="relative">
+      <div
+        onClick={() => setOpen(v => !v)}
+        className="w-7 h-7 rounded-full cursor-pointer shrink-0"
+        style={{ background: current.bar }}
+      />
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-9 z-50 bg-white rounded-[12px] shadow-lg p-2 flex gap-1.5 flex-wrap" style={{ width: 168 }}>
+            {EVENT_COLORS.map(c => (
+              <div key={c.key}
+                onClick={() => { onChange(c.key); setOpen(false) }}
+                className="w-8 h-8 rounded-full cursor-pointer flex items-center justify-center shrink-0"
+                style={{ background: c.bar, boxShadow: value === c.key ? `0 0 0 2px white, 0 0 0 3.5px ${c.bar}` : 'none' }}
+              >
+                {value === c.key && <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
     </div>
   )
 }
@@ -840,16 +846,7 @@ export default function Calendar() {
         <BottomSheet onClose={() => setShowAddEvent(false)}>
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-[17px] font-bold text-dark">Nouvel événement</h2>
-            <div className="flex gap-1.5">
-              {EVENT_COLORS.map(c => (
-                <div key={c.key} onClick={() => setNewColor(c.key)}
-                  className="w-6 h-6 rounded-full cursor-pointer flex items-center justify-center shrink-0"
-                  style={{ background: c.bar, boxShadow: newColor === c.key ? `0 0 0 2px white, 0 0 0 3.5px ${c.bar}` : 'none' }}
-                >
-                  {newColor === c.key && <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
-                </div>
-              ))}
-            </div>
+            <ColorBubble value={newColor} onChange={setNewColor} />
           </div>
 
           <TextField
@@ -914,16 +911,7 @@ export default function Calendar() {
         <BottomSheet onClose={() => setEditingEvent(null)}>
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-[17px] font-bold text-dark">Modifier l'événement</h2>
-            <div className="flex gap-1.5">
-              {EVENT_COLORS.map(c => (
-                <div key={c.key} onClick={() => setNewColor(c.key)}
-                  className="w-6 h-6 rounded-full cursor-pointer flex items-center justify-center shrink-0"
-                  style={{ background: c.bar, boxShadow: newColor === c.key ? `0 0 0 2px white, 0 0 0 3.5px ${c.bar}` : 'none' }}
-                >
-                  {newColor === c.key && <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
-                </div>
-              ))}
-            </div>
+            <ColorBubble value={newColor} onChange={setNewColor} />
           </div>
 
           <TextField

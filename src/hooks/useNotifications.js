@@ -41,14 +41,17 @@ export function useNotifications(userId) {
     const ownerId = notification.data?.owner_id
     if (!shareId) return
 
+    const isCalendar = notification.type === 'calendar_share_request'
+    const table = isCalendar ? 'calendar_shares' : 'collection_shares'
+
     // Récupère l'utilisateur courant directement pour éviter les stale closures
     const { data: { user } } = await supabase.auth.getUser()
     const currentUserId = user?.id
     if (!currentUserId) return
 
     await Promise.all([
-      supabase.from('collection_shares').update({ status: 'accepted' }).eq('id', shareId),
-      ownerId ? supabase.from('collection_shares').upsert(
+      supabase.from(table).update({ status: 'accepted' }).eq('id', shareId),
+      ownerId ? supabase.from(table).upsert(
         { owner_id: currentUserId, shared_with_id: ownerId, status: 'accepted' },
         { onConflict: 'owner_id,shared_with_id' }
       ) : Promise.resolve(),
@@ -57,10 +60,14 @@ export function useNotifications(userId) {
     await supabase.from('notifications').update({ read: true }).eq('id', notification.id)
 
     if (ownerId) {
+      const recipientName = notification.data?.recipient_name ?? 'Un utilisateur'
+      const message = isCalendar
+        ? `${recipientName} a accepté de partager son calendrier avec toi.`
+        : `${recipientName} a accepté de partager sa collection avec toi.`
       await supabase.from('notifications').insert({
         user_id: ownerId,
-        type: 'collection_share_accepted',
-        message: `${notification.data?.recipient_name ?? 'Un utilisateur'} a accepté de partager sa collection avec toi.`,
+        type: isCalendar ? 'calendar_share_accepted' : 'collection_share_accepted',
+        message,
         read: false,
       })
     }
@@ -72,11 +79,9 @@ export function useNotifications(userId) {
     const shareId = notification.data?.share_id
     if (!shareId) return
 
-    await supabase
-      .from('collection_shares')
-      .update({ status: 'declined' })
-      .eq('id', shareId)
+    const table = notification.type === 'calendar_share_request' ? 'calendar_shares' : 'collection_shares'
 
+    await supabase.from(table).update({ status: 'declined' }).eq('id', shareId)
     await supabase.from('notifications').update({ read: true }).eq('id', notification.id)
 
     setNotifications(prev => prev.filter(n => n.id !== notification.id))

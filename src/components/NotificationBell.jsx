@@ -106,7 +106,7 @@ export default function NotificationBell({ notifications, unreadCount, onOpen, o
           ) : (
             <ul className="max-h-[400px] overflow-y-auto divide-y divide-[#f0ebfa]">
               {notifications.map(n =>
-                n.type === 'collection_share_request' ? (
+                (n.type === 'collection_share_request' || n.type === 'calendar_share_request') ? (
                   <ShareRequestItem
                     key={n.id}
                     n={n}

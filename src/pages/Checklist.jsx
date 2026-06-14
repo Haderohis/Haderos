@@ -1038,12 +1038,12 @@ export default function Checklist() {
           </div>
           <SubmitButton onClick={() => {
             const name = ckForm.group.trim()
-            if (!name || ckGroups.includes(name)) return
+            if (!name) return
             addCkGroup(name)
-            if (ckForm.isShared) saveGroupShare(name, true)
+            saveGroupShare(name, ckForm.isShared)
             setShowCkModal(false)
             setCkForm({ label: '', group: '', isShared: false }); setCkGroupInput('')
-          }} disabled={!ckForm.group.trim() || ckGroups.includes(ckForm.group.trim())}>
+          }} disabled={!ckForm.group.trim()}>
             Créer
           </SubmitButton>
         </BottomSheet>

@@ -296,7 +296,23 @@ export default function Checklist() {
     })
     return keys.map((group, i) => (
       <div key={group} className={`flex flex-col gap-2 ${i > 0 ? 'pt-3 border-t border-[rgba(115,102,148,0.15)]' : 'mt-4'}`}>
-        {group && <p className="text-[12px] font-semibold text-primary uppercase tracking-wider px-1">{group}</p>}
+        {group && (
+          <div className="flex items-center justify-between px-1">
+            <p className="text-[12px] font-semibold text-primary uppercase tracking-wider">{group}</p>
+            <button onClick={async () => {
+                const ids = grouped[group].map(t => t.id)
+                setChecklistItems(prev => prev.filter(t => !ids.includes(t.id)))
+                await supabase.from('checklist_items').delete().in('id', ids)
+              }}
+              style={{ minWidth: 0, minHeight: 0 }}
+              className="flex items-center gap-1 text-[11px] text-muted/60 hover:text-red-400 transition-colors">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Supprimer le groupe
+            </button>
+          </div>
+        )}
         <ul className="flex flex-col gap-2">
           {grouped[group].map(item => (
             <li key={item.id} className={`border rounded-[8px] px-2 py-[6px] flex items-center gap-2 ${item.done ? 'bg-[#f0eef5]/80 border-[rgba(115,102,148,0.2)]' : `bg-white/70 ${isCottagecore ? 'cc-border' : 'border-white/85'}`}`}>

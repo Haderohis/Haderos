@@ -663,6 +663,58 @@ function CategoryDropdown({ value, onChange }) {
   )
 }
 
+// ─── WishlistCard ─────────────────────────────────────────────────────────────
+function WishlistCard({ item, onDelete, isCottagecore = false }) {
+  return (
+    <div className={`bg-white/70 border rounded-[8px] px-3 py-3 flex items-center gap-3 relative ${isCottagecore ? 'cc-border' : 'border-white/85'}`}>
+      <p className="flex-1 text-[14px] font-bold text-dark leading-snug truncate min-w-0">{item.title}</p>
+      <button
+        onClick={() => onDelete(item.id)}
+        className="w-7 h-7 flex items-center justify-center shrink-0 min-w-0 min-h-0"
+        aria-label="Supprimer"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="rgb(var(--color-muted))">
+          <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.46-7.12l1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14l2.12 2.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.13-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4h-3.5z" />
+        </svg>
+      </button>
+    </div>
+  )
+}
+
+// ─── AddWishlistSheet ─────────────────────────────────────────────────────────
+function AddWishlistSheet({ onClose, onSaved, category }) {
+  const { user } = useAuth()
+  const [title, setTitle] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const handleSave = async () => {
+    if (!title.trim()) return
+    setSaving(true)
+    await supabase.from('collection_wishlist').insert({ user_id: user.id, title: title.trim(), category })
+    setSaving(false)
+    onSaved()
+    onClose()
+  }
+
+  return (
+    <BottomSheet onClose={onClose}>
+      <h2 className="text-[17px] font-bold text-dark mb-4">Ajouter une envie</h2>
+      <TextField
+        label="Titre"
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+      />
+      <button
+        onClick={handleSave}
+        disabled={!title.trim() || saving}
+        className="mt-5 w-full h-12 bg-primary text-white font-semibold rounded-[12px] disabled:opacity-40"
+      >
+        {saving ? 'Enregistrement...' : 'Ajouter'}
+      </button>
+    </BottomSheet>
+  )
+}
+
 // ─── ShareChip ────────────────────────────────────────────────────────────────
 function ShareChip({ isShared, onClick }) {
   return (
@@ -692,6 +744,9 @@ export default function Collection() {
   const [shareOpen, setShareOpen] = useState(false)
   const [category, setCategory] = useState('Mangas')
   const [search, setSearch] = useState('')
+  const [viewMode, setViewMode] = useState('collection')
+  const [wishlist, setWishlist] = useState([])
+  const [wishlistLoading, setWishlistLoading] = useState(false)
 
   const fetchCollection = useCallback(async () => {
     if (!user) return
@@ -754,6 +809,23 @@ export default function Collection() {
       .subscribe()
     return () => supabase.removeChannel(channel)
   }, [fetchCollection, user])
+
+  const fetchWishlist = useCallback(async () => {
+    if (!user) return
+    setWishlistLoading(true)
+    const { data } = await supabase.from('collection_wishlist').select('*').eq('user_id', user.id).eq('category', category).order('created_at', { ascending: false })
+    setWishlist(data ?? [])
+    setWishlistLoading(false)
+  }, [user, category])
+
+  useEffect(() => {
+    if (viewMode === 'envies') fetchWishlist()
+  }, [viewMode, fetchWishlist])
+
+  const handleDeleteWish = async (id) => {
+    await supabase.from('collection_wishlist').delete().eq('id', id)
+    setWishlist(prev => prev.filter(w => w.id !== id))
+  }
 
   const handleDelete = async (myItemId) => {
     await supabase.from('manga_collection').delete().eq('id', myItemId)
@@ -830,25 +902,54 @@ export default function Collection() {
         </div>
 
         <main className="px-4 pb-28">
-          <div className="mt-4 mb-3">
+          <div className="mt-4 mb-3 flex flex-col gap-3">
+            {/* Toggle Collection / Envies */}
+            <div className="flex bg-white/70 border border-white/85 rounded-[12px] p-1 gap-1">
+              {['collection', 'envies'].map(mode => (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  className={`flex-1 h-9 rounded-[9px] text-[13px] font-semibold transition-colors capitalize ${viewMode === mode ? 'bg-primary text-white' : 'text-muted'}`}
+                >
+                  {mode === 'collection' ? 'Collection' : 'Envies'}
+                </button>
+              ))}
+            </div>
             <CategoryDropdown value={category} onChange={setCategory} />
           </div>
 
-          {loading ? (
-            <p className="text-[14px] text-muted text-center mt-12">Chargement...</p>
-          ) : filtered.length === 0 ? (
-            <div className={`bg-white/60 border rounded-[12px] h-[64px] flex flex-col items-center justify-center mt-2 ${isCottagecore ? "cc-border" : "border-accent/50"}`}>
-              <p className="text-[22px] font-bold text-primary leading-tight">
-                {search ? 'Aucun résultat' : `Aucun ${categoryLabel}`}
-              </p>
-              <p className="text-[11px] text-accent">pour le moment</p>
-            </div>
+          {viewMode === 'collection' ? (
+            loading ? (
+              <p className="text-[14px] text-muted text-center mt-12">Chargement...</p>
+            ) : filtered.length === 0 ? (
+              <div className={`bg-white/60 border rounded-[12px] h-[64px] flex flex-col items-center justify-center mt-2 ${isCottagecore ? 'cc-border' : 'border-accent/50'}`}>
+                <p className="text-[22px] font-bold text-primary leading-tight">
+                  {search ? 'Aucun résultat' : `Aucun ${categoryLabel}`}
+                </p>
+                <p className="text-[11px] text-accent">pour le moment</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {filtered.map((item, _idx) => (
+                  <MangaCard key={item.mal_id} item={{ ...item, _decoIdx: _idx % 4 }} onDelete={handleDelete} onUpdateOwned={handleUpdateOwned} onCreateOwned={handleCreateOwned} onEdit={handleEdit} isCottagecore={isCottagecore} />
+                ))}
+              </div>
+            )
           ) : (
-            <div className="flex flex-col gap-2">
-              {filtered.map((item, _idx) => (
-                <MangaCard key={item.mal_id} item={{ ...item, _decoIdx: _idx % 4 }} onDelete={handleDelete} onUpdateOwned={handleUpdateOwned} onCreateOwned={handleCreateOwned} onEdit={handleEdit} isCottagecore={isCottagecore} />
-              ))}
-            </div>
+            wishlistLoading ? (
+              <p className="text-[14px] text-muted text-center mt-12">Chargement...</p>
+            ) : wishlist.length === 0 ? (
+              <div className={`bg-white/60 border rounded-[12px] h-[64px] flex flex-col items-center justify-center mt-2 ${isCottagecore ? 'cc-border' : 'border-accent/50'}`}>
+                <p className="text-[22px] font-bold text-primary leading-tight">Aucune envie</p>
+                <p className="text-[11px] text-accent">pour le moment</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {wishlist.map(item => (
+                  <WishlistCard key={item.id} item={item} onDelete={handleDeleteWish} isCottagecore={isCottagecore} />
+                ))}
+              </div>
+            )
           )}
         </main>
       </div>
@@ -859,7 +960,7 @@ export default function Collection() {
           onClick={() => setSheetOpen(true)}
           className={`w-full h-full bg-primary text-white font-semibold text-[14px] rounded-[12px]${isCottagecore ? ' cc-border border-2' : ''}`}
         >
-          Ajouter un {categoryLabel}
+          {viewMode === 'envies' ? `Ajouter une envie` : `Ajouter un ${categoryLabel}`}
         </button>
         {isCottagecore && <>
           <LeafSmall width={15} rotate={-40} style={{ position:'absolute', left:-6,    top:-8,    zIndex:11, pointerEvents:'none' }} />
@@ -871,8 +972,11 @@ export default function Collection() {
         </>}
       </div>
 
-      {sheetOpen && (
+      {sheetOpen && viewMode === 'collection' && (
         <AddMangaSheet onClose={() => setSheetOpen(false)} onSaved={fetchCollection} category={category} />
+      )}
+      {sheetOpen && viewMode === 'envies' && (
+        <AddWishlistSheet onClose={() => setSheetOpen(false)} onSaved={fetchWishlist} category={category} />
       )}
       {shareOpen && (
         <ShareSheet

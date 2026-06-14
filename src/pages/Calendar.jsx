@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { useProfile } from '../hooks/useProfile'
 import { useTheme } from '../contexts/ThemeContext'
 import AppHeader from '../components/AppHeader'
 import BottomSheet from '../components/BottomSheet'
@@ -260,6 +261,7 @@ function CalendarShareSheet({ onClose, user }) {
 // ── Page principale ────────────────────────────────────────────────────────────
 export default function Calendar() {
   const { user } = useAuth()
+  const profile = useProfile(user)
   const { theme } = useTheme()
   const isCottagecore = theme === 'cottagecore'
 
@@ -402,6 +404,7 @@ export default function Calendar() {
       start_time: newTime || null,
       is_shared: newShared,
     })
+    if (newShared) await notifyPartner(newTitle.trim(), newDate)
     await fetchEvents()
     setSaving(false)
     setShowAddEvent(false)
@@ -425,6 +428,7 @@ export default function Calendar() {
       start_time: newTime || null,
       is_shared: newShared,
     }).eq('id', editingEvent.id)
+    if (newShared) await notifyPartner(newTitle.trim(), newDate, true)
     await fetchEvents()
     setSaving(false)
     setEditingEvent(null)
@@ -437,6 +441,23 @@ export default function Calendar() {
 
   const hasPartner = partnerProfiles.length > 0
   const partnerFirstName = partnerProfiles[0]?.first_name || partnerProfiles[0]?.display_name || ''
+  const partnerUserId = partnerProfiles[0]?.id ?? null
+
+  const myName = profile?.first_name || profile?.display_name || 'Quelqu\'un'
+
+  const notifyPartner = useCallback(async (title, eventDate, isEdit = false) => {
+    if (!partnerUserId) return
+    const dateLabel = new Date(eventDate + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
+    const message = isEdit
+      ? `${myName} a modifié un événement auquel tu participes : "${title}" le ${dateLabel}`
+      : `${myName} t'a invité à participer à "${title}" le ${dateLabel}`
+    await supabase.from('notifications').insert({
+      user_id: partnerUserId,
+      type: 'calendar_event_shared',
+      message,
+      read: false,
+    })
+  }, [partnerUserId, myName])
 
   const shareChip = (
     <div

@@ -22,7 +22,6 @@ function MangaCard({ item, onDelete, onUpdateOwned, onCreateOwned, onEdit, isCot
   const [menuOpen, setMenuOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [editTitle, setEditTitle] = useState(item.title)
-  const [editOngoing, setEditOngoing] = useState(item.ongoing ?? true)
   const [myOwned, setMyOwned] = useState(item.myOwned ?? [])
   const [ongoing, setOngoing] = useState(item.ongoing ?? true)
   const [displayMax, setDisplayMax] = useState(() => {
@@ -34,8 +33,7 @@ function MangaCard({ item, onDelete, onUpdateOwned, onCreateOwned, onEdit, isCot
 
   const handleEditSave = async () => {
     if (!editTitle.trim()) return
-    await onEdit(item.myItemId, { title: editTitle.trim(), ongoing: editOngoing })
-    setOngoing(editOngoing)
+    await onEdit(item.myItemId, { title: editTitle.trim(), ongoing })
     setEditOpen(false)
   }
 
@@ -126,13 +124,21 @@ function MangaCard({ item, onDelete, onUpdateOwned, onCreateOwned, onEdit, isCot
             </svg>
           </button>
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 z-20 bg-white rounded-[10px] shadow-lg border border-[#f0ebfa] overflow-hidden min-w-[140px]">
+            <div className="absolute right-0 top-full mt-1 z-20 bg-white rounded-[10px] shadow-lg border border-[#f0ebfa] overflow-hidden min-w-[160px]">
               {item.myItemId && (
                 <button
-                  onClick={() => { setMenuOpen(false); setEditTitle(item.title); setEditOngoing(ongoing); setEditOpen(true) }}
+                  onClick={() => { setMenuOpen(false); setEditTitle(item.title); setEditOpen(true) }}
                   className="w-full px-4 py-3 text-left text-[13px] text-dark font-medium hover:bg-soft border-b border-[#f0ebfa]"
                 >
-                  Modifier
+                  Modifier le titre
+                </button>
+              )}
+              {item.myItemId && (
+                <button
+                  onClick={async () => { setMenuOpen(false); const next = !ongoing; setOngoing(next); await onEdit(item.myItemId, { title: item.title, ongoing: next }) }}
+                  className="w-full px-4 py-3 text-left text-[13px] text-dark font-medium hover:bg-soft border-b border-[#f0ebfa]"
+                >
+                  {ongoing ? 'Marquer comme terminé' : 'Marquer en cours'}
                 </button>
               )}
               <button
@@ -156,22 +162,12 @@ function MangaCard({ item, onDelete, onUpdateOwned, onCreateOwned, onEdit, isCot
 
       {editOpen && (
         <BottomSheet onClose={() => setEditOpen(false)}>
-          <h2 className="text-[17px] font-bold text-dark mb-4">Modifier</h2>
+          <h2 className="text-[17px] font-bold text-dark mb-4">Modifier le titre</h2>
           <TextField
             label="Titre"
             value={editTitle}
             onChange={e => setEditTitle(e.target.value)}
           />
-          <div className="mt-4 flex items-center justify-between">
-            <span className="text-[14px] font-semibold text-dark">Terminé</span>
-            <div
-              onClick={() => setEditOngoing(o => !o)}
-              className={`w-[48px] h-[28px] rounded-full transition-colors flex items-center px-1 cursor-pointer ${!editOngoing ? 'bg-primary' : 'bg-[#d5d3dc]'}`}
-            >
-              <div className={`w-[20px] h-[20px] bg-white rounded-full shadow transition-transform ${!editOngoing ? 'translate-x-[20px]' : 'translate-x-0'}`} />
-            </div>
-          </div>
-          <p className="text-[12px] text-muted mt-1">{editOngoing ? 'En cours — ajout de tomes possible' : 'Terminé — plus de tomes à ajouter'}</p>
           <button
             onClick={handleEditSave}
             disabled={!editTitle.trim()}

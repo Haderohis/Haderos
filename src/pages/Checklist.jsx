@@ -60,6 +60,8 @@ export default function Checklist() {
   const [ckGroupInput, setCkGroupInput] = useState('')
   const [ckGroupOpen, setCkGroupOpen] = useState(false)
   const ckGroupRef = useRef(null)
+  const [ckQuickAddGroup, setCkQuickAddGroup] = useState(null)
+  const [ckQuickAddLabel, setCkQuickAddLabel] = useState('')
 
   // Jour courant
   const [currentDay, setCurrentDay] = useState(todayStr())
@@ -253,6 +255,16 @@ export default function Checklist() {
   // ── Checklist CRUD ──────────────────────────────────────────
   const ckAllGroups = [...new Set(checklistItems.map(t => t.group_name).filter(Boolean))]
 
+  const addCkItemInline = async (group) => {
+    if (!ckQuickAddLabel.trim()) return
+    const { data } = await supabase.from('checklist_items').insert({
+      user_id: user.id, label: ckQuickAddLabel.trim(),
+      group_name: group || null, done: false,
+    }).select().single()
+    if (data) setChecklistItems(prev => [...prev, data])
+    setCkQuickAddLabel('')
+  }
+
   const addCkItem = async () => {
     if (!ckForm.label.trim()) return
     const { data } = await supabase.from('checklist_items').insert({
@@ -307,6 +319,32 @@ export default function Checklist() {
               </button>
             </li>
           ))}
+          {/* Ajout à la volée */}
+          {ckQuickAddGroup === group ? (
+            <li className="border border-dashed border-primary/30 rounded-[8px] px-2 py-[6px] flex items-center gap-2 bg-white/40">
+              <div style={{ width: 24, height: 24 }} className="shrink-0 rounded-[3px] border-2 border-primary/30"/>
+              <input autoFocus type="text" value={ckQuickAddLabel}
+                onChange={e => setCkQuickAddLabel(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') { addCkItemInline(group) }
+                  if (e.key === 'Escape') { setCkQuickAddGroup(null); setCkQuickAddLabel('') }
+                }}
+                onBlur={() => { setCkQuickAddGroup(null); setCkQuickAddLabel('') }}
+                placeholder="Nouvelle tâche..."
+                className="flex-1 bg-transparent text-[12px] font-bold text-dark outline-none placeholder:text-accent"/>
+            </li>
+          ) : (
+            <li>
+              <button onClick={() => { setCkQuickAddGroup(group); setCkQuickAddLabel('') }}
+                style={{ minWidth: 0, minHeight: 0 }}
+                className="flex items-center gap-1 text-[12px] text-primary/50 font-medium py-1 px-1 hover:text-primary transition-colors">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+                Ajouter
+              </button>
+            </li>
+          )}
         </ul>
       </div>
     ))

@@ -106,6 +106,10 @@ RLS : SELECT/UPDATE par `user_id` ; INSERT par tout utilisateur authentifié.
 Contrainte unique : `(user_id, mal_id)`
 RLS : CRUD par `user_id` + policy `shared_collection_read` (select si partage accepté)
 
+### `collection_wishlist`
+`id` · `user_id` · `title` · `category` (text default 'Mangas') · `created_at`
+RLS : CRUD par `user_id`.
+
 ### `collection_shares`
 `id` · `owner_id` · `shared_with_id` · `status` (pending/accepted/declined) · `created_at`
 Contrainte unique : `(owner_id, shared_with_id)`
@@ -159,32 +163,53 @@ Utilisé en interne par `AppHeader`. Gère `collection_share_request` (boutons A
 
 ## Page Collection
 
-### Catégories
+### Vues
+Switch compact (32px) **Collection / Envies** au-dessus du sélecteur de catégorie.
+- `viewMode` state : `'collection'` | `'envies'`
+- Le sélecteur Mangas/Comics s'applique aux deux vues
+
+### Vue Collection
+Affichage des `manga_collection` avec volumes, partage, etc.
+
+#### Catégories
 `Mangas` (Jikan API) · `Comics` (Open Library API). Stockées dans `manga_collection.category`.
 
-### Affichage des cartes
+#### Affichage des cartes
 Liste verticale. Chaque carte :
-- Ligne 1 : titre (tronqué) + chips "Moi" (violet) / prénom partagé (amber) 
+- Ligne 1 : titre (tronqué) + chips "Moi" (violet) / prénom partagé (amber)
 - Ligne 2 : cover (34×48px) | chips de volumes scrollables horizontalement | menu ⋮
+- Bouton `+` masqué si `ongoing = false` (série terminée)
 
-### Couleurs des chips de volumes (partage)
+#### Menu ⋮ (MangaCard)
+- **Modifier le titre** → BottomSheet avec TextField titre uniquement
+- **Marquer comme terminé / Marquer en cours** → toggle `ongoing` immédiat, masque/affiche le `+`
+- **Retirer le dernier tome**
+- **Supprimer**
+
+#### Couleurs des chips de volumes (partage)
 - `#6c63ff` (violet foncé) — possédé par les deux
 - `#ada7fd` (violet clair) — possédé uniquement par moi
 - `#fbbf24` (amber) — possédé uniquement par l'autre
 - `#d5d3dc` (gris) — non possédé
 
-### Partage de collection
+#### Partage de collection
 - Bidirectionnel : à l'acceptation, un partage inverse est créé automatiquement
 - `fetchCollection` fusionne `my items` + `shared items` par `mal_id`
 - Temps réel : abonnement sur `collection_shares` pour refetch auto
 - ShareSheet : liste les partages en cours avec statut, suppression bidirectionnelle
 
-### Recherche / ajout
+#### Recherche / ajout
 - Mangas : `useMangaSearch` → Jikan `/manga?q=&limit=5`, fallback detail si volumes null
 - Comics : `useComicsSearch` → Open Library `/search.json?q=&limit=5&fields=key,title,cover_i,author_name`
 - Création manuelle disponible dès qu'il y a du texte (même si résultats présents)
 - Titre éditable dans la vue de confirmation
 - Image cliquable → picker fichier → resize canvas → base64
+
+### Vue Envies (`collection_wishlist`)
+Liste de souhaits sans notion de tomes ni de partage.
+- `WishlistCard` : titre + bouton supprimer uniquement
+- `AddWishlistSheet` : BottomSheet avec un seul champ titre
+- Migration : `supabase/collection_wishlist_migration.sql`
 
 ## Page Sport
 

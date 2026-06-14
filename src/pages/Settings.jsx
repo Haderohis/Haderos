@@ -48,7 +48,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="relative w-full h-dvh overflow-hidden bg-base">
+    <div className="relative min-h-dvh bg-base overflow-hidden">
 
       <div className="absolute -left-16 -top-4 w-72 h-72 rounded-full bg-[#c4b5fd] opacity-30 blur-3xl pointer-events-none" />
       <div className="absolute left-32 top-14 w-64 h-64 rounded-full bg-[#a5f3fc] opacity-25 blur-3xl pointer-events-none" />
@@ -57,8 +57,7 @@ export default function Settings() {
 
       <AppHeader title="Paramètres" />
 
-      <main className="absolute top-[92px] left-4 right-4 bottom-4">
-        <div className="overflow-y-auto h-full flex flex-col gap-4 pt-3 pb-4">
+      <main className="pt-[92px] px-4 pb-8 flex flex-col gap-4">
 
         {/* Section Profil */}
         <div className={`bg-white/55 border backdrop-blur-md rounded-[20px] p-5 relative ${isCottagecore ? 'cc-border' : 'border-white/85'}`}>
@@ -161,7 +160,6 @@ export default function Settings() {
               )
             })}
           </div>
-        </div>
         </div>
       </main>
     </div>

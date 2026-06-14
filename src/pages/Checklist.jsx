@@ -418,7 +418,15 @@ export default function Checklist() {
         )}
         <ul className="flex flex-col gap-2">
           {grouped[group].map(item => (
-            <li key={item.id} className={`border rounded-[8px] px-2 py-[6px] flex items-center gap-2 ${item.done ? 'bg-[#f0eef5]/80 border-[rgba(115,102,148,0.2)]' : `bg-white/70 ${isCottagecore ? 'cc-border' : 'border-white/85'}`}`}>
+            <li key={item.id} className={`border rounded-[8px] px-2 py-[6px] flex items-center gap-2 relative ${item.done ? 'bg-[#f0eef5]/80 border-[rgba(115,102,148,0.2)]' : `bg-white/70 ${isCottagecore ? 'cc-border' : 'border-white/85'}`}`}>
+              {isCottagecore && (() => {
+                const d = (String(item.id).split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % 4
+                const s = { pointerEvents:'none', position:'absolute', zIndex:10 }
+                if (d===0) return <><LeafSmall width={14} rotate={-20} style={{...s, right:2,    top:-7}} /><Flower    width={13} rotate={30}  style={{...s, left:'42%', top:-6}} /><LeafBig   width={14} rotate={15}  style={{...s, left:2,    top:-7}} /></>
+                if (d===1) return <><Flower    width={13} rotate={25}  style={{...s, right:2,    top:-6}} /><Mushroom  width={15} rotate={-10} style={{...s, left:'40%', top:-7}} /><LeafSmall width={12} rotate={60}  style={{...s, left:2,    top:-6}} /></>
+                if (d===2) return <><Mushroom  width={16} rotate={10}  style={{...s, right:2,    top:-7}} /><LeafSmall width={12} rotate={-50} style={{...s, left:'44%', top:-6}} /><Flower    width={13} rotate={40}  style={{...s, left:2,    top:-7}} /></>
+                return              <><LeafBig   width={15} rotate={-35} style={{...s, right:2,    top:-7}} /><Flower    width={13} rotate={20}  style={{...s, left:'38%', top:-6}} /><LeafSmall width={12} rotate={70}  style={{...s, left:2,    top:-6}} /></>
+              })()}
               <button onClick={() => toggleCkItem(item.id, item.done)}
                 style={{ minWidth: 0, minHeight: 0, width: 24, height: 24 }}
                 className={`rounded-[3px] border-2 flex items-center justify-center shrink-0 ${item.done ? 'border-muted bg-muted' : 'border-primary'}`}>

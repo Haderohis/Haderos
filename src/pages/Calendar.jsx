@@ -283,7 +283,7 @@ export default function Calendar() {
   })
   const [selectedDay, setSelectedDay] = useState(today)
   const [events, setEvents] = useState([])
-  const [sportDates, setSportDates] = useState(new Set())
+  const [sportDays, setSportDays] = useState({})
   const [partnerProfiles, setPartnerProfiles] = useState([])
   const [showAddEvent, setShowAddEvent] = useState(false)
   const [showShare, setShowShare] = useState(false)
@@ -321,13 +321,25 @@ export default function Calendar() {
     const first = `${year}-${String(month + 1).padStart(2, '0')}-01`
     const lastDay = new Date(year, month + 1, 0).getDate()
     const last = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
-    const { data } = await supabase
+    const { data: sessions } = await supabase
       .from('sport_sessions')
-      .select('session_date')
+      .select('id, session_date')
       .eq('user_id', user.id)
       .gte('session_date', first)
       .lte('session_date', last)
-    setSportDates(new Set((data ?? []).map(s => s.session_date)))
+    if (!sessions?.length) { setSportDays({}); return }
+    const sessionIds = sessions.map(s => s.id)
+    const { data: exercises } = await supabase
+      .from('sport_exercises')
+      .select('session_id, type')
+      .in('session_id', sessionIds)
+    const byDate = {}
+    for (const s of sessions) {
+      const exos = (exercises ?? []).filter(e => e.session_id === s.id)
+      const cardioCount = exos.filter(e => e.type === 'cardio').length
+      byDate[s.session_date] = exos.length === 0 ? 'strength' : cardioCount > exos.length / 2 ? 'cardio' : 'strength'
+    }
+    setSportDays(byDate)
   }, [user, currentMonth])
 
   const fetchEvents = useCallback(async () => {
@@ -585,16 +597,24 @@ export default function Calendar() {
                     const ds = dayStr(d)
                     const isSelected = selectedDay === ds
                     const isToday = ds === today
-                    const hasSport = sportDates.has(ds)
+                    const sportType = sportDays[ds]
                     return (
                       <div key={di} className="flex flex-col items-center py-1 cursor-pointer" onClick={() => handleDayTap(d)}>
                         <div className={`relative w-8 h-8 flex items-center justify-center rounded-full transition-colors
                           ${isSelected ? 'bg-primary' : isToday ? 'border border-primary' : 'active:bg-soft'}`}
                         >
-                          {hasSport && !isSelected && (
-                            <div className="absolute inset-0 rounded-full"
-                              style={{ background: isCottagecore ? 'rgba(163,98,82,0.12)' : 'rgba(108,99,255,0.10)' }}
-                            />
+                          {sportType && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ opacity: 0.12 }}>
+                              {sportType === 'cardio' ? (
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill={isCottagecore ? '#a36252' : 'rgb(var(--color-primary))'}>
+                                  <path d="M13.49 5.48c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3.6 13.9l1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3c1.3 1.5 3.3 2.5 5.5 2.5v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1l-5.2 2.2v4.7h2v-3.4l1.8-.7-1.6 8.1-4.9-1-.4 2 7 1.4z"/>
+                                </svg>
+                              ) : (
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill={isCottagecore ? '#a36252' : 'rgb(var(--color-primary))'}>
+                                  <path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z"/>
+                                </svg>
+                              )}
+                            </div>
                           )}
                           <span className={`relative text-[13px] font-medium leading-none ${isSelected ? 'text-white' : 'text-dark'}`}>
                             {d}

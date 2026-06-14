@@ -630,7 +630,10 @@ export default function Calendar() {
             <p className="text-[13px] font-semibold text-dark capitalize mb-3">{selectedDayLabel}</p>
 
             {selectedEvents.length === 0 && (
-              <p className="text-center text-[13px] text-muted py-6">Aucun événement ce jour</p>
+              <div className={`bg-white/60 border rounded-[12px] h-[64px] flex flex-col items-center justify-center mt-2 ${isCottagecore ? 'cc-border' : 'border-accent/50'}`}>
+                <p className="text-[22px] font-bold text-primary leading-tight">Aucun événement</p>
+                <p className="text-[11px] text-accent">pour le moment</p>
+              </div>
             )}
 
             {selectedEvents.length > 0 && (

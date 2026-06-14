@@ -909,7 +909,7 @@ export default function Collection() {
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode)}
-                  className={`flex-1 h-9 rounded-[9px] text-[13px] font-semibold transition-colors capitalize ${viewMode === mode ? 'bg-primary text-white' : 'text-muted'}`}
+                  className={`flex-1 h-7 rounded-[8px] text-[13px] font-semibold transition-colors capitalize ${viewMode === mode ? 'bg-primary text-white' : 'text-muted'}`}
                 >
                   {mode === 'collection' ? 'Collection' : 'Envies'}
                 </button>

@@ -301,6 +301,7 @@ export default function Checklist() {
           <div className="flex items-center justify-between px-1">
             <p className="text-[12px] font-semibold text-primary uppercase tracking-wider">{group}</p>
             <button onClick={() => setCkDeleteGroup(group)}
+              disabled={!grouped[group].every(t => t.done)}
               style={{ minWidth: 0, minHeight: 0 }}
               className="flex items-center gap-1 text-[11px] text-muted/60 hover:text-red-400 transition-colors">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none">

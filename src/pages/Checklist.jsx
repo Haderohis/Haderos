@@ -63,6 +63,7 @@ export default function Checklist() {
   const [ckQuickAddGroup, setCkQuickAddGroup] = useState(null)
   const [ckQuickAddLabel, setCkQuickAddLabel] = useState('')
   const [ckDeleteGroup, setCkDeleteGroup] = useState(null)
+  const [ckResetGroup, setCkResetGroup] = useState(null)
   const [partnerName, setPartnerName] = useState(null)
 
   // Jour courant
@@ -349,6 +350,16 @@ export default function Checklist() {
                     <circle cx="6" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
                     <circle cx="18" cy="19" r="3" stroke="currentColor" strokeWidth="2"/>
                     <path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" stroke="currentColor" strokeWidth="2"/>
+                  </svg>
+                </button>
+                {/* Réinitialiser groupe */}
+                <button onClick={() => setCkResetGroup(group)}
+                  disabled={!grouped[group].some(t => t.done)}
+                  style={{ minWidth: 0, minHeight: 0 }}
+                  className="flex items-center gap-1 text-[11px] text-muted/40 hover:text-muted transition-colors disabled:opacity-30">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M3 3v5h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
                 {/* Supprimer groupe */}
@@ -927,6 +938,28 @@ export default function Checklist() {
       )}
 
       {/* Modal suppression groupe checklist */}
+      {ckResetGroup !== null && (
+        <BottomSheet onClose={() => setCkResetGroup(null)}>
+          <p className="text-[17px] font-semibold text-dark">Réinitialiser le groupe ?</p>
+          <p className="text-[13px] text-muted -mt-2">Toutes les tâches de « {ckResetGroup} » seront décochées.</p>
+          <div className="flex gap-3">
+            <button onClick={() => setCkResetGroup(null)}
+              className="flex-1 h-12 rounded-[12px] border border-muted/30 text-[14px] font-semibold text-muted">
+              Annuler
+            </button>
+            <button onClick={async () => {
+                const ids = checklistItems.filter(t => t.group_name === ckResetGroup && t.user_id === user?.id).map(t => t.id)
+                setChecklistItems(prev => prev.map(t => ids.includes(t.id) ? { ...t, done: false } : t))
+                await supabase.from('checklist_items').update({ done: false }).in('id', ids)
+                setCkResetGroup(null)
+              }}
+              className="flex-1 h-12 rounded-[12px] bg-[#6c63ff] text-[14px] font-semibold text-white">
+              Réinitialiser
+            </button>
+          </div>
+        </BottomSheet>
+      )}
+
       {ckDeleteGroup !== null && (
         <BottomSheet onClose={() => setCkDeleteGroup(null)}>
           <p className="text-[17px] font-semibold text-dark">Supprimer le groupe ?</p>

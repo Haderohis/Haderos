@@ -401,7 +401,7 @@ export default function Calendar() {
 
     const { data } = await supabase
       .from('calendar_events')
-      .select('id, user_id, title, event_date, end_date, start_time, is_shared')
+      .select('id, user_id, title, event_date, end_date, start_time, is_shared, color')
       .lte('event_date', last)
       .or(`end_date.gte.${first},and(end_date.is.null,event_date.gte.${first})`)
 

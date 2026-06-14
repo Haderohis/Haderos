@@ -259,7 +259,7 @@ export default function Checklist() {
     if (!ckQuickAddLabel.trim()) return
     const { data } = await supabase.from('checklist_items').insert({
       user_id: user.id, label: ckQuickAddLabel.trim(),
-      group_name: group || null, done: false,
+      group_name: group || null, done: false, item_date: todayStr(),
     }).select().single()
     if (data) setChecklistItems(prev => [...prev, data])
     setCkQuickAddLabel('')
@@ -269,7 +269,7 @@ export default function Checklist() {
     if (!ckForm.label.trim()) return
     const { data } = await supabase.from('checklist_items').insert({
       user_id: user.id, label: ckForm.label.trim(),
-      group_name: ckForm.group || null, done: false,
+      group_name: ckForm.group || null, done: false, item_date: todayStr(),
     }).select().single()
     if (data) setChecklistItems(prev => [...prev, data])
     setShowCkModal(false)

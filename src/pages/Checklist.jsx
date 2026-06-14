@@ -496,12 +496,12 @@ export default function Checklist() {
       <div className="absolute top-[76px] left-0 right-0 z-10 bg-white/55 backdrop-blur-md border-b border-white/80">
 
         {/* Switch Checklist / Worklist */}
-        <div className="px-4 pt-3 flex">
+        <div className="px-4 pt-3">
           <div className="flex bg-soft rounded-[8px] p-[3px] gap-[2px] h-8">
             {[['checklist','Checklist'],['worklist','Worklist']].map(([mode, label]) => (
               <button key={mode} onClick={() => setViewMode(mode)}
                 style={{ minWidth: 0, minHeight: 0 }}
-                className={`px-3 text-[12px] font-semibold rounded-[6px] transition-colors ${viewMode === mode ? 'bg-white text-primary shadow-sm' : 'text-muted'}`}>
+                className={`flex-1 text-[12px] font-semibold rounded-[6px] transition-colors ${viewMode === mode ? 'bg-white text-primary shadow-sm' : 'text-muted'}`}>
                 {label}
               </button>
             ))}

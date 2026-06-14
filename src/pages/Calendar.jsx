@@ -488,6 +488,15 @@ export default function Calendar() {
             : lastNonNullIdx
           return { ...e, startCol: Math.max(0, startCol), endCol: Math.min(6, endCol), startsInWeek, endsInWeek }
         })
+        .reduce((acc, e) => {
+          // Assigner la première lane où l'event ne chevauche pas
+          const lane = acc.reduce((minLane, other) => {
+            if (other.lane === minLane && other.endCol >= e.startCol && other.startCol <= e.endCol) return minLane + 1
+            return minLane
+          }, 0)
+          acc.push({ ...e, lane })
+          return acc
+        }, [])
     })
   }, [events, weeks, year, month])
 
@@ -692,15 +701,15 @@ export default function Calendar() {
 
                 {/* Barres (tous les events) */}
                 {allBars.length > 0 && (
-                  <div className="relative mb-1" style={{ height: allBars.length * 20 }}>
-                    {allBars.map((e, bi) => {
+                  <div className="relative mb-1" style={{ height: (Math.max(...allBars.map(e => e.lane), -1) + 1) * 20 }}>
+                    {allBars.map((e) => {
                       const endDs = e.end_date ?? e.event_date
                       return (
                         <div
                           key={e.id}
                           className="absolute h-5 flex items-center cursor-pointer overflow-hidden"
                           style={{
-                            top: bi * 20,
+                            top: e.lane * 20,
                             left: `calc(${e.startCol} / 7 * 100% + ${e.startsInWeek ? 3 : 0}px)`,
                             right: `calc((6 - ${e.endCol}) / 7 * 100% + ${e.endsInWeek ? 3 : 0}px)`,
                           }}

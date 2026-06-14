@@ -18,15 +18,26 @@ function formatOwnedLabel(ownedArr, total) {
 }
 
 // ─── MangaCard ────────────────────────────────────────────────────────────────
-function MangaCard({ item, onDelete, onUpdateOwned, onCreateOwned, isCottagecore = false }) {
+function MangaCard({ item, onDelete, onUpdateOwned, onCreateOwned, onEdit, isCottagecore = false }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [editTitle, setEditTitle] = useState(item.title)
+  const [editOngoing, setEditOngoing] = useState(item.ongoing ?? true)
   const [myOwned, setMyOwned] = useState(item.myOwned ?? [])
+  const [ongoing, setOngoing] = useState(item.ongoing ?? true)
   const [displayMax, setDisplayMax] = useState(() => {
     const allOwned = [...(item.myOwned ?? []), ...(item.theirOwned ?? [])]
     const maxOwned = allOwned.length ? Math.max(...allOwned) : 0
     const base = item.total_volumes ?? maxOwned
     return item.ongoing ? Math.max(base, maxOwned + 5) : base
   })
+
+  const handleEditSave = async () => {
+    if (!editTitle.trim()) return
+    await onEdit(item.myItemId, { title: editTitle.trim(), ongoing: editOngoing })
+    setOngoing(editOngoing)
+    setEditOpen(false)
+  }
 
   const chipStyle = (n) => {
     const mine = myOwned.includes(n)
@@ -91,13 +102,15 @@ function MangaCard({ item, onDelete, onUpdateOwned, onCreateOwned, isCottagecore
                 {n}
               </button>
             ))}
-            <button
-              onClick={() => changeDisplayMax(displayMax + 1)}
-              className="h-[32px] w-[32px] flex items-center justify-center rounded-[2px] text-[18px] font-semibold text-primary bg-soft"
-              aria-label="Ajouter un tome"
-            >
-              +
-            </button>
+            {ongoing && (
+              <button
+                onClick={() => changeDisplayMax(displayMax + 1)}
+                className="h-[32px] w-[32px] flex items-center justify-center rounded-[2px] text-[18px] font-semibold text-primary bg-soft"
+                aria-label="Ajouter un tome"
+              >
+                +
+              </button>
+            )}
           </div>
         </div>
 
@@ -114,6 +127,14 @@ function MangaCard({ item, onDelete, onUpdateOwned, onCreateOwned, isCottagecore
           </button>
           {menuOpen && (
             <div className="absolute right-0 top-full mt-1 z-20 bg-white rounded-[10px] shadow-lg border border-[#f0ebfa] overflow-hidden min-w-[140px]">
+              {item.myItemId && (
+                <button
+                  onClick={() => { setMenuOpen(false); setEditTitle(item.title); setEditOngoing(ongoing); setEditOpen(true) }}
+                  className="w-full px-4 py-3 text-left text-[13px] text-dark font-medium hover:bg-soft border-b border-[#f0ebfa]"
+                >
+                  Modifier
+                </button>
+              )}
               <button
                 onClick={() => { setMenuOpen(false); changeDisplayMax(Math.max(displayMax - 1, myOwned.length > 0 ? Math.max(...myOwned) : 0)) }}
                 className="w-full px-4 py-3 text-left text-[13px] text-dark font-medium hover:bg-soft border-b border-[#f0ebfa]"
@@ -132,6 +153,34 @@ function MangaCard({ item, onDelete, onUpdateOwned, onCreateOwned, isCottagecore
           )}
         </div>
       </div>
+
+      {editOpen && (
+        <BottomSheet onClose={() => setEditOpen(false)}>
+          <h2 className="text-[17px] font-bold text-dark mb-4">Modifier</h2>
+          <TextField
+            label="Titre"
+            value={editTitle}
+            onChange={e => setEditTitle(e.target.value)}
+          />
+          <div className="mt-4 flex items-center justify-between">
+            <span className="text-[14px] font-semibold text-dark">Terminé</span>
+            <div
+              onClick={() => setEditOngoing(o => !o)}
+              className={`w-[48px] h-[28px] rounded-full transition-colors flex items-center px-1 cursor-pointer ${!editOngoing ? 'bg-primary' : 'bg-[#d5d3dc]'}`}
+            >
+              <div className={`w-[20px] h-[20px] bg-white rounded-full shadow transition-transform ${!editOngoing ? 'translate-x-[20px]' : 'translate-x-0'}`} />
+            </div>
+          </div>
+          <p className="text-[12px] text-muted mt-1">{editOngoing ? 'En cours — ajout de tomes possible' : 'Terminé — plus de tomes à ajouter'}</p>
+          <button
+            onClick={handleEditSave}
+            disabled={!editTitle.trim()}
+            className="mt-5 w-full h-12 bg-primary text-white font-semibold rounded-[12px] disabled:opacity-40"
+          >
+            Enregistrer
+          </button>
+        </BottomSheet>
+      )}
     </div>
   )
 }
@@ -724,6 +773,11 @@ export default function Collection() {
     setMangas(prev => prev.map(m => m.myItemId === id ? { ...m, myOwned: newOwned } : m))
   }
 
+  const handleEdit = async (id, { title, ongoing }) => {
+    await supabase.from('manga_collection').update({ title, ongoing }).eq('id', id)
+    setMangas(prev => prev.map(m => m.myItemId === id ? { ...m, title, ongoing } : m))
+  }
+
   const handleCreateOwned = async (mergedItem, newOwned) => {
     const { data } = await supabase.from('manga_collection').upsert({
       user_id: user.id, mal_id: mergedItem.mal_id, title: mergedItem.title,
@@ -796,7 +850,7 @@ export default function Collection() {
           ) : (
             <div className="flex flex-col gap-2">
               {filtered.map((item, _idx) => (
-                <MangaCard key={item.mal_id} item={{ ...item, _decoIdx: _idx % 4 }} onDelete={handleDelete} onUpdateOwned={handleUpdateOwned} onCreateOwned={handleCreateOwned} isCottagecore={isCottagecore} />
+                <MangaCard key={item.mal_id} item={{ ...item, _decoIdx: _idx % 4 }} onDelete={handleDelete} onUpdateOwned={handleUpdateOwned} onCreateOwned={handleCreateOwned} onEdit={handleEdit} isCottagecore={isCottagecore} />
               ))}
             </div>
           )}

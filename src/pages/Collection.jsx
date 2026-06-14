@@ -904,7 +904,7 @@ export default function Collection() {
         <main className="px-4 pb-28">
           <div className="mt-4 mb-3 flex flex-col gap-3">
             {/* Toggle Collection / Envies */}
-            <div className="flex bg-white/70 border border-white/85 rounded-[12px] p-1 gap-1">
+            <div className="flex bg-white/70 border border-white/85 rounded-[10px] p-[3px] gap-[3px]">
               {['collection', 'envies'].map(mode => (
                 <button
                   key={mode}

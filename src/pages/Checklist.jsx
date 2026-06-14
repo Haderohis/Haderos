@@ -417,10 +417,11 @@ export default function Checklist() {
           </div>
         )}
         <ul className="flex flex-col gap-2">
-          {grouped[group].map(item => (
+          {grouped[group].map((item, itemIdx) => (
             <li key={item.id} className={`border rounded-[8px] px-2 py-[6px] flex items-center gap-2 relative ${item.done ? 'bg-[#f0eef5]/80 border-[rgba(115,102,148,0.2)]' : `bg-white/70 ${isCottagecore ? 'cc-border' : 'border-white/85'}`}`}>
               {isCottagecore && (() => {
-                const d = parseInt(String(item.id).replace(/-/g,'').slice(-2), 16) % 8
+                const base = parseInt(String(item.id).replace(/-/g,'').slice(-3,-1), 16)
+                const d = (base + itemIdx * 3) % 8
                 const s = { pointerEvents:'none', position:'absolute', zIndex:10 }
                 if (d===0) return <><LeafSmall width={14} rotate={-20} style={{...s, right:4,    top:-8 }} /><Flower    width={13} rotate={30}  style={{...s, left:'55%', top:-5 }} /><LeafBig   width={15} rotate={15}  style={{...s, left:0,    bottom:-8}} /></>
                 if (d===1) return <><Flower    width={14} rotate={-40} style={{...s, right:6,    bottom:-7}} /><Mushroom  width={16} rotate={15}  style={{...s, left:'30%', top:-8 }} /><LeafSmall width={12} rotate={60}  style={{...s, left:2,    top:-6 }} /></>

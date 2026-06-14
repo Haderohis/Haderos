@@ -13,45 +13,51 @@ const DAYS_FR = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
 
 const EVENT_COLORS = [
-  { key: 'violet',  bar: 'rgba(108,99,255,0.82)',  card: 'rgb(var(--color-soft))',      text: 'white' },
-  { key: 'rose',    bar: 'rgba(236,72,153,0.82)',   card: 'rgba(236,72,153,0.10)',       text: 'white' },
-  { key: 'red',     bar: 'rgba(239,68,68,0.82)',    card: 'rgba(239,68,68,0.10)',        text: 'white' },
-  { key: 'orange',  bar: 'rgba(249,115,22,0.82)',   card: 'rgba(249,115,22,0.10)',       text: 'white' },
-  { key: 'green',   bar: 'rgba(34,197,94,0.82)',    card: 'rgba(34,197,94,0.10)',        text: 'white' },
-  { key: 'teal',    bar: 'rgba(20,184,166,0.82)',   card: 'rgba(20,184,166,0.10)',       text: 'white' },
-  { key: 'blue',    bar: 'rgba(59,130,246,0.82)',   card: 'rgba(59,130,246,0.10)',       text: 'white' },
+  { key: 'violet',  bar: 'rgba(108,99,255,0.82)',  card: 'rgba(108,99,255,0.10)',   barCC: 'rgba(163,98,82,0.82)',   cardCC: 'rgba(163,98,82,0.10)' },
+  { key: 'rose',    bar: 'rgba(236,72,153,0.82)',   card: 'rgba(236,72,153,0.10)',   barCC: 'rgba(188,110,120,0.82)', cardCC: 'rgba(188,110,120,0.10)' },
+  { key: 'red',     bar: 'rgba(239,68,68,0.82)',    card: 'rgba(239,68,68,0.10)',    barCC: 'rgba(160,72,60,0.82)',   cardCC: 'rgba(160,72,60,0.10)' },
+  { key: 'orange',  bar: 'rgba(249,115,22,0.82)',   card: 'rgba(249,115,22,0.10)',   barCC: 'rgba(185,130,65,0.82)', cardCC: 'rgba(185,130,65,0.10)' },
+  { key: 'green',   bar: 'rgba(34,197,94,0.82)',    card: 'rgba(34,197,94,0.10)',    barCC: 'rgba(95,125,80,0.82)',  cardCC: 'rgba(95,125,80,0.10)' },
+  { key: 'teal',    bar: 'rgba(20,184,166,0.82)',   card: 'rgba(20,184,166,0.10)',   barCC: 'rgba(75,115,100,0.82)', cardCC: 'rgba(75,115,100,0.10)' },
+  { key: 'blue',    bar: 'rgba(59,130,246,0.82)',   card: 'rgba(59,130,246,0.10)',   barCC: 'rgba(85,105,140,0.82)', cardCC: 'rgba(85,105,140,0.10)' },
 ]
-const DEFAULT_COLOR = EVENT_COLORS[0]
 function getEventColor(colorKey, isMine, isCottagecore) {
-  if (!isMine) return { bar: 'rgba(251,191,36,0.85)', card: 'rgba(251,191,36,0.10)', text: '#78350f', cardText: null }
-  const found = EVENT_COLORS.find(c => c.key === colorKey)
-  const c = found ?? (isCottagecore ? { bar: 'rgba(163,98,82,0.82)', card: 'rgb(var(--color-soft))', text: 'white' } : DEFAULT_COLOR)
-  return { bar: c.bar, card: c.card, text: c.text, cardText: null }
+  if (!isMine) return { bar: 'rgba(251,191,36,0.85)', card: 'rgba(251,191,36,0.10)', text: '#78350f' }
+  const c = EVENT_COLORS.find(c => c.key === colorKey) ?? EVENT_COLORS[0]
+  return {
+    bar:  isCottagecore ? c.barCC  : c.bar,
+    card: isCottagecore ? c.cardCC : c.card,
+    text: 'white',
+  }
 }
 
-function ColorBubble({ value, onChange }) {
+function ColorBubble({ value, onChange, isCottagecore }) {
   const [open, setOpen] = useState(false)
   const current = EVENT_COLORS.find(c => c.key === value) ?? EVENT_COLORS[0]
+  const bubbleBg = isCottagecore ? current.barCC : current.bar
   return (
     <div className="relative">
       <div
         onClick={() => setOpen(v => !v)}
         className="w-7 h-7 rounded-full cursor-pointer shrink-0"
-        style={{ background: current.bar }}
+        style={{ background: bubbleBg }}
       />
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-9 z-50 bg-white rounded-[12px] shadow-lg p-2 flex gap-1.5 flex-wrap" style={{ width: 168 }}>
-            {EVENT_COLORS.map(c => (
-              <div key={c.key}
-                onClick={() => { onChange(c.key); setOpen(false) }}
-                className="w-8 h-8 rounded-full cursor-pointer flex items-center justify-center shrink-0"
-                style={{ background: c.bar, boxShadow: value === c.key ? `0 0 0 2px white, 0 0 0 3.5px ${c.bar}` : 'none' }}
-              >
-                {value === c.key && <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
-              </div>
-            ))}
+            {EVENT_COLORS.map(c => {
+              const bg = isCottagecore ? c.barCC : c.bar
+              return (
+                <div key={c.key}
+                  onClick={() => { onChange(c.key); setOpen(false) }}
+                  className="w-8 h-8 rounded-full cursor-pointer flex items-center justify-center shrink-0"
+                  style={{ background: bg, boxShadow: value === c.key ? `0 0 0 2px white, 0 0 0 3.5px ${bg}` : 'none' }}
+                >
+                  {value === c.key && <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
+                </div>
+              )
+            })}
           </div>
         </>
       )}
@@ -855,7 +861,7 @@ export default function Calendar() {
         <BottomSheet onClose={() => setShowAddEvent(false)}>
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-[17px] font-bold text-dark">Nouvel événement</h2>
-            <ColorBubble value={newColor} onChange={setNewColor} />
+            <ColorBubble value={newColor} onChange={setNewColor} isCottagecore={isCottagecore} />
           </div>
 
           <TextField
@@ -920,7 +926,7 @@ export default function Calendar() {
         <BottomSheet onClose={() => setEditingEvent(null)}>
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-[17px] font-bold text-dark">Modifier l'événement</h2>
-            <ColorBubble value={newColor} onChange={setNewColor} />
+            <ColorBubble value={newColor} onChange={setNewColor} isCottagecore={isCottagecore} />
           </div>
 
           <TextField

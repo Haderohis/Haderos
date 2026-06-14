@@ -94,10 +94,11 @@ supabase/
 `id` · `label` · `group_name` · `tags` (JSON) · `due_date` · `done` · `completed_at` · `position` · `jira_url` · `figma_url`
 
 ### `checklist_items`
-`id` · `user_id` · `label` · `group_name` · `done` (bool) · `item_date` (date, stocké mais non filtré) · `position` (int) · `created_at`
-RLS : CRUD par `user_id`.
-- Tâches persistantes (pas de filtre par date) — disparaissent uniquement à la suppression manuelle
-- Suppression de groupe disponible uniquement quand tous les éléments du groupe sont cochés
+`id` · `user_id` · `label` · `group_name` · `done` (bool) · `is_shared` (bool, default false) · `item_date` (date, stocké mais non filtré) · `position` (int) · `created_at`
+RLS : `checklist_own_all` (CRUD par `user_id`) · `checklist_shared_select` (SELECT si `is_shared=true` et `collection_shares` accepté) · `checklist_shared_update` (UPDATE idem)
+- Tâches persistantes sans filtre de date — supprimées uniquement manuellement
+- Groupes gérés côté client dans `localStorage('ck_groups')` et `localStorage('ck_group_shares')`
+- Suppression de groupe possible même avec des tâches non cochées
 
 ### `expenses`
 `id` · `amount` · `description` · `payer_id` · `debtor_id` · `created_by` · `expense_date` (date) · `tags` (text[]) · `created_at`
@@ -200,11 +201,35 @@ Switch compact pleine largeur (`h-8`, `bg-soft`, `rounded-[8px]`) persisté dans
 
 ### Mode Checklist
 - Pas de stats, pas de date, pas de tags ni liens
-- Tâches persistantes (chargées sans filtre de date) — supprimées uniquement manuellement
-- Groupes avec ajout à la volée inline (Entrée = valider, Échap = fermer)
-- Suppression de groupe via modal de confirmation — uniquement si tous les éléments sont cochés
+- Organisé par **groupes** (ex : Courses, Ménage) — le bouton `+` crée un groupe, les tâches s'ajoutent à la volée inline dans chaque groupe
+- Groupes persistés dans `localStorage('ck_groups')` — existent même vides
+- Tâches persistantes sans filtre de date — supprimées uniquement manuellement
+- Ajout à la volée inline par groupe (Entrée = valider et rester ouvert, Échap/blur = fermer)
+- Suppression individuelle de tâche possible même si cochée
 - `top-[188px]` pour le contenu (header 76px + switch + search, sans date nav)
 - La navigation de jour est masquée (`hidden`) en mode checklist
+- Empty state : "Aucun groupe" si `ckGroups.length === 0` et pas d'items
+
+### Actions sur les groupes (header de groupe)
+- **Icône partage** → ouvre BottomSheet "Gérer le partage" avec recherche de profils + chips
+- **Icône réinitialiser** → modal de confirmation → supprime toutes les tâches, groupe reste vide
+- **Icône supprimer** → modal de confirmation → supprime le groupe et toutes ses tâches
+
+### Création de groupe (`showCkModal`)
+- Champ nom du groupe (requis)
+- Champ de recherche "Partager avec" : recherche profils par nom, sélection → chips avec ×
+- `ckForm` : `{ group: '', sharedWith: [{ id, name }] }`
+
+### Partage checklist
+- `ckGroupShares` : `{ groupName: [{ id, name }] }` — persisté dans `localStorage('ck_group_shares')`
+- `is_shared = true` sur les items si le groupe a des utilisateurs dans `ckGroupShares`
+- RLS : policy `checklist_own_all` (CRUD par `user_id`) + `checklist_shared_select/update` (via `collection_shares` accepté)
+- Migration : `supabase/checklist_items_share.sql`
+- Items partenaires affichés en lecture seule avec badge amber du prénom
+
+### Décorations cottagecore (tâches checklist)
+- 8 patterns, hash = `(parseInt(uuid.slice(-3,-1), 16) + itemIdx * 3) % 8`
+- 3 décos par tâche, positions alternées haut/bas avec positions horizontales variées
 
 ## Page Collection
 

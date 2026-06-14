@@ -178,6 +178,7 @@ export default function Sport() {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [showNutrition, setShowNutrition] = useState(false)
 
   const weekStartStr = toDateStr(weekStart)
   const isCurrentWeek = weekStartStr === CURRENT_WEEK_START
@@ -408,7 +409,38 @@ export default function Sport() {
       <div className="absolute top-[460px] left-[40px] w-[240px] h-[240px] rounded-full bg-[#fde68a] opacity-15 blur-3xl pointer-events-none" />
 
 
-      <AppHeader title="Sport" />
+      <AppHeader title="Sport" titleExtra={
+        <div className="relative" style={{ marginLeft: -4 }}>
+          {showNutrition && <div className="fixed inset-0 z-40" onClick={() => setShowNutrition(false)} />}
+          <button
+            onClick={() => setShowNutrition(p => !p)}
+            className="w-6 h-6 flex items-center justify-center"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="rgb(var(--color-primary))"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          </button>
+          {showNutrition && (
+            <div
+              className="absolute top-8 left-1/2 -translate-x-1/2 w-[220px] bg-white rounded-[12px] shadow-xl border border-soft p-3 z-50"
+              onClick={e => e.stopPropagation()}
+            >
+              <p className="text-[11px] font-bold text-dark mb-2">Portions / repas</p>
+              {[
+                { label: 'Riz (cru)', qty: '80–90 g' },
+                { label: 'Pâtes (crues)', qty: '80–90 g' },
+                { label: 'Quinoa (cru)', qty: '70–80 g' },
+                { label: 'Poulet', qty: '150–180 g' },
+                { label: 'Viande hachée', qty: '150–170 g' },
+                { label: 'Poisson blanc', qty: '150–180 g' },
+              ].map(({ label, qty }) => (
+                <div key={label} className="flex justify-between items-center py-[5px] border-b border-soft last:border-0">
+                  <span className="text-[12px] text-muted">{label}</span>
+                  <span className="text-[12px] font-semibold text-primary">{qty}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      } />
 
       {/* Calendar sub-header */}
       <div className="pt-[76px]">

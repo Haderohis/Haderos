@@ -13,13 +13,13 @@ const DAYS_FR = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
 
 const EVENT_COLORS = [
-  { key: 'violet',  bar: 'rgba(108,99,255,0.82)',  card: 'rgba(108,99,255,0.10)',   barCC: 'rgba(163,98,82,0.82)',   cardCC: 'rgba(163,98,82,0.10)' },
-  { key: 'rose',    bar: 'rgba(236,72,153,0.82)',   card: 'rgba(236,72,153,0.10)',   barCC: 'rgba(188,110,120,0.82)', cardCC: 'rgba(188,110,120,0.10)' },
-  { key: 'red',     bar: 'rgba(239,68,68,0.82)',    card: 'rgba(239,68,68,0.10)',    barCC: 'rgba(160,72,60,0.82)',   cardCC: 'rgba(160,72,60,0.10)' },
-  { key: 'orange',  bar: 'rgba(249,115,22,0.82)',   card: 'rgba(249,115,22,0.10)',   barCC: 'rgba(185,130,65,0.82)', cardCC: 'rgba(185,130,65,0.10)' },
-  { key: 'green',   bar: 'rgba(34,197,94,0.82)',    card: 'rgba(34,197,94,0.10)',    barCC: 'rgba(95,125,80,0.82)',  cardCC: 'rgba(95,125,80,0.10)' },
-  { key: 'teal',    bar: 'rgba(20,184,166,0.82)',   card: 'rgba(20,184,166,0.10)',   barCC: 'rgba(75,115,100,0.82)', cardCC: 'rgba(75,115,100,0.10)' },
-  { key: 'blue',    bar: 'rgba(59,130,246,0.82)',   card: 'rgba(59,130,246,0.10)',   barCC: 'rgba(85,105,140,0.82)', cardCC: 'rgba(85,105,140,0.10)' },
+  { key: 'violet',  bar: 'rgba(108,99,255,0.82)',  card: 'rgba(108,99,255,0.10)',   barCC: 'rgba(180,90,70,0.92)',   cardCC: 'rgba(180,90,70,0.14)' },
+  { key: 'rose',    bar: 'rgba(236,72,153,0.82)',   card: 'rgba(236,72,153,0.10)',   barCC: 'rgba(200,100,115,0.92)', cardCC: 'rgba(200,100,115,0.14)' },
+  { key: 'red',     bar: 'rgba(239,68,68,0.82)',    card: 'rgba(239,68,68,0.10)',    barCC: 'rgba(175,65,50,0.92)',   cardCC: 'rgba(175,65,50,0.14)' },
+  { key: 'orange',  bar: 'rgba(249,115,22,0.82)',   card: 'rgba(249,115,22,0.10)',   barCC: 'rgba(200,140,55,0.92)', cardCC: 'rgba(200,140,55,0.14)' },
+  { key: 'green',   bar: 'rgba(34,197,94,0.82)',    card: 'rgba(34,197,94,0.10)',    barCC: 'rgba(90,135,70,0.92)',  cardCC: 'rgba(90,135,70,0.14)' },
+  { key: 'teal',    bar: 'rgba(20,184,166,0.82)',   card: 'rgba(20,184,166,0.10)',   barCC: 'rgba(65,125,105,0.92)', cardCC: 'rgba(65,125,105,0.14)' },
+  { key: 'blue',    bar: 'rgba(59,130,246,0.82)',   card: 'rgba(59,130,246,0.10)',   barCC: 'rgba(75,100,150,0.92)', cardCC: 'rgba(75,100,150,0.14)' },
 ]
 function getEventColor(colorKey, isMine, isCottagecore) {
   if (!isMine) return { bar: 'rgba(251,191,36,0.85)', card: 'rgba(251,191,36,0.10)', text: '#78350f' }

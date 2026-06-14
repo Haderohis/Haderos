@@ -1,7 +1,10 @@
-﻿import { useEffect } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useProfile } from '../hooks/useProfile'
+import { supabase } from '../lib/supabase'
 import AppHeader from '../components/AppHeader'
+import { TextField } from '../components/FormFields'
 import { useTheme, THEMES } from '../contexts/ThemeContext'
 import { LeafSmall, LeafBig, Flower, Mushroom } from '../components/CottageDecor'
 
@@ -10,10 +13,39 @@ export default function Settings() {
   const navigate = useNavigate()
   const { theme, setTheme } = useTheme()
   const isCottagecore = theme === 'cottagecore'
+  const profile = useProfile(user)
+
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [displayName, setDisplayName] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     if (!loading && !user) navigate('/login')
   }, [user, loading])
+
+  useEffect(() => {
+    if (profile) {
+      setFirstName(profile.first_name ?? '')
+      setLastName(profile.last_name ?? '')
+      setDisplayName(profile.display_name ?? '')
+    }
+  }, [profile])
+
+  async function handleSaveProfile() {
+    if (!user) return
+    setSaving(true)
+    await supabase.from('profiles').upsert({
+      id: user.id,
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
+      display_name: displayName.trim(),
+    }, { onConflict: 'id' })
+    setSaving(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
 
   return (
     <div className="relative w-full h-dvh overflow-hidden bg-base">
@@ -25,7 +57,41 @@ export default function Settings() {
 
       <AppHeader title="Paramètres" />
 
-      <main className="absolute top-[92px] left-4 right-4 bottom-4">
+      <main className="absolute top-[92px] left-4 right-4 bottom-4 overflow-y-auto flex flex-col gap-4">
+
+        {/* Section Profil */}
+        <div className={`bg-white/55 border backdrop-blur-md rounded-[20px] p-5 relative ${isCottagecore ? 'cc-border' : 'border-white/85'}`}>
+          <p className="text-[13px] font-semibold text-muted uppercase tracking-wider mb-4">Profil</p>
+          <div className="flex flex-col gap-3">
+            <TextField
+              label="Prénom"
+              value={firstName}
+              onChange={e => setFirstName(e.target.value)}
+              placeholder="Prénom"
+            />
+            <TextField
+              label="Nom"
+              value={lastName}
+              onChange={e => setLastName(e.target.value)}
+              placeholder="Nom"
+            />
+            <TextField
+              label="Pseudo"
+              value={displayName}
+              onChange={e => setDisplayName(e.target.value)}
+              placeholder="Pseudo affiché"
+            />
+            <button
+              onClick={handleSaveProfile}
+              disabled={saving}
+              className="mt-1 h-12 bg-primary text-white font-semibold rounded-[12px] text-[14px] disabled:opacity-60 transition-opacity"
+            >
+              {saved ? 'Enregistré ✓' : saving ? 'Enregistrement…' : 'Enregistrer'}
+            </button>
+          </div>
+        </div>
+
+        {/* Section Thème */}
         <div className={`bg-white/55 border backdrop-blur-md rounded-[20px] p-5 relative ${isCottagecore ? 'cc-border' : 'border-white/85'}`}>
           {isCottagecore && <>
             <LeafBig   width={28} rotate={-30} style={{ position:'absolute', left:-10,  top:-12,    zIndex:10, pointerEvents:'none' }} />

@@ -508,10 +508,7 @@ export default function Calendar() {
       <div className="pt-[76px]">
         {/* Navigation mois */}
         <div className="sticky top-[76px] z-20 bg-base/90 backdrop-blur-sm px-4 py-2 flex items-center justify-between border-b border-white/60">
-          <button
-            onClick={prevMonth}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-soft"
-          >
+          <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center" style={{ minWidth:0, minHeight:0 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="rgb(var(--color-muted))">
               <path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/>
             </svg>
@@ -519,10 +516,7 @@ export default function Calendar() {
           <p className="text-[15px] font-semibold text-dark capitalize">
             {MONTHS_FR[month]} {year}
           </p>
-          <button
-            onClick={nextMonth}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-soft"
-          >
+          <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center" style={{ minWidth:0, minHeight:0 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="rgb(var(--color-muted))">
               <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/>
             </svg>

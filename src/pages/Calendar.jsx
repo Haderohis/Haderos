@@ -633,12 +633,11 @@ export default function Calendar() {
         {/* Panel événements du jour sélectionné */}
         {selectedDay && (
           <div className="px-4 pt-4 pb-32">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-[13px] font-semibold text-dark capitalize">{selectedDayLabel}</p>
-              {selectedEvents.length === 0 && (
-                <span className="text-[12px] text-accent">Aucun événement</span>
-              )}
-            </div>
+            <p className="text-[13px] font-semibold text-dark capitalize mb-3">{selectedDayLabel}</p>
+
+            {selectedEvents.length === 0 && (
+              <p className="text-center text-[13px] text-muted py-6">Aucun événement ce jour</p>
+            )}
 
             {selectedEvents.length > 0 && (
               <div className="flex flex-col gap-3">

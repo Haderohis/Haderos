@@ -1022,36 +1022,11 @@ export default function Checklist() {
 
       {/* Modal Checklist */}
       {showCkModal && (
-        <BottomSheet onClose={() => { setShowCkModal(false); setCkForm({ label: '', group: '' }); setCkGroupInput('') }}>
-          <p className="text-[17px] font-semibold text-dark">Nouvelle tâche</p>
-          <TextField label="Nom" required autoFocus value={ckForm.label}
-            onChange={e => setCkForm(f => ({ ...f, label: e.target.value }))}
-            placeholder="Nom de la tâche..." />
-          <div className="flex flex-col gap-1" ref={ckGroupRef}>
-            <label className="text-[12px] font-medium text-muted">Groupe</label>
-            <div className="relative">
-              <input type="text" value={ckGroupInput}
-                onChange={e => { setCkGroupInput(e.target.value); setCkForm(f => ({ ...f, group: e.target.value })); setCkGroupOpen(true) }}
-                onFocus={() => setCkGroupOpen(true)}
-                placeholder="Sélectionne ou crée un groupe..."
-                className="bg-soft rounded-[10px] h-12 px-4 text-[14px] text-dark outline-none placeholder:text-accent w-full"/>
-              {ckGroupOpen && ckAllGroups.filter(g => g.toLowerCase().includes(ckGroupInput.toLowerCase())).length > 0 && (
-                <ul className="absolute left-0 right-0 top-[52px] bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-soft">
-                  {ckAllGroups.filter(g => g.toLowerCase().includes(ckGroupInput.toLowerCase())).map(g => (
-                    <li key={g}>
-                      <button className="w-full text-left px-4 py-3 text-[13px] text-dark hover:bg-soft"
-                        style={{ minWidth: 0, minHeight: 0 }}
-                        onClick={() => {
-                          const groupIsShared = checklistItems.filter(t => t.user_id === user?.id && t.group_name === g).some(t => t.is_shared)
-                          setCkForm(f => ({ ...f, group: g, isShared: groupIsShared }))
-                          setCkGroupInput(g); setCkGroupOpen(false)
-                        }}>{g}</button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
+        <BottomSheet onClose={() => { setShowCkModal(false); setCkForm({ label: '', group: '', isShared: false }); setCkGroupInput('') }}>
+          <p className="text-[17px] font-semibold text-dark">Nouveau groupe</p>
+          <TextField label="Nom du groupe" required autoFocus value={ckForm.group}
+            onChange={e => { setCkForm(f => ({ ...f, group: e.target.value })); setCkGroupInput(e.target.value) }}
+            placeholder="Ex : Courses, Ménage..." />
           {partnerName && (
             <div className="flex items-center justify-between gap-3">
               <span className="text-[13px] font-medium text-dark">Partager avec {partnerName}</span>
@@ -1061,8 +1036,15 @@ export default function Checklist() {
               </div>
             </div>
           )}
-          <SubmitButton onClick={addCkItem} disabled={!ckForm.label.trim()}>
-            Ajouter
+          <SubmitButton onClick={() => {
+            const name = ckForm.group.trim()
+            if (!name || ckGroups.includes(name)) return
+            addCkGroup(name)
+            if (ckForm.isShared) saveGroupShare(name, true)
+            setShowCkModal(false)
+            setCkForm({ label: '', group: '', isShared: false }); setCkGroupInput('')
+          }} disabled={!ckForm.group.trim() || ckGroups.includes(ckForm.group.trim())}>
+            Créer
           </SubmitButton>
         </BottomSheet>
       )}

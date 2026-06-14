@@ -405,7 +405,6 @@ export default function Checklist() {
                 </button>
                 {/* Supprimer groupe */}
                 <button onClick={() => setCkDeleteGroup(group)}
-                  disabled={!grouped[group].every(t => t.done)}
               style={{ minWidth: 0, minHeight: 0 }}
               className="flex items-center gap-1 text-[11px] text-muted/60 hover:text-red-400 transition-colors">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none">

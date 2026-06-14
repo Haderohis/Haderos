@@ -538,9 +538,12 @@ export default function Calendar() {
                     <div
                       key={e.id}
                       className={`relative rounded-[12px] px-4 py-3 ${isCottagecore ? 'cc-border' : ''}`}
-                      style={e.isMine
-                        ? { background: 'rgb(var(--color-soft))' }
-                        : { background: 'rgba(251,191,36,0.10)' }
+                      style={
+                        // Events où je participe (les miens ou ceux du partenaire avec is_shared=true) → violet
+                        // Events du partenaire sans participation → amber
+                        e.isMine || e.is_shared
+                          ? { background: 'rgb(var(--color-soft))' }
+                          : { background: 'rgba(251,191,36,0.10)' }
                       }
                     >
                       {isCottagecore && EVENT_DECOS[decoIdx]}
@@ -548,12 +551,23 @@ export default function Calendar() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-[14px] font-semibold text-dark leading-snug">{e.title}</p>
+                            {/* Mon event avec partenaire qui participe */}
                             {e.isMine && e.is_shared && (
-                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary shrink-0">
-                                Partagé
+                              <span
+                                className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 text-[#92400e]"
+                                style={{ background: 'rgba(251,191,36,0.3)' }}
+                              >
+                                {partnerFirstName} participe
                               </span>
                             )}
-                            {!e.isMine && (
+                            {/* Event du partenaire où je participe */}
+                            {!e.isMine && e.is_shared && (
+                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary shrink-0">
+                                Je participe
+                              </span>
+                            )}
+                            {/* Event du partenaire sans participation */}
+                            {!e.isMine && !e.is_shared && (
                               <span
                                 className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 text-[#92400e]"
                                 style={{ background: 'rgba(251,191,36,0.3)' }}
@@ -637,8 +651,8 @@ export default function Calendar() {
           {hasPartner && (
             <div className="flex items-center justify-between gap-3">
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-medium text-dark">Partager avec {partnerFirstName}</p>
-                <p className="text-[11px] text-muted mt-0.5">{partnerFirstName} verra cet événement</p>
+                <p className="text-[13px] font-medium text-dark">{partnerFirstName} participe</p>
+                <p className="text-[11px] text-muted mt-0.5">L'événement apparaît différemment pour {partnerFirstName}</p>
               </div>
               <div
                 onClick={() => setNewShared(v => !v)}

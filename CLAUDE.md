@@ -292,8 +292,16 @@ Exporte 4 SVG inline réutilisables : `LeafSmall` · `LeafBig` · `Flower` · `M
 
 #### Placement des décorations
 - **Header** : éléments entre le burger et le titre, et entre le titre et la cloche — `position:absolute` par rapport au wrapper de page, `zIndex:35`
-- **Cards / items** : 3–4 décos par carte, positions variées (coins + haut-centre + bas-centre). Wrapper de la carte doit être `relative`
-- **Bouton d'action fixe** : wrapper `<div className="fixed bottom-4 left-4 right-4 z-10" style={{height:48}}>` avec `<button>` pleine taille dedans + décos en `position:absolute` autour (`zIndex:11`), 5–6 éléments sur haut et bas du bouton
+- **Cards / items** : proportionnel à la taille de l'élément. Wrapper de la carte doit être `relative`. Répartir sur haut, bas et côtés (1–2 coins max, privilégier haut/bas/côtés). Nombre actuel par élément :
+  - TaskItem (Checklist) : 3 décos (4 patterns selon hash ASCII de l'id)
+  - MangaCard (Collection) : 4 décos (4 patterns selon `_decoIdx % 4`)
+  - ExpenseCard (Expenses) : 5 décos (4 patterns selon 2 derniers hex de l'UUID `% 4`)
+  - Carte exercice (Sport) : 5 décos (5 patterns selon `exoIdx % 5`, `zIndex:20`)
+  - Settings card : 8 décos
+  - Home card : ~12 décos positionnées depuis le wrapper de page
+- **Bouton d'action fixe** : wrapper `<div className="fixed bottom-4 left-4 right-4 z-10" style={{height:48}}>` avec `<button>` pleine taille dedans + décos en `position:absolute` autour (`zIndex:11`). Nombre actuel :
+  - Checklist, Collection, Expenses : 6 décos chacun
+  - Sport : 7 décos
 - **Home** : décos positionnées par rapport au wrapper de page (`relative`), réparties sur les 4 bords de la `<main>` card (haut, bas, côté gauche ~35/50/65%, côté droit ~32/50/66%)
 
 #### Règles overflow

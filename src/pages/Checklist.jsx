@@ -406,7 +406,7 @@ export default function Checklist() {
       <div className="absolute -left-8 top-52 w-60 h-60 rounded-full bg-[#bbf7d0] opacity-20 blur-3xl pointer-events-none"/>
       <div className="absolute left-40 top-[461px] w-64 h-64 rounded-full bg-[#fed7aa] opacity-25 blur-3xl pointer-events-none"/>
 
-      <AppHeader title="Worklist" />
+      <AppHeader title="Checklist" />
 
       {/* Barre recherche + jour */}
       <div className="absolute top-[76px] left-0 right-0 z-10 bg-white/55 backdrop-blur-md border-b border-white/80">

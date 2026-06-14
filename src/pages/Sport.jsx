@@ -488,33 +488,43 @@ export default function Sport() {
           const DECO = [
             // champignon en haut à gauche, fleur centrée en haut, feuille en bas à droite
             <>
-              <Mushroom   key="a1" width={22} rotate={-15}  style={{ position:'absolute', left:-9,   top:-6,   ...Z }} />
-              <Flower     key="a2" width={18} rotate={20}   style={{ position:'absolute', left:'42%', top:-10, ...Z }} />
-              <LeafSmall  key="a3" width={15} rotate={-60}  style={{ position:'absolute', right:-7,  bottom:10,...Z }} />
+              <Mushroom   key="a1" width={22} rotate={-15}  style={{ position:'absolute', left:-9,    top:-6,    ...Z }} />
+              <Flower     key="a2" width={18} rotate={20}   style={{ position:'absolute', left:'42%', top:-10,   ...Z }} />
+              <LeafBig    key="a4" width={20} rotate={15}   style={{ position:'absolute', right:-8,   top:-7,    ...Z }} />
+              <LeafSmall  key="a3" width={15} rotate={-60}  style={{ position:'absolute', right:-7,   bottom:10, ...Z }} />
+              <Flower     key="a5" width={14} rotate={-30}  style={{ position:'absolute', left:'35%', bottom:-8, ...Z }} />
             </>,
             // feuille en haut à droite, petite feuille centrée en bas, fleur en bas à gauche
             <>
-              <LeafBig    key="b1" width={26} rotate={200}  style={{ position:'absolute', right:-10, top:-8,   ...Z }} />
-              <LeafSmall  key="b2" width={14} rotate={130}  style={{ position:'absolute', left:'38%', bottom:-7,...Z }} />
-              <Flower     key="b3" width={17} rotate={-25}  style={{ position:'absolute', left:-8,   bottom:4, ...Z }} />
+              <LeafBig    key="b1" width={26} rotate={200}  style={{ position:'absolute', right:-10,  top:-8,    ...Z }} />
+              <Mushroom   key="b4" width={20} rotate={-8}   style={{ position:'absolute', left:-8,    top:-7,    ...Z }} />
+              <LeafSmall  key="b2" width={14} rotate={130}  style={{ position:'absolute', left:'38%', bottom:-7, ...Z }} />
+              <Flower     key="b3" width={17} rotate={-25}  style={{ position:'absolute', left:-8,    bottom:4,  ...Z }} />
+              <LeafSmall  key="b5" width={13} rotate={70}   style={{ position:'absolute', right:-5,   bottom:-6, ...Z }} />
             </>,
             // fleur en haut à gauche, champignon centré en bas, feuille en haut à droite
             <>
-              <Flower     key="c1" width={18} rotate={30}   style={{ position:'absolute', left:-8,   top:6,    ...Z }} />
+              <Flower     key="c1" width={18} rotate={30}   style={{ position:'absolute', left:-8,    top:6,     ...Z }} />
+              <LeafSmall  key="c4" width={13} rotate={55}   style={{ position:'absolute', left:'46%', top:-7,    ...Z }} />
               <Mushroom   key="c2" width={24} rotate={8}    style={{ position:'absolute', left:'62%', bottom:-12,...Z }} />
-              <LeafBig    key="c3" width={22} rotate={-20}  style={{ position:'absolute', right:-9,  top:-6,   ...Z }} />
+              <LeafBig    key="c3" width={22} rotate={-20}  style={{ position:'absolute', right:-9,   top:-6,    ...Z }} />
+              <Flower     key="c5" width={14} rotate={-40}  style={{ position:'absolute', left:-6,    bottom:-7, ...Z }} />
             </>,
             // feuille petite en haut à gauche, grande feuille centrée en haut, champignon en bas à droite
             <>
-              <LeafSmall  key="d1" width={16} rotate={-80}  style={{ position:'absolute', left:-7,   top:8,    ...Z }} />
-              <LeafBig    key="d2" width={24} rotate={-10}  style={{ position:'absolute', left:'30%', top:-12, ...Z }} />
-              <Mushroom   key="d3" width={22} rotate={12}   style={{ position:'absolute', right:-9,  bottom:4, ...Z }} />
+              <LeafSmall  key="d1" width={16} rotate={-80}  style={{ position:'absolute', left:-7,    top:8,     ...Z }} />
+              <LeafBig    key="d2" width={24} rotate={-10}  style={{ position:'absolute', left:'30%', top:-12,   ...Z }} />
+              <Flower     key="d4" width={16} rotate={25}   style={{ position:'absolute', right:-7,   top:-8,    ...Z }} />
+              <Mushroom   key="d3" width={22} rotate={12}   style={{ position:'absolute', right:-9,   bottom:4,  ...Z }} />
+              <LeafSmall  key="d5" width={13} rotate={-45}  style={{ position:'absolute', left:'50%', bottom:-7, ...Z }} />
             </>,
             // fleur en bas à droite, petite feuille en haut centré, champignon en haut à gauche
             <>
-              <Mushroom   key="e1" width={20} rotate={-5}   style={{ position:'absolute', left:-9,   top:-8,   ...Z }} />
-              <LeafSmall  key="e2" width={15} rotate={40}   style={{ position:'absolute', left:'58%', top:-8,  ...Z }} />
-              <Flower     key="e3" width={19} rotate={-20}  style={{ position:'absolute', right:-8,  bottom:6, ...Z }} />
+              <Mushroom   key="e1" width={20} rotate={-5}   style={{ position:'absolute', left:-9,    top:-8,    ...Z }} />
+              <LeafSmall  key="e2" width={15} rotate={40}   style={{ position:'absolute', left:'58%', top:-8,    ...Z }} />
+              <LeafBig    key="e4" width={22} rotate={30}   style={{ position:'absolute', left:-8,    bottom:-8, ...Z }} />
+              <Flower     key="e3" width={19} rotate={-20}  style={{ position:'absolute', right:-8,   bottom:6,  ...Z }} />
+              <LeafSmall  key="e5" width={13} rotate={-60}  style={{ position:'absolute', right:-6,   top:'40%', ...Z }} />
             </>,
           ]
 

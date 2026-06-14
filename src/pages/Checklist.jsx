@@ -151,6 +151,22 @@ export default function Checklist() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
+  // ── Recherche de profils pour le partage ──────────────────────
+  useEffect(() => {
+    if (!ckShareSearch.trim()) { setCkShareResults([]); return }
+    const timer = setTimeout(async () => {
+      setCkShareSearching(true)
+      const { data } = await supabase.from('profiles')
+        .select('id, first_name, last_name, display_name')
+        .neq('id', user?.id)
+        .or(`display_name.ilike.%${ckShareSearch}%,first_name.ilike.%${ckShareSearch}%,last_name.ilike.%${ckShareSearch}%`)
+        .limit(5)
+      setCkShareResults(data ?? [])
+      setCkShareSearching(false)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [ckShareSearch, user])
+
   // ── Logique jour ──────────────────────────────────────────────
   const isToday = currentDay === todayStr()
 
@@ -1012,29 +1028,104 @@ export default function Checklist() {
 
       {/* Modal Checklist */}
       {showCkModal && (
-        <BottomSheet onClose={() => { setShowCkModal(false); setCkForm({ label: '', group: '', isShared: false }); setCkGroupInput('') }}>
+        <BottomSheet onClose={() => { setShowCkModal(false); setCkForm({ group: '', sharedWith: [] }); setCkShareSearch(''); setCkShareResults([]) }}>
           <p className="text-[17px] font-semibold text-dark">Nouveau groupe</p>
           <TextField label="Nom du groupe" required autoFocus value={ckForm.group}
-            onChange={e => { setCkForm(f => ({ ...f, group: e.target.value })); setCkGroupInput(e.target.value) }}
+            onChange={e => setCkForm(f => ({ ...f, group: e.target.value }))}
             placeholder="Ex : Courses, Ménage..." />
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-[13px] font-medium text-dark">
-              {partnerName ? `Partager avec ${partnerName}` : 'Partager'}
-            </span>
-            <div onClick={() => setCkForm(f => ({ ...f, isShared: !f.isShared }))}
-              className={`relative w-11 h-6 rounded-full cursor-pointer transition-colors shrink-0 ${ckForm.isShared ? 'bg-primary' : 'bg-[#d5d3dc]'}`}>
-              <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${ckForm.isShared ? 'translate-x-5' : 'translate-x-0.5'}`} />
+          <div className="flex flex-col gap-2">
+            <label className="text-[12px] font-medium text-muted">Partager avec</label>
+            {ckForm.sharedWith.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {ckForm.sharedWith.map(u => (
+                  <span key={u.id} className="flex items-center gap-1 px-2 py-1 rounded-full bg-soft text-[12px] font-medium text-primary">
+                    {u.name}
+                    <button style={{ minWidth:0, minHeight:0 }} onClick={() => setCkForm(f => ({ ...f, sharedWith: f.sharedWith.filter(x => x.id !== u.id) }))}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="relative">
+              <input type="text" value={ckShareSearch}
+                onChange={e => setCkShareSearch(e.target.value)}
+                placeholder="Rechercher une personne..."
+                className="bg-soft rounded-[10px] h-12 px-4 text-[14px] text-dark outline-none placeholder:text-accent w-full"/>
+              {ckShareSearching && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] text-muted">...</span>}
+              {ckShareResults.length > 0 && (
+                <ul className="absolute left-0 right-0 top-[52px] bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-soft">
+                  {ckShareResults.filter(r => !ckForm.sharedWith.find(u => u.id === r.id)).map(r => {
+                    const name = r.display_name || `${r.first_name ?? ''} ${r.last_name ?? ''}`.trim()
+                    return (
+                      <li key={r.id}>
+                        <button className="w-full text-left px-4 py-3 text-[13px] text-dark hover:bg-soft" style={{ minWidth:0, minHeight:0 }}
+                          onClick={() => { setCkForm(f => ({ ...f, sharedWith: [...f.sharedWith, { id: r.id, name }] })); setCkShareSearch(''); setCkShareResults([]) }}>
+                          {name}
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
             </div>
           </div>
           <SubmitButton onClick={() => {
             const name = ckForm.group.trim()
             if (!name) return
             addCkGroup(name)
-            saveGroupShare(name, ckForm.isShared)
+            saveGroupShare(name, ckForm.sharedWith)
             setShowCkModal(false)
-            setCkForm({ label: '', group: '', isShared: false }); setCkGroupInput('')
+            setCkForm({ group: '', sharedWith: [] }); setCkShareSearch(''); setCkShareResults([])
           }} disabled={!ckForm.group.trim()}>
             Créer
+          </SubmitButton>
+        </BottomSheet>
+      )}
+
+      {/* Modal gérer le partage d'un groupe */}
+      {ckManageShareGroup !== null && (
+        <BottomSheet onClose={() => { setCkManageShareGroup(null); setCkShareSearch(''); setCkShareResults([]) }}>
+          <p className="text-[17px] font-semibold text-dark">Partager « {ckManageShareGroup} »</p>
+          {ckManageSelected.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {ckManageSelected.map(u => (
+                <span key={u.id} className="flex items-center gap-1 px-2 py-1 rounded-full bg-soft text-[12px] font-medium text-primary">
+                  {u.name}
+                  <button style={{ minWidth:0, minHeight:0 }} onClick={() => setCkManageSelected(prev => prev.filter(x => x.id !== u.id))}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="relative">
+            <input type="text" value={ckShareSearch}
+              onChange={e => setCkShareSearch(e.target.value)}
+              placeholder="Rechercher une personne..."
+              className="bg-soft rounded-[10px] h-12 px-4 text-[14px] text-dark outline-none placeholder:text-accent w-full"/>
+            {ckShareSearching && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] text-muted">...</span>}
+            {ckShareResults.length > 0 && (
+              <ul className="absolute left-0 right-0 top-[52px] bg-white rounded-[10px] shadow-lg z-10 overflow-hidden border border-soft">
+                {ckShareResults.filter(r => !ckManageSelected.find(u => u.id === r.id)).map(r => {
+                  const name = r.display_name || `${r.first_name ?? ''} ${r.last_name ?? ''}`.trim()
+                  return (
+                    <li key={r.id}>
+                      <button className="w-full text-left px-4 py-3 text-[13px] text-dark hover:bg-soft" style={{ minWidth:0, minHeight:0 }}
+                        onClick={() => { setCkManageSelected(prev => [...prev, { id: r.id, name }]); setCkShareSearch(''); setCkShareResults([]) }}>
+                        {name}
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
+          <SubmitButton onClick={async () => {
+            await applyGroupShare(ckManageShareGroup, ckManageSelected)
+            setCkManageShareGroup(null); setCkShareSearch(''); setCkShareResults([])
+          }}>
+            Enregistrer
           </SubmitButton>
         </BottomSheet>
       )}

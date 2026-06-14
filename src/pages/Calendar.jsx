@@ -607,7 +607,7 @@ export default function Calendar() {
                           }}
                         >
                           <div
-                            className="h-[16px] w-full flex items-center px-2 overflow-hidden"
+                            className="h-[16px] w-full flex items-center justify-center px-1 overflow-hidden"
                             style={{
                               background: e.isMine ? 'rgba(108,99,255,0.82)' : 'rgba(251,191,36,0.85)',
                               borderRadius: `${e.startsInWeek ? 4 : 0}px ${e.endsInWeek ? 4 : 0}px ${e.endsInWeek ? 4 : 0}px ${e.startsInWeek ? 4 : 0}px`,

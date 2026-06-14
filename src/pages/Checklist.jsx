@@ -420,12 +420,16 @@ export default function Checklist() {
           {grouped[group].map(item => (
             <li key={item.id} className={`border rounded-[8px] px-2 py-[6px] flex items-center gap-2 relative ${item.done ? 'bg-[#f0eef5]/80 border-[rgba(115,102,148,0.2)]' : `bg-white/70 ${isCottagecore ? 'cc-border' : 'border-white/85'}`}`}>
               {isCottagecore && (() => {
-                const d = (String(item.id).split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % 4
+                const d = (String(item.id).split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % 8
                 const s = { pointerEvents:'none', position:'absolute', zIndex:10 }
                 if (d===0) return <><LeafSmall width={14} rotate={-20} style={{...s, right:4,    top:-8 }} /><Flower    width={13} rotate={30}  style={{...s, left:'55%', top:-5 }} /><LeafBig   width={15} rotate={15}  style={{...s, left:0,    bottom:-8}} /></>
                 if (d===1) return <><Flower    width={14} rotate={-40} style={{...s, right:6,    bottom:-7}} /><Mushroom  width={16} rotate={15}  style={{...s, left:'30%', top:-8 }} /><LeafSmall width={12} rotate={60}  style={{...s, left:2,    top:-6 }} /></>
                 if (d===2) return <><Mushroom  width={15} rotate={-20} style={{...s, right:2,    top:-8 }} /><LeafBig   width={14} rotate={50}  style={{...s, left:'60%', bottom:-7}} /><Flower    width={12} rotate={40}  style={{...s, left:4,    top:-6 }} /></>
-                return              <><LeafBig   width={16} rotate={-35} style={{...s, right:0,    bottom:-8}} /><Flower    width={13} rotate={-15} style={{...s, left:'35%', bottom:-6}} /><LeafSmall width={13} rotate={70}  style={{...s, left:2,    top:-7 }} /></>
+                if (d===3) return <><LeafBig   width={16} rotate={-35} style={{...s, right:0,    bottom:-8}} /><Flower    width={13} rotate={-15} style={{...s, left:'35%', bottom:-6}} /><LeafSmall width={13} rotate={70}  style={{...s, left:2,    top:-7 }} /></>
+                if (d===4) return <><Mushroom  width={14} rotate={25}  style={{...s, right:8,    top:-8 }} /><LeafSmall width={13} rotate={-55} style={{...s, left:'48%', bottom:-6}} /><Flower    width={14} rotate={-30} style={{...s, left:6,    bottom:-7}} /></>
+                if (d===5) return <><LeafBig   width={13} rotate={40}  style={{...s, right:0,    top:-7 }} /><Flower    width={14} rotate={60}  style={{...s, left:'25%', top:-6 }} /><Mushroom  width={15} rotate={-5}  style={{...s, right:10,  bottom:-8}} /></>
+                if (d===6) return <><LeafSmall width={15} rotate={80}  style={{...s, right:3,    bottom:-7}} /><LeafBig   width={14} rotate={-40} style={{...s, left:'50%', top:-8 }} /><Flower    width={12} rotate={10}  style={{...s, left:0,    top:-6 }} /></>
+                return              <><Flower    width={15} rotate={-25} style={{...s, right:5,    top:-7 }} /><Mushroom  width={14} rotate={35}  style={{...s, left:'40%', bottom:-8}} /><LeafBig   width={13} rotate={-60} style={{...s, left:4,    bottom:-7}} /></>
               })()}
               <button onClick={() => toggleCkItem(item.id, item.done)}
                 style={{ minWidth: 0, minHeight: 0, width: 24, height: 24 }}

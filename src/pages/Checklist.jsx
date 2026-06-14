@@ -64,6 +64,9 @@ export default function Checklist() {
   const [ckQuickAddLabel, setCkQuickAddLabel] = useState('')
   const [ckDeleteGroup, setCkDeleteGroup] = useState(null)
   const [ckResetGroup, setCkResetGroup] = useState(null)
+  const [ckGroups, setCkGroups] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('ck_groups') || '[]') } catch { return [] }
+  })
   const [partnerName, setPartnerName] = useState(null)
 
   // Jour courant
@@ -104,7 +107,16 @@ export default function Checklist() {
     if (!user || viewMode !== 'checklist') return
     supabase.from('checklist_items').select('*')
       .order('position', { ascending: true })
-      .then(({ data }) => { if (data) setChecklistItems(data) })
+      .then(({ data }) => {
+        if (data) {
+          setChecklistItems(data)
+          const dbGroups = [...new Set(data.filter(t => t.user_id === user.id && t.group_name).map(t => t.group_name))]
+          const stored = JSON.parse(localStorage.getItem('ck_groups') || '[]')
+          const merged = [...new Set([...stored, ...dbGroups])]
+          setCkGroups(merged)
+          localStorage.setItem('ck_groups', JSON.stringify(merged))
+        }
+      })
   }, [user, viewMode])
 
   useEffect(() => {
@@ -273,7 +285,15 @@ export default function Checklist() {
   }
 
   // ── Checklist CRUD ──────────────────────────────────────────
-  const ckAllGroups = [...new Set(checklistItems.map(t => t.group_name).filter(Boolean))]
+  const ckAllGroups = [...new Set([...ckGroups, ...checklistItems.map(t => t.group_name).filter(Boolean)])]
+
+  const saveCkGroups = (groups) => {
+    setCkGroups(groups)
+    localStorage.setItem('ck_groups', JSON.stringify(groups))
+  }
+  const addCkGroup = (name) => {
+    if (name && !ckGroups.includes(name)) saveCkGroups([...ckGroups, name])
+  }
 
   const toggleGroupShare = async (group) => {
     const groupItems = checklistItems.filter(t => t.group_name === group && t.user_id === user.id)
@@ -293,7 +313,7 @@ export default function Checklist() {
       user_id: user.id, label: ckQuickAddLabel.trim(),
       group_name: group || null, done: false, is_shared: isShared, item_date: todayStr(),
     }).select().single()
-    if (data) setChecklistItems(prev => [...prev, data])
+    if (data) { setChecklistItems(prev => [...prev, data]); addCkGroup(group) }
     setCkQuickAddLabel('')
   }
 
@@ -303,7 +323,7 @@ export default function Checklist() {
       user_id: user.id, label: ckForm.label.trim(),
       group_name: ckForm.group || null, done: false, is_shared: ckForm.isShared, item_date: todayStr(),
     }).select().single()
-    if (data) setChecklistItems(prev => [...prev, data])
+    if (data) { setChecklistItems(prev => [...prev, data]); addCkGroup(ckForm.group) }
     setShowCkModal(false)
     setCkForm({ label: '', group: '', isShared: false }); setCkGroupInput('')
   }
@@ -317,12 +337,13 @@ export default function Checklist() {
   }
 
   const renderCkGrouped = (items, isPartner = false) => {
+    const seed = isPartner ? {} : Object.fromEntries(ckGroups.map(g => [g, []]))
     const grouped = items.reduce((acc, item) => {
       const key = item.group_name ?? ''
       if (!acc[key]) acc[key] = []
       acc[key].push(item)
       return acc
-    }, {})
+    }, seed)
     const keys = Object.keys(grouped).sort((a, b) => {
       if (a === '') return -1; if (b === '') return 1; return a.localeCompare(b)
     })
@@ -949,8 +970,8 @@ export default function Checklist() {
             </button>
             <button onClick={async () => {
                 const ids = checklistItems.filter(t => t.group_name === ckResetGroup && t.user_id === user?.id).map(t => t.id)
-                setChecklistItems(prev => prev.map(t => ids.includes(t.id) ? { ...t, done: false } : t))
-                await supabase.from('checklist_items').update({ done: false }).in('id', ids)
+                setChecklistItems(prev => prev.filter(t => !ids.includes(t.id)))
+                await supabase.from('checklist_items').delete().in('id', ids)
                 setCkResetGroup(null)
               }}
               className="flex-1 h-12 rounded-[12px] bg-[#6c63ff] text-[14px] font-semibold text-white">
@@ -972,6 +993,7 @@ export default function Checklist() {
             <button onClick={async () => {
                 const ids = checklistItems.filter(t => t.group_name === ckDeleteGroup).map(t => t.id)
                 setChecklistItems(prev => prev.filter(t => t.group_name !== ckDeleteGroup))
+                saveCkGroups(ckGroups.filter(g => g !== ckDeleteGroup))
                 await supabase.from('checklist_items').delete().in('id', ids)
                 setCkDeleteGroup(null)
               }}

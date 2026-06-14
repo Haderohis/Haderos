@@ -56,10 +56,7 @@ export default function Checklist() {
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('ck_viewMode') || 'worklist')
   const [checklistItems, setChecklistItems] = useState([])
   const [showCkModal, setShowCkModal] = useState(false)
-  const [ckForm, setCkForm] = useState({ label: '', group: '', isShared: false })
-  const [ckGroupInput, setCkGroupInput] = useState('')
-  const [ckGroupOpen, setCkGroupOpen] = useState(false)
-  const ckGroupRef = useRef(null)
+  const [ckForm, setCkForm] = useState({ group: '', sharedWith: [] })
   const [ckQuickAddGroup, setCkQuickAddGroup] = useState(null)
   const [ckQuickAddLabel, setCkQuickAddLabel] = useState('')
   const [ckDeleteGroup, setCkDeleteGroup] = useState(null)
@@ -67,9 +64,15 @@ export default function Checklist() {
   const [ckGroups, setCkGroups] = useState(() => {
     try { return JSON.parse(localStorage.getItem('ck_groups') || '[]') } catch { return [] }
   })
+  // ckGroupShares : { groupName: [{ id, name }] }
   const [ckGroupShares, setCkGroupShares] = useState(() => {
     try { return JSON.parse(localStorage.getItem('ck_group_shares') || '{}') } catch { return {} }
   })
+  const [ckManageShareGroup, setCkManageShareGroup] = useState(null)
+  const [ckShareSearch, setCkShareSearch] = useState('')
+  const [ckShareResults, setCkShareResults] = useState([])
+  const [ckShareSearching, setCkShareSearching] = useState(false)
+  const [ckManageSelected, setCkManageSelected] = useState([])
   const [partnerName, setPartnerName] = useState(null)
 
   // Jour courant
@@ -294,52 +297,39 @@ export default function Checklist() {
     setCkGroups(groups)
     localStorage.setItem('ck_groups', JSON.stringify(groups))
   }
-  const saveGroupShare = (group, shared) => {
-    const next = { ...ckGroupShares, [group]: shared }
+  const saveGroupShare = (group, users) => {
+    const next = { ...ckGroupShares, [group]: users }
     setCkGroupShares(next)
     localStorage.setItem('ck_group_shares', JSON.stringify(next))
   }
   const addCkGroup = (name) => {
     if (name && !ckGroups.includes(name)) saveCkGroups([...ckGroups, name])
   }
+  const groupSharedUsers = (group) => Array.isArray(ckGroupShares[group]) ? ckGroupShares[group] : []
+  const groupIsSharedWith = (group) => groupSharedUsers(group).length > 0
 
-  const toggleGroupShare = async (group) => {
-    const newShared = !ckGroupShares[group]
-    saveGroupShare(group, newShared)
+  const applyGroupShare = async (group, users) => {
+    saveGroupShare(group, users)
+    const isShared = users.length > 0
     const groupItems = checklistItems.filter(t => t.group_name === group && t.user_id === user.id)
     if (groupItems.length > 0) {
       setChecklistItems(prev => prev.map(t =>
-        t.group_name === group && t.user_id === user.id ? { ...t, is_shared: newShared } : t
+        t.group_name === group && t.user_id === user.id ? { ...t, is_shared: isShared } : t
       ))
-      await supabase.from('checklist_items').update({ is_shared: newShared })
+      await supabase.from('checklist_items').update({ is_shared: isShared })
         .in('id', groupItems.map(t => t.id))
     }
   }
 
   const addCkItemInline = async (group) => {
     if (!ckQuickAddLabel.trim()) return
-    const isShared = ckGroupShares[group] ?? false
+    const isShared = groupIsSharedWith(group)
     const { data } = await supabase.from('checklist_items').insert({
       user_id: user.id, label: ckQuickAddLabel.trim(),
       group_name: group || null, done: false, is_shared: isShared, item_date: todayStr(),
     }).select().single()
     if (data) { setChecklistItems(prev => [...prev, data]); addCkGroup(group) }
     setCkQuickAddLabel('')
-  }
-
-  const addCkItem = async () => {
-    if (!ckForm.label.trim()) return
-    const { data } = await supabase.from('checklist_items').insert({
-      user_id: user.id, label: ckForm.label.trim(),
-      group_name: ckForm.group || null, done: false, is_shared: ckForm.isShared, item_date: todayStr(),
-    }).select().single()
-    if (data) {
-      setChecklistItems(prev => [...prev, data])
-      addCkGroup(ckForm.group)
-      if (ckForm.group) saveGroupShare(ckForm.group, ckForm.isShared)
-    }
-    setShowCkModal(false)
-    setCkForm({ label: '', group: '', isShared: false }); setCkGroupInput('')
   }
   const toggleCkItem = async (id, done) => {
     setChecklistItems(prev => prev.map(t => t.id === id ? { ...t, done: !done } : t))
@@ -362,7 +352,7 @@ export default function Checklist() {
       if (a === '') return -1; if (b === '') return 1; return a.localeCompare(b)
     })
     return keys.map((group, i) => {
-      const groupIsShared = ckGroupShares[group] ?? grouped[group].some(t => t.is_shared)
+      const groupIsShared = groupIsSharedWith(group)
       return (
       <div key={`${isPartner ? 'p' : 'o'}-${group}`} className={`flex flex-col gap-2 ${i > 0 ? 'pt-3 border-t border-[rgba(115,102,148,0.15)]' : 'mt-4'}`}>
         {group && (
@@ -375,10 +365,10 @@ export default function Checklist() {
             </div>
             {!isPartner && (
               <div className="flex items-center gap-2 shrink-0">
-                {/* Toggle partage */}
-                <button onClick={() => toggleGroupShare(group)}
+                {/* Partage */}
+                <button onClick={() => { setCkManageShareGroup(group); setCkManageSelected(groupSharedUsers(group)); setCkShareSearch(''); setCkShareResults([]) }}
                   style={{ minWidth: 0, minHeight: 0 }}
-                  title={groupIsShared ? 'Arrêter le partage' : 'Partager ce groupe'}
+                  title="Gérer le partage"
                   className={`flex items-center gap-1 text-[11px] font-medium transition-colors ${groupIsShared ? 'text-primary' : 'text-muted/40 hover:text-muted'}`}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                     <circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="2"/>
@@ -819,13 +809,13 @@ export default function Checklist() {
           {/* ── Mode Checklist ── */}
           {viewMode === 'checklist' && (
             <>
-              {checklistItems.length === 0 && (
+              {checklistItems.length === 0 && ckGroups.length === 0 && (
                 <div className={`bg-white/60 border rounded-[12px] h-16 flex flex-col items-center justify-center mt-4 ${isCottagecore ? 'cc-border' : 'border-accent/50'}`}>
-                  <p className="text-[22px] font-bold text-primary leading-tight">Aucune tâche</p>
+                  <p className="text-[22px] font-bold text-primary leading-tight">Aucun groupe</p>
                   <p className="text-[11px] text-accent">pour le moment</p>
                 </div>
               )}
-              {checklistItems.length > 0 && (() => {
+              {(() => {
                 const ownCkItems = checklistItems.filter(t => t.user_id === user?.id)
                 const partnerCkItems = checklistItems.filter(t => t.user_id !== user?.id)
                 return <>

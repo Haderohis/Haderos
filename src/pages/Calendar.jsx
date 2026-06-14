@@ -838,7 +838,19 @@ export default function Calendar() {
       {/* BottomSheet : Ajouter un événement */}
       {showAddEvent && (
         <BottomSheet onClose={() => setShowAddEvent(false)}>
-          <h2 className="text-[17px] font-bold text-dark">Nouvel événement</h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-[17px] font-bold text-dark">Nouvel événement</h2>
+            <div className="flex gap-1.5">
+              {EVENT_COLORS.map(c => (
+                <div key={c.key} onClick={() => setNewColor(c.key)}
+                  className="w-6 h-6 rounded-full cursor-pointer flex items-center justify-center shrink-0"
+                  style={{ background: c.bar, boxShadow: newColor === c.key ? `0 0 0 2px white, 0 0 0 3.5px ${c.bar}` : 'none' }}
+                >
+                  {newColor === c.key && <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
+                </div>
+              ))}
+            </div>
+          </div>
 
           <TextField
             label="Titre"
@@ -875,8 +887,6 @@ export default function Calendar() {
               className="h-12 bg-soft rounded-[10px] px-3 text-[14px] text-dark outline-none [color-scheme:light]"
             />
           </div>
-
-          <ColorPicker value={newColor} onChange={setNewColor} />
 
           {hasPartner && (
             <div className="flex items-center justify-between gap-3">
@@ -902,7 +912,19 @@ export default function Calendar() {
       {/* BottomSheet : Modifier un événement */}
       {editingEvent && (
         <BottomSheet onClose={() => setEditingEvent(null)}>
-          <h2 className="text-[17px] font-bold text-dark">Modifier l'événement</h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-[17px] font-bold text-dark">Modifier l'événement</h2>
+            <div className="flex gap-1.5">
+              {EVENT_COLORS.map(c => (
+                <div key={c.key} onClick={() => setNewColor(c.key)}
+                  className="w-6 h-6 rounded-full cursor-pointer flex items-center justify-center shrink-0"
+                  style={{ background: c.bar, boxShadow: newColor === c.key ? `0 0 0 2px white, 0 0 0 3.5px ${c.bar}` : 'none' }}
+                >
+                  {newColor === c.key && <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
+                </div>
+              ))}
+            </div>
+          </div>
 
           <TextField
             label="Titre"
@@ -939,8 +961,6 @@ export default function Calendar() {
               className="h-12 bg-soft rounded-[10px] px-3 text-[14px] text-dark outline-none [color-scheme:light]"
             />
           </div>
-
-          <ColorPicker value={newColor} onChange={setNewColor} />
 
           {hasPartner && (
             <div className="flex items-center justify-between gap-3">

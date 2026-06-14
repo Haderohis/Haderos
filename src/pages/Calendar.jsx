@@ -615,12 +615,15 @@ export default function Calendar() {
   const shareChip = (
     <div
       onClick={() => setShowShare(true)}
-      className="flex items-center gap-1 h-6 px-2 rounded-full bg-soft cursor-pointer"
+      className="flex items-center gap-[5px] bg-soft rounded-full px-2.5 h-6 cursor-pointer"
     >
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="rgb(var(--color-primary))">
-        <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92 0-1.61-1.31-2.92-2.92-2.92z"/>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="rgb(var(--color-primary))">
+        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
       </svg>
-      <span className="text-[11px] font-semibold text-primary">Partager</span>
+      <span className="text-[10px] font-medium leading-none text-primary">Partager</span>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="rgb(var(--color-primary))">
+        <path d="M7 10l5 5 5-5H7z" />
+      </svg>
     </div>
   )
 

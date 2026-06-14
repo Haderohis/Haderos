@@ -904,12 +904,13 @@ export default function Collection() {
         <main className="px-4 pb-28">
           <div className="mt-4 mb-3 flex flex-col gap-3">
             {/* Toggle Collection / Envies */}
-            <div className="flex bg-white/70 border border-white/85 rounded-[10px] p-[3px] gap-[3px]">
+            <div className="flex bg-soft rounded-[8px] p-[3px] gap-[2px] h-8">
               {['collection', 'envies'].map(mode => (
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode)}
-                  className={`flex-1 h-7 rounded-[8px] text-[13px] font-semibold transition-colors capitalize ${viewMode === mode ? 'bg-primary text-white' : 'text-muted'}`}
+                  style={{ minWidth: 0, minHeight: 0 }}
+                  className={`flex-1 text-[12px] font-semibold rounded-[6px] transition-colors ${viewMode === mode ? 'bg-white text-primary shadow-sm' : 'text-muted'}`}
                 >
                   {mode === 'collection' ? 'Collection' : 'Envies'}
                 </button>

@@ -1053,13 +1053,12 @@ export default function Checklist() {
             </div>
           </div>
           {partnerName && (
-            <div className="flex items-center justify-between">
-              <span className="text-[13px] text-dark font-medium">Partager avec {partnerName}</span>
-              <button onClick={() => setCkForm(f => ({ ...f, isShared: !f.isShared }))}
-                style={{ minWidth: 0, minHeight: 0 }}
-                className={`w-10 h-6 rounded-full transition-colors relative ${ckForm.isShared ? 'bg-primary' : 'bg-[#e2dff0]'}`}>
-                <span className={`absolute top-[3px] w-[18px] h-[18px] bg-white rounded-full shadow transition-transform ${ckForm.isShared ? 'translate-x-[18px]' : 'translate-x-[3px]'}`}/>
-              </button>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[13px] font-medium text-dark">Partager avec {partnerName}</span>
+              <div onClick={() => setCkForm(f => ({ ...f, isShared: !f.isShared }))}
+                className={`relative w-11 h-6 rounded-full cursor-pointer transition-colors shrink-0 ${ckForm.isShared ? 'bg-primary' : 'bg-[#d5d3dc]'}`}>
+                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${ckForm.isShared ? 'translate-x-5' : 'translate-x-0.5'}`} />
+              </div>
             </div>
           )}
           <SubmitButton onClick={addCkItem} disabled={!ckForm.label.trim()}>

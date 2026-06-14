@@ -349,8 +349,9 @@ Liste de souhaits sans notion de tomes ni de partage.
 - `endDs = e.end_date ?? e.event_date` → single-day = barre dans une seule cellule
 - Positionnement : `left: calc(startCol/7 * 100% + inset)` / `right: calc((6-endCol)/7 * 100% + inset)`
 - Border-radius : arrondi uniquement du côté où l'event commence/finit dans la semaine (plat si coupe la ligne)
-- Couleurs : mes events → violet (`rgba(108,99,255,0.82)`) ou cottagecore (`rgba(163,98,82,0.82)`) · partner → amber (`rgba(251,191,36,0.85)`)
+- Couleurs : mes events → selon `color` stockée + thème · partner → amber (`rgba(251,191,36,0.85)`)
 - Clic sur une barre → sélectionne le premier jour couvert dans la semaine
+- **Lane packing** : events non-chevauchants partagent la même ligne — algorithme d'assignation par lane, hauteur du bloc = `maxLane * 20px`
 
 ### Panel événements du jour
 - S'affiche sous la grille quand un jour est sélectionné
@@ -365,8 +366,14 @@ Liste de souhaits sans notion de tomes ni de partage.
 - Suppression bidirectionnelle (supprime les deux sens en même temps)
 - ShareChip dans `titleExtra` du header
 
+### Couleurs d'événements
+- 7 couleurs : `violet` · `rose` · `red` · `orange` · `green` · `teal` · `blue` — stockées dans `calendar_events.color`
+- Chaque couleur a une variante `bar`/`card` (thème violet) et `barCC`/`cardCC` (thème cottagecore — tons terreux/naturels, opacité 0.92)
+- `getEventColor(colorKey, isMine, isCottagecore)` → `{ bar, card, text }` — events partenaire toujours amber
+- Sélecteur : bulle unique colorée à droite du titre de la modal → dropdown au clic avec les 7 couleurs (couleurs adaptées au thème actif)
+
 ### Formulaire ajout/édition
-- Titre (requis) · Date début · Date de fin (optionnelle) · Heure (optionnelle) · Toggle "[Prénom] participe" (visible si partage accepté)
+- Titre (requis) · Date début · Date de fin (optionnelle) · Heure (optionnelle) · Couleur (bulle+dropdown) · Toggle "[Prénom] participe" (visible si partage accepté)
 - `end_date` ignorée si ≤ `event_date` (stocké null)
 - `fetchEvents()` appelé directement après INSERT (pas de dépendance au temps réel pour le rafraîchissement immédiat)
 
@@ -374,6 +381,12 @@ Liste de souhaits sans notion de tomes ni de partage.
 - `calendar_share_request` : envoyé à l'invitation de partage
 - `calendar_share_accepted` : envoyé à l'acceptation (géré par `useNotifications.js`)
 - `calendar_event_shared` : envoyé au partenaire quand `is_shared=true` (ajout ou modif)
+
+### Icône sport sur le calendrier
+- Icône haltère (strength) ou coureur (cardio) à `opacity: 0.45` dans le fond du numéro de jour
+- Couleur : `white` si jour sélectionné · cottagecore `#a36252` · violet `rgb(var(--color-primary))`
+- Visible uniquement si la séance a au moins 1 exercice (sessions vides ignorées)
+- Type = majoritaire parmi les exercices (`cardioCount > total/2` → cardio, sinon strength)
 
 ### Cottagecore
 - EventCards : 4 variantes, `decoIdx = parseInt(id.replace(/-/g,'').slice(-2), 16) % 4`

@@ -317,6 +317,7 @@ Liste de souhaits sans notion de tomes ni de partage.
 - Jour sélectionné : `bg-primary rounded-full text-white` · Aujourd'hui : `border border-primary rounded-full`
 - Barres d'événements sous les numéros (pas de dots) — span multi-jours entre colonnes
 - `toDateStr()` importé depuis `src/lib/date.js`
+- Icône sport (haltère ou coureur) en fond des numéros de jours à `opacity: 0.45` si une séance existe ce jour — type majoritaire parmi les exercices de la séance (cardio si `cardioCount > total/2`, sinon strength)
 
 ### Barres d'événements
 - Approche `allBars` : tous les events traités uniformément, qu'ils durent 1 jour ou plusieurs

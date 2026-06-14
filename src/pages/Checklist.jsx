@@ -388,7 +388,7 @@ export default function Checklist() {
             </li>
           ))}
           {/* Ajout à la volée — uniquement pour ses propres groupes */}
-          {!isPartner && ckQuickAddGroup === group ? (
+          {!isPartner && (ckQuickAddGroup === group ? (
             <li className="border border-dashed border-primary/30 rounded-[8px] px-2 py-[6px] flex items-center gap-2 bg-white/40">
               <div style={{ width: 24, height: 24 }} className="shrink-0 rounded-[3px] border-2 border-primary/30"/>
               <input autoFocus type="text" value={ckQuickAddLabel}
@@ -401,7 +401,7 @@ export default function Checklist() {
                 placeholder="Nouvelle tâche..."
                 className="flex-1 bg-transparent text-[12px] font-bold text-dark outline-none placeholder:text-accent"/>
             </li>
-          ) : !isPartner ? (
+          ) : (
             <li>
               <button onClick={() => { setCkQuickAddGroup(group); setCkQuickAddLabel('') }}
                 style={{ minWidth: 0, minHeight: 0 }}
@@ -412,7 +412,7 @@ export default function Checklist() {
                 Ajouter
               </button>
             </li>
-          ) : null}
+          ))}
         </ul>
       </div>
     ))

@@ -34,6 +34,7 @@
 | `/collection` | Collection | Oui |
 | `/dashboard` | Dashboard | Oui |
 | `/sport` | Sport | Oui |
+| `/calendar` | Calendrier | Oui |
 
 ## Structure des fichiers
 
@@ -49,7 +50,8 @@ src/
 │   ├── Settings.jsx         # Placeholder
 │   ├── Dashboard.jsx
 │   ├── Collection.jsx       # Collection perso (mangas + comics) avec partage
-│   └── Sport.jsx            # Suivi sport : calendrier semaine, exercices, séries
+│   ├── Sport.jsx            # Suivi sport : calendrier semaine, exercices, séries
+│   └── Calendar.jsx         # Calendrier partagé : événements perso/partagés, vues mois
 ├── components/
 │   ├── AppHeader.jsx        # Header partagé (menu + notifications) — prop titleExtra
 │   ├── Drawer.jsx           # Menu navigation latéral (fixed, nav scrollable)
@@ -77,7 +79,10 @@ supabase/
 ├── collection_shares_recipient_delete.sql  # Policy: recipient peut supprimer un partage
 ├── sport_migration.sql                 # Tables sport_sessions, sport_exercises, sport_sets + RLS
 ├── sport_add_muscle.sql                # ALTER sport_exercises ADD COLUMN muscle text
-└── checklist_items_migration.sql       # Table checklist_items (mode Checklist de /checklist)
+├── checklist_items_migration.sql       # Table checklist_items (mode Checklist de /checklist)
+├── calendar_migration.sql              # Tables calendar_shares + calendar_events + RLS
+├── calendar_add_end_date.sql           # ALTER calendar_events ADD COLUMN end_date date NULL
+└── calendar_shared_read_fix.sql        # Recrée policy shared_read sans filtre is_shared
 ```
 
 ## Schéma base de données (Supabase)
@@ -104,8 +109,9 @@ RLS : SELECT/INSERT si lié à une dépense accessible. DELETE si payer ou debto
 
 ### `notifications`
 `id` · `user_id` · `type` · `message` · `read` · `data` (jsonb) · `created_at`
-Types : `new_expense` · `reimbursement` · `collection_share_request` · `collection_share_accepted`
-- `collection_share_request` : `data = { share_id, owner_id, recipient_name }`
+Types : `new_expense` · `reimbursement` · `collection_share_request` · `collection_share_accepted` · `calendar_share_request` · `calendar_share_accepted` · `calendar_event_shared`
+- `collection_share_request` / `calendar_share_request` : `data = { share_id, owner_id, recipient_name }`
+- `calendar_event_shared` : message simple, pas de `data`
 RLS : SELECT/UPDATE par `user_id` ; INSERT par tout utilisateur authentifié.
 
 ### `manga_collection`
@@ -122,6 +128,18 @@ RLS : CRUD par `user_id`.
 Contrainte unique : `(owner_id, shared_with_id)`
 RLS : owner peut select/insert/delete ; recipient peut select/update/delete
 - À l'acceptation, un partage inverse est créé automatiquement (bidirectionnel)
+
+### `calendar_shares`
+`id` · `owner_id` · `shared_with_id` · `status` (pending/accepted/declined) · `created_at`
+Contrainte unique : `(owner_id, shared_with_id)`
+RLS : owner peut select/insert/delete ; recipient peut select/update/delete
+- Même pattern bidirectionnel que `collection_shares`
+
+### `calendar_events`
+`id` · `user_id` · `title` · `event_date` (date) · `end_date` (date, nullable) · `start_time` (time, nullable) · `color` (text, nullable) · `is_shared` (bool) · `created_at`
+RLS : `owner_all` (CRUD par `user_id`) + `shared_read` (SELECT si partage accepté — tous les events visibles, pas seulement `is_shared=true`)
+- `is_shared = true` signifie "le partenaire participe" (affichage différencié), pas "le partenaire peut voir"
+- Tous les events sont visibles par le partenaire qui a un partage accepté
 
 ### `sport_sessions`
 `id` · `user_id` · `session_date` (date) · `name` (text, optionnel) · `created_at`
@@ -141,7 +159,7 @@ Toutes les tables ont RLS activé.
 
 - **Fetch data** : `useEffect` → `supabase.from(table).select()` directement dans les pages
 - **Optimistic updates** : certains composants mettent à jour le state local avant confirmation serveur
-- **Temps réel** : `useNotifications` et `Collection.jsx` utilisent `supabase.channel()` avec `postgres_changes`
+- **Temps réel** : `useNotifications`, `Collection.jsx` et `Calendar.jsx` utilisent `supabase.channel()` avec `postgres_changes`
 - **Auth guard** : `useAuth()` gère la session globalement, `<ProtectedRoute>` redirige vers `/login`
 - **Upsert** : utiliser `onConflict` pour les tables avec contrainte unique
 - **Images locales** : resize canvas → base64 JPEG (max 200×280, qualité 0.82) stocké dans `cover_url`
@@ -158,7 +176,7 @@ Header commun avec bouton menu hamburger + cloche notifications. Gère lui-même
 Position `fixed` (ne scroll pas avec la page). Navigation scrollable, déconnexion + version toujours visibles en bas.
 
 ### `<NotificationBell>`
-Utilisé en interne par `AppHeader`. Gère `collection_share_request` (boutons Accepter/Refuser). Ne pas importer directement dans les pages.
+Utilisé en interne par `AppHeader`. Gère `collection_share_request` et `calendar_share_request` (boutons Accepter/Refuser). Ne pas importer directement dans les pages.
 
 ### FormFields (`src/components/FormFields.jsx`)
 - `<TextField label required error ...props>`
@@ -291,6 +309,50 @@ Liste de souhaits sans notion de tomes ni de partage.
 - Bip sonore à la fin via Web Audio API (2 bips courts + 1 long)
 - Se ferme automatiquement 1,2s après le bip
 
+## Page Calendrier (`/calendar`)
+
+### Vue mensuelle
+- Navigation `< Mois Année >` sticky sous le header (`top-[76px]`) — flèches simples sans fond rond
+- Grille `grid-cols-7`, en-têtes L M M J V S D
+- Jour sélectionné : `bg-primary rounded-full text-white` · Aujourd'hui : `border border-primary rounded-full`
+- Barres d'événements sous les numéros (pas de dots) — span multi-jours entre colonnes
+- `toDateStr()` importé depuis `src/lib/date.js`
+
+### Barres d'événements
+- Approche `allBars` : tous les events traités uniformément, qu'ils durent 1 jour ou plusieurs
+- `endDs = e.end_date ?? e.event_date` → single-day = barre dans une seule cellule
+- Positionnement : `left: calc(startCol/7 * 100% + inset)` / `right: calc((6-endCol)/7 * 100% + inset)`
+- Border-radius : arrondi uniquement du côté où l'event commence/finit dans la semaine (plat si coupe la ligne)
+- Couleurs : mes events → violet (`rgba(108,99,255,0.82)`) ou cottagecore (`rgba(163,98,82,0.82)`) · partner → amber (`rgba(251,191,36,0.85)`)
+- Clic sur une barre → sélectionne le premier jour couvert dans la semaine
+
+### Panel événements du jour
+- S'affiche sous la grille quand un jour est sélectionné
+- Empty state : `bg-white/60 border rounded-[12px] h-[64px]` avec titre bold primary + sous-titre accent (même pattern que les autres écrans)
+- EventCard : fond `bg-soft` (violet) si mes events ou si je participe · fond `rgba(251,191,36,0.10)` (amber) si event partenaire sans participation
+- Badges : amber "Prénom participe" sur mes events `is_shared=true` · violet "Je participe" sur events partenaire `is_shared=true` · amber "Prénom" sur events partenaire `is_shared=false`
+- Boutons crayon + × uniquement sur mes propres events (pattern `style={{ minWidth:0, minHeight:0 }}`)
+
+### Partage (`CalendarShareSheet`)
+- Même pattern que Collection : recherche par profil, invitation → notification `calendar_share_request`
+- Bidirectionnel : `useNotifications.js` crée le partage inverse à l'acceptation
+- Suppression bidirectionnelle (supprime les deux sens en même temps)
+- ShareChip dans `titleExtra` du header
+
+### Formulaire ajout/édition
+- Titre (requis) · Date début · Date de fin (optionnelle) · Heure (optionnelle) · Toggle "[Prénom] participe" (visible si partage accepté)
+- `end_date` ignorée si ≤ `event_date` (stocké null)
+- `fetchEvents()` appelé directement après INSERT (pas de dépendance au temps réel pour le rafraîchissement immédiat)
+
+### Notifications
+- `calendar_share_request` : envoyé à l'invitation de partage
+- `calendar_share_accepted` : envoyé à l'acceptation (géré par `useNotifications.js`)
+- `calendar_event_shared` : envoyé au partenaire quand `is_shared=true` (ajout ou modif)
+
+### Cottagecore
+- EventCards : 4 variantes, `decoIdx = parseInt(id.replace(/-/g,'').slice(-2), 16) % 4`
+- Bouton fixe : 6 décos (même pattern Expenses/Sport)
+
 ## Comportements spécifiques Expenses
 
 - **Tags** : saisie libre, majuscules autorisées, Entrée/virgule pour valider. Suggestions issues des tags existants.
@@ -352,10 +414,11 @@ Exporte 4 SVG inline réutilisables : `LeafSmall` · `LeafBig` · `Flower` · `M
   - MangaCard (Collection) : 4 décos (4 patterns selon `_decoIdx % 4`)
   - ExpenseCard (Expenses) : 5 décos (4 patterns selon 2 derniers hex de l'UUID `% 4`)
   - Carte exercice (Sport) : 5 décos (5 patterns selon `exoIdx % 5`, `zIndex:20`)
+  - EventCard (Calendar) : 4 décos (4 patterns selon `parseInt(id.replace(/-/g,'').slice(-2), 16) % 4`)
   - Settings card : 8 décos
   - Home card : ~12 décos positionnées depuis le wrapper de page
 - **Bouton d'action fixe** : wrapper `<div className="fixed bottom-4 left-4 right-4 z-10" style={{height:48}}>` avec `<button>` pleine taille dedans + décos en `position:absolute` autour (`zIndex:11`). Nombre actuel :
-  - Checklist, Collection, Expenses : 6 décos chacun
+  - Checklist, Collection, Expenses, Calendar : 6 décos chacun
   - Sport : 7 décos
 - **Home** : décos positionnées par rapport au wrapper de page (`relative`), réparties sur les 4 bords de la `<main>` card (haut, bas, côté gauche ~35/50/65%, côté droit ~32/50/66%)
 

@@ -283,6 +283,7 @@ export default function Calendar() {
   })
   const [selectedDay, setSelectedDay] = useState(today)
   const [events, setEvents] = useState([])
+  const [sportDates, setSportDates] = useState(new Set())
   const [partnerProfiles, setPartnerProfiles] = useState([])
   const [showAddEvent, setShowAddEvent] = useState(false)
   const [showShare, setShowShare] = useState(false)
@@ -312,6 +313,22 @@ export default function Calendar() {
       .in('id', partnerIds)
     setPartnerProfiles(profiles ?? [])
   }, [user])
+
+  const fetchSportDates = useCallback(async () => {
+    if (!user) return
+    const year = currentMonth.getFullYear()
+    const month = currentMonth.getMonth()
+    const first = `${year}-${String(month + 1).padStart(2, '0')}-01`
+    const lastDay = new Date(year, month + 1, 0).getDate()
+    const last = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+    const { data } = await supabase
+      .from('sport_sessions')
+      .select('session_date')
+      .eq('user_id', user.id)
+      .gte('session_date', first)
+      .lte('session_date', last)
+    setSportDates(new Set((data ?? []).map(s => s.session_date)))
+  }, [user, currentMonth])
 
   const fetchEvents = useCallback(async () => {
     if (!user) return
@@ -351,7 +368,8 @@ export default function Calendar() {
   useEffect(() => {
     fetchPartners()
     fetchEvents()
-  }, [fetchPartners, fetchEvents])
+    fetchSportDates()
+  }, [fetchPartners, fetchEvents, fetchSportDates])
 
   useEffect(() => {
     if (!user) return
@@ -567,12 +585,18 @@ export default function Calendar() {
                     const ds = dayStr(d)
                     const isSelected = selectedDay === ds
                     const isToday = ds === today
+                    const hasSport = sportDates.has(ds)
                     return (
                       <div key={di} className="flex flex-col items-center py-1 cursor-pointer" onClick={() => handleDayTap(d)}>
-                        <div className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors
+                        <div className={`relative w-8 h-8 flex items-center justify-center rounded-full transition-colors
                           ${isSelected ? 'bg-primary' : isToday ? 'border border-primary' : 'active:bg-soft'}`}
                         >
-                          <span className={`text-[13px] font-medium leading-none ${isSelected ? 'text-white' : 'text-dark'}`}>
+                          {hasSport && !isSelected && (
+                            <div className="absolute inset-0 rounded-full"
+                              style={{ background: isCottagecore ? 'rgba(163,98,82,0.12)' : 'rgba(108,99,255,0.10)' }}
+                            />
+                          )}
+                          <span className={`relative text-[13px] font-medium leading-none ${isSelected ? 'text-white' : 'text-dark'}`}>
                             {d}
                           </span>
                         </div>

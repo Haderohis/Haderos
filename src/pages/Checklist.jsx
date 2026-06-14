@@ -928,7 +928,7 @@ export default function Checklist() {
         <div className="fixed bottom-4 left-4 right-4 z-10" style={{ height: 48 }}>
           <button onClick={viewMode === 'checklist' ? () => setShowCkModal(true) : openModal}
             className={`w-full h-full bg-primary rounded-[12px] text-white text-[14px] font-semibold${isCottagecore ? ' cc-border border-2' : ''}`}>
-            Nouvelle tâche
+            Ajouter une tâche
           </button>
           {isCottagecore && <>
             <LeafBig   width={22} rotate={20}  style={{ position:'absolute', left:-7,    top:-9,    zIndex:11, pointerEvents:'none' }} />

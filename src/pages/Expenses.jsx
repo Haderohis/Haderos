@@ -715,7 +715,7 @@ export default function Expenses() {
           onClick={() => setShowNew(true)}
           className={`w-full h-full bg-primary rounded-[12px] text-white text-[14px] font-semibold${isCottagecore ? ' cc-border border-2' : ''}`}
         >
-          Nouvelle dépense
+          Ajouter une dépense
         </button>
         {isCottagecore && <>
           <Mushroom  width={26} rotate={-15} style={{ position:'absolute', left:-7,    top:-12,   zIndex:11, pointerEvents:'none' }} />

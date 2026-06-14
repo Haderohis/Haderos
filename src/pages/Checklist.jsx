@@ -98,7 +98,7 @@ export default function Checklist() {
   useEffect(() => {
     if (!user || viewMode !== 'checklist') return
     supabase.from('checklist_items').select('*')
-      .eq('user_id', user.id).eq('item_date', currentDay)
+      .eq('user_id', user.id)
       .order('position', { ascending: true })
       .then(({ data }) => { if (data) setChecklistItems(data) })
   }, [user, viewMode, currentDay])
@@ -257,7 +257,7 @@ export default function Checklist() {
     if (!ckForm.label.trim()) return
     const { data } = await supabase.from('checklist_items').insert({
       user_id: user.id, label: ckForm.label.trim(),
-      group_name: ckForm.group || null, done: false, item_date: currentDay,
+      group_name: ckForm.group || null, done: false,
     }).select().single()
     if (data) setChecklistItems(prev => [...prev, data])
     setShowCkModal(false)
@@ -635,8 +635,8 @@ export default function Checklist() {
           </div>
         </div>
 
-        {/* Navigation jour */}
-        <div className="flex items-center justify-between px-4 mt-2 mb-2 h-11">
+        {/* Navigation jour — worklist uniquement */}
+        <div className={`flex items-center justify-between px-4 mt-2 mb-2 h-11 ${viewMode === 'checklist' ? 'hidden' : ''}`}>
           <button onClick={prevDay} disabled={!hasPrev}
             className={`min-w-[44px] min-h-[44px] flex items-center justify-center ${!hasPrev ? 'opacity-20' : ''}`}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -661,7 +661,7 @@ export default function Checklist() {
       </div>
 
       {/* Contenu */}
-      <main className={`absolute left-4 right-4 flex flex-col top-[248px] ${isToday ? 'bottom-[76px]' : 'bottom-4'}`}>
+      <main className={`absolute left-4 right-4 flex flex-col ${viewMode === 'checklist' ? 'top-[188px]' : 'top-[248px]'} ${isToday ? 'bottom-[76px]' : 'bottom-4'}`}>
         <div className="flex flex-col gap-3 overflow-y-auto flex-1">
 
           {/* ── Mode Checklist ── */}

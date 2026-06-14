@@ -12,6 +12,16 @@ import { toDateStr } from '../lib/date'
 const DAYS_FR = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
 
+function fmtDateRange(startDate, endDate) {
+  const s = new Date(startDate + 'T12:00:00')
+  const e = endDate ? new Date(endDate + 'T12:00:00') : null
+  if (!e) return s.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
+  const sameMonth = s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear()
+  const sDay = s.toLocaleDateString('fr-FR', { day: 'numeric', month: sameMonth ? undefined : 'long' })
+  const eDay = e.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
+  return `${sDay} – ${eDay}`
+}
+
 // 0=Lun … 6=Dim
 function weekday(date) {
   return (date.getDay() + 6) % 7
@@ -280,6 +290,7 @@ export default function Calendar() {
   // Form
   const [newTitle, setNewTitle] = useState('')
   const [newDate, setNewDate] = useState(today)
+  const [newEndDate, setNewEndDate] = useState('')
   const [newTime, setNewTime] = useState('')
   const [newShared, setNewShared] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -312,9 +323,9 @@ export default function Calendar() {
 
     const { data } = await supabase
       .from('calendar_events')
-      .select('id, user_id, title, event_date, start_time, is_shared')
-      .gte('event_date', first)
+      .select('id, user_id, title, event_date, end_date, start_time, is_shared')
       .lte('event_date', last)
+      .or(`end_date.gte.${first},and(end_date.is.null,event_date.gte.${first})`)
 
     if (!data) return
 
@@ -369,14 +380,17 @@ export default function Calendar() {
 
   const dayStr = (d) => `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 
+  const eventCoversDay = (e, ds) =>
+    e.event_date <= ds && (e.end_date ? e.end_date >= ds : e.event_date === ds)
+
   const eventsForDay = (d) => {
     const ds = dayStr(d)
-    return events.filter(e => e.event_date === ds)
+    return events.filter(e => eventCoversDay(e, ds))
   }
 
   const selectedEvents = selectedDay
     ? events
-        .filter(e => e.event_date === selectedDay)
+        .filter(e => eventCoversDay(e, selectedDay))
         .sort((a, b) => (a.start_time ?? '99:99').localeCompare(b.start_time ?? '99:99'))
     : []
 
@@ -388,6 +402,7 @@ export default function Calendar() {
   const openAddEvent = () => {
     setNewTitle('')
     setNewDate(selectedDay ?? today)
+    setNewEndDate('')
     setNewTime('')
     setNewShared(false)
     setTitleError('')
@@ -401,6 +416,7 @@ export default function Calendar() {
       user_id: user.id,
       title: newTitle.trim(),
       event_date: newDate,
+      end_date: (newEndDate && newEndDate > newDate) ? newEndDate : null,
       start_time: newTime || null,
       is_shared: newShared,
     })
@@ -414,6 +430,7 @@ export default function Calendar() {
     setEditingEvent(e)
     setNewTitle(e.title)
     setNewDate(e.event_date)
+    setNewEndDate(e.end_date ?? '')
     setNewTime(e.start_time ? e.start_time.slice(0, 5) : '')
     setNewShared(e.is_shared)
     setTitleError('')
@@ -425,6 +442,7 @@ export default function Calendar() {
     await supabase.from('calendar_events').update({
       title: newTitle.trim(),
       event_date: newDate,
+      end_date: (newEndDate && newEndDate > newDate) ? newEndDate : null,
       start_time: newTime || null,
       is_shared: newShared,
     }).eq('id', editingEvent.id)
@@ -621,8 +639,12 @@ export default function Calendar() {
                               </span>
                             )}
                           </div>
-                          {e.start_time && (
-                            <p className="text-[12px] text-muted mt-0.5">{e.start_time.slice(0, 5)}</p>
+                          {(e.end_date || e.start_time) && (
+                            <p className="text-[12px] text-muted mt-0.5">
+                              {e.end_date && fmtDateRange(e.event_date, e.end_date)}
+                              {e.end_date && e.start_time && ' · '}
+                              {e.start_time && e.start_time.slice(0, 5)}
+                            </p>
                           )}
                         </div>
                         {e.isMine && (
@@ -689,11 +711,22 @@ export default function Calendar() {
             error={titleError}
           />
 
-          <DateField
-            label="Date"
-            value={newDate}
-            onChange={e => setNewDate(e.target.value)}
-          />
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <DateField
+                label="Date de début"
+                value={newDate}
+                onChange={e => setNewDate(e.target.value)}
+              />
+            </div>
+            <div className="flex-1">
+              <DateField
+                label="Date de fin"
+                value={newEndDate}
+                onChange={e => setNewEndDate(e.target.value)}
+              />
+            </div>
+          </div>
 
           <div className="flex flex-col gap-1">
             <label className="text-[12px] font-medium text-muted">Heure (optionnelle)</label>
@@ -740,11 +773,22 @@ export default function Calendar() {
             error={titleError}
           />
 
-          <DateField
-            label="Date"
-            value={newDate}
-            onChange={e => setNewDate(e.target.value)}
-          />
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <DateField
+                label="Date de début"
+                value={newDate}
+                onChange={e => setNewDate(e.target.value)}
+              />
+            </div>
+            <div className="flex-1">
+              <DateField
+                label="Date de fin"
+                value={newEndDate}
+                onChange={e => setNewEndDate(e.target.value)}
+              />
+            </div>
+          </div>
 
           <div className="flex flex-col gap-1">
             <label className="text-[12px] font-medium text-muted">Heure (optionnelle)</label>

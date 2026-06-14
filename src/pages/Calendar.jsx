@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useProfile } from '../hooks/useProfile'
@@ -11,6 +11,47 @@ import { toDateStr } from '../lib/date'
 
 const DAYS_FR = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
+
+const EVENT_COLORS = [
+  { key: 'violet',  bar: 'rgba(108,99,255,0.82)',  card: 'rgb(var(--color-soft))',      text: 'white' },
+  { key: 'rose',    bar: 'rgba(236,72,153,0.82)',   card: 'rgba(236,72,153,0.10)',       text: 'white' },
+  { key: 'red',     bar: 'rgba(239,68,68,0.82)',    card: 'rgba(239,68,68,0.10)',        text: 'white' },
+  { key: 'orange',  bar: 'rgba(249,115,22,0.82)',   card: 'rgba(249,115,22,0.10)',       text: 'white' },
+  { key: 'green',   bar: 'rgba(34,197,94,0.82)',    card: 'rgba(34,197,94,0.10)',        text: 'white' },
+  { key: 'teal',    bar: 'rgba(20,184,166,0.82)',   card: 'rgba(20,184,166,0.10)',       text: 'white' },
+  { key: 'blue',    bar: 'rgba(59,130,246,0.82)',   card: 'rgba(59,130,246,0.10)',       text: 'white' },
+]
+const DEFAULT_COLOR = EVENT_COLORS[0]
+function getEventColor(colorKey, isMine, isCottagecore) {
+  if (!isMine) return { bar: 'rgba(251,191,36,0.85)', card: 'rgba(251,191,36,0.10)', text: '#78350f', cardText: null }
+  const found = EVENT_COLORS.find(c => c.key === colorKey)
+  const c = found ?? (isCottagecore ? { bar: 'rgba(163,98,82,0.82)', card: 'rgb(var(--color-soft))', text: 'white' } : DEFAULT_COLOR)
+  return { bar: c.bar, card: c.card, text: c.text, cardText: null }
+}
+
+function ColorPicker({ value, onChange }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="text-[12px] font-medium text-muted">Couleur</label>
+      <div className="flex gap-2 flex-wrap">
+        {EVENT_COLORS.map(c => (
+          <div
+            key={c.key}
+            onClick={() => onChange(c.key)}
+            className="w-8 h-8 rounded-full cursor-pointer flex items-center justify-center shrink-0"
+            style={{ background: c.bar, boxShadow: value === c.key ? `0 0 0 2px white, 0 0 0 4px ${c.bar}` : 'none' }}
+          >
+            {value === c.key && (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+              </svg>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 function fmtDateRange(startDate, endDate) {
   const s = new Date(startDate + 'T12:00:00')
@@ -294,6 +335,7 @@ export default function Calendar() {
   const [newEndDate, setNewEndDate] = useState('')
   const [newTime, setNewTime] = useState('')
   const [newShared, setNewShared] = useState(false)
+  const [newColor, setNewColor] = useState('violet')
   const [saving, setSaving] = useState(false)
   const [titleError, setTitleError] = useState('')
   const [editingEvent, setEditingEvent] = useState(null)
@@ -407,8 +449,41 @@ export default function Calendar() {
   while (cells.length % 7 !== 0) cells.push(null)
 
   // Découpage en semaines pour le rendu des barres multi-jours
-  const weeks = []
-  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7))
+  const weeks = useMemo(() => {
+    const w = []
+    for (let i = 0; i < cells.length; i += 7) w.push(cells.slice(i, i + 7))
+    return w
+  }, [cells.length, year, month, firstWeekday, daysInMonth]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Barres d'événements pré-calculées par semaine
+  const allBarsPerWeek = useMemo(() => {
+    const ds = (d) => `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    return weeks.map(week => {
+      const firstNonNullIdx = week.findIndex(d => d !== null)
+      const lastNonNullIdx = 6 - [...week].reverse().findIndex(d => d !== null)
+      if (firstNonNullIdx < 0) return []
+      const weekFirstDs = ds(week[firstNonNullIdx])
+      const weekLastDs = lastNonNullIdx <= 6 ? ds(week[lastNonNullIdx]) : null
+      if (!weekLastDs) return []
+      return events
+        .filter(e => {
+          const endDs = e.end_date ?? e.event_date
+          return e.event_date <= weekLastDs && endDs >= weekFirstDs
+        })
+        .map(e => {
+          const endDs = e.end_date ?? e.event_date
+          const startsInWeek = e.event_date >= weekFirstDs
+          const endsInWeek = endDs <= weekLastDs
+          const startCol = startsInWeek
+            ? week.findIndex(d => d !== null && ds(d) === e.event_date)
+            : firstNonNullIdx
+          const endCol = endsInWeek
+            ? week.findIndex(d => d !== null && ds(d) === endDs)
+            : lastNonNullIdx
+          return { ...e, startCol: Math.max(0, startCol), endCol: Math.min(6, endCol), startsInWeek, endsInWeek }
+        })
+    })
+  }, [events, weeks, year, month])
 
   const prevMonth = () => setCurrentMonth(new Date(year, month - 1, 1))
   const nextMonth = () => setCurrentMonth(new Date(year, month + 1, 1))
@@ -440,6 +515,7 @@ export default function Calendar() {
     setNewEndDate('')
     setNewTime('')
     setNewShared(false)
+    setNewColor('violet')
     setTitleError('')
     setShowAddEvent(true)
   }
@@ -454,6 +530,7 @@ export default function Calendar() {
       end_date: (newEndDate && newEndDate > newDate) ? newEndDate : null,
       start_time: newTime || null,
       is_shared: newShared,
+      color: newColor,
     })
     if (newShared) await notifyPartner(newTitle.trim(), newDate)
     await fetchEvents()
@@ -468,6 +545,7 @@ export default function Calendar() {
     setNewEndDate(e.end_date ?? '')
     setNewTime(e.start_time ? e.start_time.slice(0, 5) : '')
     setNewShared(e.is_shared)
+    setNewColor(e.color ?? 'violet')
     setTitleError('')
   }
 
@@ -480,6 +558,7 @@ export default function Calendar() {
       end_date: (newEndDate && newEndDate > newDate) ? newEndDate : null,
       start_time: newTime || null,
       is_shared: newShared,
+      color: newColor,
     }).eq('id', editingEvent.id)
     if (newShared) await notifyPartner(newTitle.trim(), newDate, true)
     await fetchEvents()
@@ -566,28 +645,7 @@ export default function Calendar() {
           {/* Semaines */}
           {weeks.map((week, weekIdx) => {
             const firstNonNullIdx = week.findIndex(d => d !== null)
-            const lastNonNullIdx = 6 - [...week].reverse().findIndex(d => d !== null)
-            const weekFirstDs = firstNonNullIdx >= 0 ? dayStr(week[firstNonNullIdx]) : null
-            const weekLastDs = lastNonNullIdx <= 6 ? dayStr(week[lastNonNullIdx]) : null
-
-            // Toutes les barres (1 jour ou plusieurs)
-            const allBars = events
-              .filter(e => {
-                const endDs = e.end_date ?? e.event_date
-                return weekFirstDs && weekLastDs && e.event_date <= weekLastDs && endDs >= weekFirstDs
-              })
-              .map(e => {
-                const endDs = e.end_date ?? e.event_date
-                const startsInWeek = e.event_date >= weekFirstDs
-                const endsInWeek = endDs <= weekLastDs
-                const startCol = startsInWeek
-                  ? week.findIndex(d => d !== null && dayStr(d) === e.event_date)
-                  : firstNonNullIdx
-                const endCol = endsInWeek
-                  ? week.findIndex(d => d !== null && dayStr(d) === endDs)
-                  : lastNonNullIdx
-                return { ...e, startCol: Math.max(0, startCol), endCol: Math.min(6, endCol), startsInWeek, endsInWeek }
-              })
+            const allBars = allBarsPerWeek[weekIdx] ?? []
 
             return (
               <div key={weekIdx}>
@@ -648,14 +706,12 @@ export default function Calendar() {
                           <div
                             className="h-[16px] w-full flex items-center justify-center px-1 overflow-hidden"
                             style={{
-                              background: e.isMine
-                                ? isCottagecore ? 'rgba(163,98,82,0.82)' : 'rgba(108,99,255,0.82)'
-                                : 'rgba(251,191,36,0.85)',
+                              background: getEventColor(e.color, e.isMine, isCottagecore).bar,
                               borderRadius: `${e.startsInWeek ? 4 : 0}px ${e.endsInWeek ? 4 : 0}px ${e.endsInWeek ? 4 : 0}px ${e.startsInWeek ? 4 : 0}px`,
                             }}
                           >
                             <span className="text-[10px] font-semibold truncate leading-none"
-                              style={{ color: e.isMine ? 'white' : '#78350f' }}>
+                              style={{ color: getEventColor(e.color, e.isMine, isCottagecore).text }}>
                               {e.title}
                             </span>
                           </div>
@@ -689,13 +745,7 @@ export default function Calendar() {
                     <div
                       key={e.id}
                       className={`relative rounded-[12px] px-4 py-3 ${isCottagecore ? 'cc-border' : ''}`}
-                      style={
-                        // Events où je participe (les miens ou ceux du partenaire avec is_shared=true) → violet
-                        // Events du partenaire sans participation → amber
-                        e.isMine || e.is_shared
-                          ? { background: 'rgb(var(--color-soft))' }
-                          : { background: 'rgba(251,191,36,0.10)' }
-                      }
+                      style={{ background: getEventColor(e.color, e.isMine, isCottagecore).card }}
                     >
                       {isCottagecore && EVENT_DECOS[decoIdx]}
                       <div className="flex items-center justify-between gap-2">
@@ -826,6 +876,8 @@ export default function Calendar() {
             />
           </div>
 
+          <ColorPicker value={newColor} onChange={setNewColor} />
+
           {hasPartner && (
             <div className="flex items-center justify-between gap-3">
               <div className="flex-1 min-w-0">
@@ -887,6 +939,8 @@ export default function Calendar() {
               className="h-12 bg-soft rounded-[10px] px-3 text-[14px] text-dark outline-none [color-scheme:light]"
             />
           </div>
+
+          <ColorPicker value={newColor} onChange={setNewColor} />
 
           {hasPartner && (
             <div className="flex items-center justify-between gap-3">

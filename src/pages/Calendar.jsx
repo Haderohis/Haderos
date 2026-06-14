@@ -282,6 +282,7 @@ export default function Calendar() {
   const [newShared, setNewShared] = useState(false)
   const [saving, setSaving] = useState(false)
   const [titleError, setTitleError] = useState('')
+  const [editingEvent, setEditingEvent] = useState(null)
 
   const fetchPartners = useCallback(async () => {
     if (!user) return
@@ -404,6 +405,29 @@ export default function Calendar() {
     await fetchEvents()
     setSaving(false)
     setShowAddEvent(false)
+  }
+
+  const openEditEvent = (e) => {
+    setEditingEvent(e)
+    setNewTitle(e.title)
+    setNewDate(e.event_date)
+    setNewTime(e.start_time ? e.start_time.slice(0, 5) : '')
+    setNewShared(e.is_shared)
+    setTitleError('')
+  }
+
+  const handleSaveEvent = async () => {
+    if (!newTitle.trim()) { setTitleError('Le titre est requis'); return }
+    setSaving(true)
+    await supabase.from('calendar_events').update({
+      title: newTitle.trim(),
+      event_date: newDate,
+      start_time: newTime || null,
+      is_shared: newShared,
+    }).eq('id', editingEvent.id)
+    await fetchEvents()
+    setSaving(false)
+    setEditingEvent(null)
   }
 
   const handleDeleteEvent = async (id) => {
@@ -581,14 +605,24 @@ export default function Calendar() {
                           )}
                         </div>
                         {e.isMine && (
-                          <button
-                            onClick={() => handleDeleteEvent(e.id)}
-                            className="shrink-0 w-7 h-7 flex items-center justify-center rounded-full bg-white/70 text-muted opacity-50 active:opacity-100"
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                              <path d="M18 6L6 18M6 6l12 12" />
-                            </svg>
-                          </button>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              onClick={() => openEditEvent(e)}
+                              className="w-7 h-7 flex items-center justify-center rounded-full bg-white/70 text-muted opacity-50 active:opacity-100"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteEvent(e.id)}
+                              className="w-7 h-7 flex items-center justify-center rounded-full bg-white/70 text-muted opacity-50 active:opacity-100"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                <path d="M18 6L6 18M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -665,6 +699,57 @@ export default function Calendar() {
 
           <SubmitButton onClick={handleAddEvent} disabled={saving || !newTitle.trim()}>
             {saving ? 'Ajout...' : 'Ajouter'}
+          </SubmitButton>
+        </BottomSheet>
+      )}
+
+      {/* BottomSheet : Modifier un événement */}
+      {editingEvent && (
+        <BottomSheet onClose={() => setEditingEvent(null)}>
+          <h2 className="text-[17px] font-bold text-dark">Modifier l'événement</h2>
+
+          <TextField
+            label="Titre"
+            required
+            value={newTitle}
+            onChange={e => { setNewTitle(e.target.value); if (titleError) setTitleError('') }}
+            placeholder="Ex : Anniversaire, RDV médecin..."
+            error={titleError}
+          />
+
+          <DateField
+            label="Date"
+            value={newDate}
+            onChange={e => setNewDate(e.target.value)}
+          />
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[12px] font-medium text-muted">Heure (optionnelle)</label>
+            <input
+              type="time"
+              value={newTime}
+              onChange={e => setNewTime(e.target.value)}
+              className="h-12 bg-soft rounded-[10px] px-3 text-[14px] text-dark outline-none [color-scheme:light]"
+            />
+          </div>
+
+          {hasPartner && (
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-medium text-dark">{partnerFirstName} participe</p>
+                <p className="text-[11px] text-muted mt-0.5">L'événement apparaît différemment pour {partnerFirstName}</p>
+              </div>
+              <div
+                onClick={() => setNewShared(v => !v)}
+                className={`relative w-11 h-6 rounded-full cursor-pointer transition-colors shrink-0 ${newShared ? 'bg-primary' : 'bg-[#d5d3dc]'}`}
+              >
+                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${newShared ? 'translate-x-5' : 'translate-x-0.5'}`} />
+              </div>
+            </div>
+          )}
+
+          <SubmitButton onClick={handleSaveEvent} disabled={saving || !newTitle.trim()}>
+            {saving ? 'Enregistrement...' : 'Enregistrer'}
           </SubmitButton>
         </BottomSheet>
       )}

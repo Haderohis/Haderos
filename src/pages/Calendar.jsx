@@ -708,9 +708,8 @@ export default function Calendar() {
                   })}
                 </div>
 
-                {/* Barres (tous les events) */}
-                {allBars.length > 0 && (
-                  <div className="relative mb-1" style={{ height: (Math.max(...allBars.map(e => e.lane), -1) + 1) * 20 }}>
+                {/* Barres (tous les events) — hauteur min 20px même sans event */}
+                <div className="relative mb-1" style={{ height: Math.max(1, Math.max(...allBars.map(e => e.lane), -1) + 1) * 20 }}>
                     {allBars.map((e) => {
                       const endDs = e.end_date ?? e.event_date
                       return (
@@ -742,8 +741,7 @@ export default function Calendar() {
                         </div>
                       )
                     })}
-                  </div>
-                )}
+                </div>
               </div>
             )
           })}

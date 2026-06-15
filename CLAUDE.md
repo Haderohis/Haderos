@@ -82,7 +82,8 @@ supabase/
 ├── checklist_items_migration.sql       # Table checklist_items (mode Checklist de /checklist)
 ├── calendar_migration.sql              # Tables calendar_shares + calendar_events + RLS
 ├── calendar_add_end_date.sql           # ALTER calendar_events ADD COLUMN end_date date NULL
-└── calendar_shared_read_fix.sql        # Recrée policy shared_read sans filtre is_shared
+├── calendar_shared_read_fix.sql        # Recrée policy shared_read sans filtre is_shared
+└── presentiel_migration.sql            # Table presentiel_days + RLS
 ```
 
 ## Schéma base de données (Supabase)
@@ -141,6 +142,11 @@ RLS : owner peut select/insert/delete ; recipient peut select/update/delete
 RLS : `owner_all` (CRUD par `user_id`) + `shared_read` (SELECT si partage accepté — tous les events visibles, pas seulement `is_shared=true`)
 - `is_shared = true` signifie "le partenaire participe" (affichage différencié), pas "le partenaire peut voir"
 - Tous les events sont visibles par le partenaire qui a un partage accepté
+
+### `presentiel_days`
+`id` · `user_id` · `day_date` (date) · `created_at`
+Contrainte unique : `(user_id, day_date)`
+RLS : CRUD par `user_id`
 
 ### `sport_sessions`
 `id` · `user_id` · `session_date` (date) · `name` (text, optionnel) · `created_at`
@@ -429,6 +435,14 @@ Liste de souhaits sans notion de tomes ni de partage.
 - `calendar_share_request` : envoyé à l'invitation de partage
 - `calendar_share_accepted` : envoyé à l'acceptation (géré par `useNotifications.js`)
 - `calendar_event_shared` : envoyé au partenaire quand `is_shared=true` (ajout ou modif)
+
+### Présentiel
+- Toggle discret à droite du label de date dans le panel du jour — icône maison + texte "Présentiel"
+- Inactif : opacité 0.4 · Actif : opacité 1, icône remplie
+- Petit point (w-1 h-1) sous le numéro de jour sur la grille, opacité ~0.45
+- Table `presentiel_days` : `user_id` + `day_date` (unique), RLS CRUD par `user_id`
+- Migration : `supabase/presentiel_migration.sql`
+- Toggle optimiste (state local mis à jour avant confirmation Supabase)
 
 ### Icône sport sur le calendrier
 - Icône haltère (strength) ou coureur (cardio) à `opacity: 0.45` dans le fond du numéro de jour

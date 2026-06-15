@@ -1,0 +1,12 @@
+<IfModule mod_rewrite.c>
+  Options -MultiViews
+  RewriteEngine On
+  RewriteBase /party/
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ /party/index.html [QSA,L]
+</IfModule>
+
+<IfModule !mod_rewrite.c>
+  ErrorDocument 404 /party/index.html
+</IfModule>

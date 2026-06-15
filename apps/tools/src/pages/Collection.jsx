@@ -755,7 +755,7 @@ export default function Collection() {
     const displayName = (p) => p?.display_name || `${p?.first_name ?? ''} ${p?.last_name ?? ''}`.trim() || 'Utilisateur'
 
     const [{ data: myItems }, { data: shares }] = await Promise.all([
-      supabase.from('manga_collection').select('*').eq('user_id', user.id).eq('category', category).order('created_at', { ascending: false }),
+      supabase.from('manga_collection').select('id, user_id, mal_id, title, total_volumes, owned_volumes, cover_url, ongoing, category').eq('user_id', user.id).eq('category', category).order('created_at', { ascending: false }),
       supabase.from('collection_shares').select('owner_id').eq('shared_with_id', user.id).eq('status', 'accepted'),
     ])
 
@@ -764,7 +764,7 @@ export default function Collection() {
 
     if (ownerIds.length > 0) {
       const [{ data: shared }, { data: profiles }] = await Promise.all([
-        supabase.from('manga_collection').select('*').in('user_id', ownerIds).eq('category', category),
+        supabase.from('manga_collection').select('id, user_id, mal_id, title, total_volumes, owned_volumes, cover_url, ongoing, category').in('user_id', ownerIds).eq('category', category),
         supabase.from('profiles').select('id, display_name, first_name, last_name').in('id', ownerIds),
       ])
       sharedItems = shared ?? []

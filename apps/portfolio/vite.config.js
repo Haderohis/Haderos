@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: './', // chemins relatifs requis pour hébergement mutualisé o2switch (cPanel)
+  base: '/',
   server: {
     port: 5173,
     host: true,

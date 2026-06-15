@@ -232,27 +232,30 @@ export default function Sport() {
         setDayExercises(list)
         setLoading(false)
 
-        // Load last perfs for all exercises (parallel)
+        // Load last perfs for all exercises — one query per unique name, then pick most recent
         const uniqueNames = [...new Set(list.map(e => e.name))]
-        const results = await Promise.all(
-          uniqueNames.map(name =>
-            supabase
-              .from('sport_sessions')
-              .select(`id, session_date, sport_exercises!inner(name, type, sport_sets(set_number, reps, weight_kg, duration_seconds, kcal))`)
-              .eq('user_id', user.id)
-              .eq('sport_exercises.name', name)
-              .neq('id', sid)
-              .order('session_date', { ascending: false })
-              .limit(1)
-              .then(({ data }) => ({ name, data }))
-          )
-        )
+        const { data: perfRows } = await supabase
+          .from('sport_exercises')
+          .select('name, type, sport_sets(set_number, reps, weight_kg, duration_seconds, kcal), sport_sessions!inner(id, session_date, user_id)')
+          .eq('sport_sessions.user_id', user.id)
+          .neq('sport_sessions.id', sid)
+          .in('name', uniqueNames)
+          .order('sport_sessions(session_date)', { ascending: false })
+
         const perfs = {}
-        for (const { name, data } of results) {
+        for (const name of uniqueNames) {
+          const rows = (perfRows ?? []).filter(r => r.name === name)
+          if (!rows.length) { perfs[name] = null; continue }
+          // pick the row with the most recent session_date
+          const best = rows.reduce((a, b) =>
+            (a.sport_sessions?.session_date ?? '') >= (b.sport_sessions?.session_date ?? '') ? a : b
+          )
           const exo = list.find(e => e.name === name)
-          perfs[name] = data?.length
-            ? { date: data[0].session_date, sets: data[0].sport_exercises[0].sport_sets, type: exo?.type }
-            : null
+          perfs[name] = {
+            date: best.sport_sessions?.session_date,
+            sets: best.sport_sets,
+            type: exo?.type,
+          }
         }
         setLastPerfs(perfs)
       })

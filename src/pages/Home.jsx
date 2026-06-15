@@ -85,6 +85,9 @@ export default function Home() {
   const [overrideMealId, setOverrideMealId] = useState(() => getSavedOverride())
   const [liked, setLiked] = useState(getLiked)
   const [showLiked, setShowLiked] = useState(false)
+  const [showAdd, setShowAdd] = useState(false)
+  const [addForm, setAddForm] = useState({ name: '', desc: '' })
+  const [showMenu, setShowMenu] = useState(false)
 
   const todayMeal = MEALS.find(m => m.id === overrideMealId) ?? baseMeal
   const isLiked = liked.some(m => m.id === todayMeal.id)
@@ -122,6 +125,24 @@ export default function Home() {
     })
   }
 
+  function addCustomMeal() {
+    if (!addForm.name.trim()) return
+    const custom = {
+      id: `custom_${Date.now()}`,
+      emoji: '🍽️',
+      name: addForm.name.trim(),
+      desc: addForm.desc.trim(),
+      likedAt: new Date().toISOString(),
+    }
+    setLiked(prev => {
+      const next = [custom, ...prev]
+      saveLiked(next)
+      return next
+    })
+    setAddForm({ name: '', desc: '' })
+    setShowAdd(false)
+  }
+
   return (
     <div className="relative w-full h-dvh overflow-hidden bg-base">
 
@@ -133,26 +154,19 @@ export default function Home() {
 
       <AppHeader title="Toolbox" />
 
-      {/* Décos cottagecore */}
-      {isCottagecore && <>
-        <LeafBig   width={30} rotate={-25} style={{ position:'absolute', top:80,  left:4,    zIndex:20, pointerEvents:'none' }} />
-        <Flower    width={20} rotate={-15} style={{ position:'absolute', top:80,  left:'40%',zIndex:20, pointerEvents:'none' }} />
-        <LeafSmall width={14} rotate={-40} style={{ position:'absolute', top:84,  right:6,   zIndex:20, pointerEvents:'none' }} />
-        <Mushroom  width={26} rotate={20}  style={{ position:'absolute', top:'35%', left:4,   zIndex:20, pointerEvents:'none' }} />
-        <LeafSmall width={16} rotate={-55} style={{ position:'absolute', top:'50%', left:6,   zIndex:20, pointerEvents:'none' }} />
-        <Flower    width={18} rotate={40}  style={{ position:'absolute', top:'65%', left:4,   zIndex:20, pointerEvents:'none' }} />
-        <LeafBig   width={26} rotate={30}  style={{ position:'absolute', top:'32%', right:4,  zIndex:20, pointerEvents:'none' }} />
-        <Flower    width={18} rotate={-20} style={{ position:'absolute', top:'50%', right:6,  zIndex:20, pointerEvents:'none' }} />
-        <LeafSmall width={15} rotate={70}  style={{ position:'absolute', top:'66%', right:4,  zIndex:20, pointerEvents:'none' }} />
-        <LeafSmall width={18} rotate={-60} style={{ position:'absolute', bottom:6,  left:4,    zIndex:20, pointerEvents:'none' }} />
-        <LeafBig   width={24} rotate={15}  style={{ position:'absolute', bottom:4,  left:'42%',zIndex:20, pointerEvents:'none' }} />
-        <Mushroom  width={20} rotate={-12} style={{ position:'absolute', bottom:6,  right:4,   zIndex:20, pointerEvents:'none' }} />
-      </>}
 
       <div className="absolute top-[92px] left-4 right-4 bottom-4 flex flex-col gap-3">
 
         {/* Bloc bonne journée */}
-        <div className={`bg-white/55 border backdrop-blur-md rounded-[20px] flex flex-col items-center justify-center gap-2 py-6 px-6 ${isCottagecore ? 'cc-border' : 'border-white/85'}`}>
+        <div className={`bg-white/55 border backdrop-blur-md rounded-[20px] flex flex-col items-center justify-center gap-2 py-6 px-6 relative ${isCottagecore ? 'cc-border' : 'border-white/85'}`}>
+          {isCottagecore && <>
+            <LeafBig   width={28} rotate={-25} style={{ position:'absolute', left:-10,  top:-10,   zIndex:10, pointerEvents:'none' }} />
+            <Flower    width={18} rotate={20}  style={{ position:'absolute', left:'38%',top:-10,   zIndex:10, pointerEvents:'none' }} />
+            <LeafSmall width={14} rotate={-40} style={{ position:'absolute', right:-8,  top:-8,    zIndex:10, pointerEvents:'none' }} />
+            <Mushroom  width={20} rotate={-12} style={{ position:'absolute', left:-9,   bottom:-9, zIndex:10, pointerEvents:'none' }} />
+            <LeafSmall width={13} rotate={60}  style={{ position:'absolute', left:'45%',bottom:-7, zIndex:10, pointerEvents:'none' }} />
+            <Flower    width={16} rotate={30}  style={{ position:'absolute', right:-8,  bottom:-8, zIndex:10, pointerEvents:'none' }} />
+          </>}
           <p className="text-[22px] font-bold text-dark/90">Bonne journée</p>
           <p className="text-[13px] text-muted text-center leading-snug">
             Ouvre le menu pour accéder<br />à tes outils
@@ -160,7 +174,15 @@ export default function Home() {
         </div>
 
         {/* Bloc plat du jour */}
-        <div className={`bg-white/55 border backdrop-blur-md rounded-[20px] px-4 py-4 flex flex-col gap-2 ${isCottagecore ? 'cc-border' : 'border-white/85'}`}>
+        <div className={`bg-white/55 border backdrop-blur-md rounded-[20px] px-4 py-4 flex flex-col gap-2 relative ${isCottagecore ? 'cc-border' : 'border-white/85'}`}>
+          {isCottagecore && <>
+            <Mushroom  width={24} rotate={15}  style={{ position:'absolute', left:-10,  top:-9,    zIndex:10, pointerEvents:'none' }} />
+            <LeafBig   width={22} rotate={-15} style={{ position:'absolute', left:'40%',top:-9,    zIndex:10, pointerEvents:'none' }} />
+            <Flower    width={16} rotate={-30} style={{ position:'absolute', right:-8,  top:-8,    zIndex:10, pointerEvents:'none' }} />
+            <LeafSmall width={14} rotate={55}  style={{ position:'absolute', left:-7,   bottom:-7, zIndex:10, pointerEvents:'none' }} />
+            <Flower    width={15} rotate={20}  style={{ position:'absolute', left:'42%',bottom:-8, zIndex:10, pointerEvents:'none' }} />
+            <LeafBig   width={22} rotate={10}  style={{ position:'absolute', right:-9,  bottom:-9, zIndex:10, pointerEvents:'none' }} />
+          </>}
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-col gap-0.5 flex-1 min-w-0">
               <span className={`text-[10px] font-semibold uppercase tracking-wide ${isCottagecore ? 'text-[#a36252]' : 'text-[#6c63ff]'}`}>Plat du jour</span>
@@ -169,31 +191,104 @@ export default function Home() {
               </span>
               <span className="text-[12px] text-muted leading-snug mt-0.5">{todayMeal.desc}</span>
             </div>
-            <div className="flex items-center gap-1 shrink-0 mt-0.5">
+            <div className="flex items-center gap-0.5 shrink-0 mt-0.5">
+              {/* Cœur — hors dropdown */}
               <button onClick={toggleLike} style={{ minWidth: 0, minHeight: 0 }} className="p-1">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill={isLiked ? '#e11d48' : 'none'} stroke={isLiked ? '#e11d48' : '#736694'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                 </svg>
               </button>
-              <button onClick={regenerate} style={{ minWidth: 0, minHeight: 0 }} className="p-1">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#736694" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M23 4v6h-6" />
-                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-                </svg>
-              </button>
-              {liked.length > 0 && (
-                <button onClick={() => setShowLiked(true)} style={{ minWidth: 0, minHeight: 0 }} className="p-1">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#736694" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 11l3 3L22 4" />
-                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+
+              {/* Bouton ⋮ + dropdown */}
+              <div className="relative">
+                <button onClick={() => setShowMenu(m => !m)} style={{ minWidth: 0, minHeight: 0 }} className="p-1">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="#736694">
+                    <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
                   </svg>
                 </button>
-              )}
+                {showMenu && (
+                  <>
+                    {/* overlay transparent pour fermer */}
+                    <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+                    <div className="absolute right-0 top-8 z-50 bg-white rounded-[12px] shadow-lg border border-black/5 py-1 w-48 flex flex-col">
+                      <button
+                        onClick={() => { regenerate(); setShowMenu(false) }}
+                        style={{ minWidth: 0, minHeight: 0 }}
+                        className="flex items-center gap-2.5 px-3 py-2.5 text-[13px] text-dark hover:bg-[#f2edfa] text-left"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#736694" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M23 4v6h-6" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                        </svg>
+                        Autre suggestion
+                      </button>
+                      <button
+                        onClick={() => { setShowAdd(true); setShowMenu(false) }}
+                        style={{ minWidth: 0, minHeight: 0 }}
+                        className="flex items-center gap-2.5 px-3 py-2.5 text-[13px] text-dark hover:bg-[#f2edfa] text-left"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#736694" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+                        </svg>
+                        Ajouter un plat
+                      </button>
+                      {liked.length > 0 && (
+                        <button
+                          onClick={() => { setShowLiked(true); setShowMenu(false) }}
+                          style={{ minWidth: 0, minHeight: 0 }}
+                          className="flex items-center gap-2.5 px-3 py-2.5 text-[13px] text-dark hover:bg-[#f2edfa] text-left"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#736694" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                          </svg>
+                          Mes favoris ({liked.length})
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
       </div>
+
+      {/* BottomSheet ajout plat custom */}
+      {showAdd && (
+        <BottomSheet onClose={() => { setShowAdd(false); setAddForm({ name: '', desc: '' }) }}>
+          <h2 className="text-[17px] font-bold text-dark">Ajouter un plat</h2>
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-[12px] font-semibold text-muted">Nom du plat *</label>
+              <input
+                autoFocus
+                value={addForm.name}
+                onChange={e => setAddForm(f => ({ ...f, name: e.target.value }))}
+                onKeyDown={e => e.key === 'Enter' && addCustomMeal()}
+                placeholder="Ex : Gratin dauphinois"
+                className="h-12 rounded-[10px] bg-[#f2edfa] px-3 text-[14px] text-dark outline-none"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[12px] font-semibold text-muted">Description (optionnelle)</label>
+              <input
+                value={addForm.desc}
+                onChange={e => setAddForm(f => ({ ...f, desc: e.target.value }))}
+                onKeyDown={e => e.key === 'Enter' && addCustomMeal()}
+                placeholder="Ingrédients, sauce…"
+                className="h-12 rounded-[10px] bg-[#f2edfa] px-3 text-[14px] text-dark outline-none"
+              />
+            </div>
+            <button
+              onClick={addCustomMeal}
+              disabled={!addForm.name.trim()}
+              className="h-12 rounded-[12px] bg-[#6c63ff] text-white font-semibold text-[15px] disabled:opacity-40"
+            >
+              Ajouter aux favoris
+            </button>
+          </div>
+        </BottomSheet>
+      )}
 
       {/* BottomSheet plats likés */}
       {showLiked && (

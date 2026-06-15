@@ -187,6 +187,23 @@ Utilisé en interne par `AppHeader`. Gère `collection_share_request` et `calend
 - `<SubmitButton disabled onClick>`
 - `<FieldLabel required>`
 
+## Page Home (`/`)
+
+### Layout
+- Deux cards glassmorphism empilées : **Bonne journée** (texte d'accueil) + **Plat du jour** (en dessous)
+- Container `absolute top-[92px] left-4 right-4 bottom-4 flex flex-col gap-3`
+
+### Plat du jour
+- Sélection déterministe par `dayOfYear % MEALS.length` (30 plats en rotation)
+- Bases : riz · pâtes · quinoa · poulet · viande hachée · poisson blanc + plats occasionnels (pizza, wraps, bobun)
+- **Régénérer (↺)** : tire aléatoirement un autre plat, persisté dans `localStorage('home_meal_override')` avec la date du jour — reset automatique le lendemain
+- **Liker (❤️)** : toggle, persisté dans `localStorage('home_liked_meals')`
+- **Favoris (☑)** : icône visible seulement si `liked.length > 0` — ouvre un BottomSheet listant les plats likés avec bouton dé-liker
+
+### Couleurs thème
+- Label "Plat du jour" et accent : `#6c63ff` violet · `#a36252` cottagecore
+- Fond items favoris BottomSheet : `#f2edfa` violet · `#f5ede6` cottagecore
+
 ## Page Checklist (`/checklist`)
 
 ### Switch Checklist / Worklist

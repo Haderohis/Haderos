@@ -105,7 +105,8 @@ export default function Login() {
   const handleForgot = async () => {
     if (!email) { setError('Entre ton adresse email d\'abord.'); return }
     setLoading(true)
-    const redirectTo = window.location.origin + import.meta.env.BASE_URL + 'reset-password'
+    const base = import.meta.env.VITE_APP_URL ?? (window.location.origin + import.meta.env.BASE_URL)
+    const redirectTo = base.replace(/\/$/, '') + '/reset-password'
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
     if (error) { setError(error.message) } else { setInfo('Email de réinitialisation envoyé !') }
     setLoading(false)

@@ -187,6 +187,37 @@ Utilisé en interne par `AppHeader`. Gère `collection_share_request` et `calend
 - `<SubmitButton disabled onClick>`
 - `<FieldLabel required>`
 
+## Page Login (`/login`)
+
+### Design
+- Fond `bg-[#f6f4f9]` avec 4 blobs absolus floutés (`blur-3xl`, `opacity-20/30`) : violet haut-gauche, indigo haut-droite, jaune bas-droite, vert bas-gauche
+- Logo : icône toolbox SVG blanche sur fond `#6c63ff` `rounded-[14px]` 56×56px + titre "HadeTools" + sous-titre selon le mode
+- Card centrale : `bg-white/75 backdrop-blur-md rounded-[20px] shadow-sm border border-white/60 p-6`
+- Inputs : `bg-white border border-[#e8e2f5] rounded-[10px] h-12`, labels `text-[#6c63ff] text-xs font-medium`
+- Bouton primaire : `bg-[#6c63ff] text-white rounded-[12px] h-12 font-semibold`
+- Bouton outline (switch mode) : `border border-[#6c63ff] text-[#6c63ff] rounded-[12px] h-12 bg-white/60`
+
+### Deux modes dans le même fichier (`mode` state : `'login' | 'register'`)
+
+**Mode connexion**
+- Email + mot de passe (toggle show/hide via `EyeIcon`)
+- Lien "Mot de passe oublié ?" → `supabase.auth.resetPasswordForEmail(email)`
+- Bouton "Se connecter" → `signIn` depuis `useAuth`
+- Lien "S'inscrire" → bascule en mode `register`
+
+**Mode inscription**
+- Pseudo + Prénom/Nom (grid 2 colonnes) + Email + Mot de passe + Confirmation
+- Indicateur de force : 3 barres colorées (rouge/orange/vert), score = longueur ≥ 8 + majuscule + chiffre
+- Checkbox CGU custom : `<div>` 20×20px (pas `<button>` — règle globale min-height:44px sur button), carré violet avec coche SVG blanche
+- Bouton "Créer mon compte" → `signUp` depuis `useAuth` (crée le compte Supabase + upsert profil)
+- Lien "Déjà un compte ?" → bascule en mode `login`
+
+### `useAuth.js` — `signUp`
+```js
+signUp(email, password, { pseudo, firstName, lastName })
+// → supabase.auth.signUp + profiles.upsert({ id, display_name: pseudo, first_name, last_name })
+```
+
 ## Page Home (`/`)
 
 ### Layout

@@ -23,6 +23,18 @@ export function useAuth() {
     return { data, error }
   }
 
+  const signUp = async (email, password, { pseudo, firstName, lastName }) => {
+    const { data, error } = await supabase.auth.signUp({ email, password })
+    if (error) return { data, error }
+    await supabase.from('profiles').upsert({
+      id: data.user.id,
+      display_name: pseudo,
+      first_name: firstName,
+      last_name: lastName,
+    })
+    return { data, error: null }
+  }
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
     return { error }
@@ -33,6 +45,7 @@ export function useAuth() {
     user: session?.user ?? null,
     loading,
     signIn,
+    signUp,
     signOut,
   }
 }

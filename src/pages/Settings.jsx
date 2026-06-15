@@ -72,18 +72,20 @@ export default function Settings() {
           </>}
           <p className="text-[13px] font-semibold text-muted uppercase tracking-wider mb-4">Profil</p>
           <div className="flex flex-col gap-3">
-            <TextField
-              label="Prénom"
-              value={firstName}
-              onChange={e => setFirstName(e.target.value)}
-              placeholder="Prénom"
-            />
-            <TextField
-              label="Nom"
-              value={lastName}
-              onChange={e => setLastName(e.target.value)}
-              placeholder="Nom"
-            />
+            <div className="grid grid-cols-2 gap-3">
+              <TextField
+                label="Prénom"
+                value={firstName}
+                onChange={e => setFirstName(e.target.value)}
+                placeholder="Prénom"
+              />
+              <TextField
+                label="Nom"
+                value={lastName}
+                onChange={e => setLastName(e.target.value)}
+                placeholder="Nom"
+              />
+            </div>
             <TextField
               label="Pseudo"
               value={displayName}

@@ -337,6 +337,7 @@ export default function Calendar() {
   const [selectedDay, setSelectedDay] = useState(today)
   const [events, setEvents] = useState([])
   const [sportDays, setSportDays] = useState({})
+  const [presentielDays, setPresentielDays] = useState(new Set())
   const [partnerProfiles, setPartnerProfiles] = useState([])
   const [showAddEvent, setShowAddEvent] = useState(false)
   const [showShare, setShowShare] = useState(false)
@@ -397,6 +398,32 @@ export default function Calendar() {
     setSportDays(byDate)
   }, [user, currentMonth])
 
+  const fetchPresentiel = useCallback(async () => {
+    if (!user) return
+    const year = currentMonth.getFullYear()
+    const month = currentMonth.getMonth()
+    const first = `${year}-${String(month + 1).padStart(2, '0')}-01`
+    const lastDay = new Date(year, month + 1, 0).getDate()
+    const last = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+    const { data } = await supabase
+      .from('presentiel_days')
+      .select('day_date')
+      .eq('user_id', user.id)
+      .gte('day_date', first)
+      .lte('day_date', last)
+    setPresentielDays(new Set((data ?? []).map(d => d.day_date)))
+  }, [user, currentMonth])
+
+  const togglePresentiel = async (ds) => {
+    if (presentielDays.has(ds)) {
+      setPresentielDays(prev => { const s = new Set(prev); s.delete(ds); return s })
+      await supabase.from('presentiel_days').delete().eq('user_id', user.id).eq('day_date', ds)
+    } else {
+      setPresentielDays(prev => new Set([...prev, ds]))
+      await supabase.from('presentiel_days').upsert({ user_id: user.id, day_date: ds }, { onConflict: 'user_id,day_date' })
+    }
+  }
+
   const fetchEvents = useCallback(async () => {
     if (!user) return
     const year = currentMonth.getFullYear()
@@ -436,7 +463,8 @@ export default function Calendar() {
     fetchPartners()
     fetchEvents()
     fetchSportDates()
-  }, [fetchPartners, fetchEvents, fetchSportDates])
+    fetchPresentiel()
+  }, [fetchPartners, fetchEvents, fetchSportDates, fetchPresentiel])
 
   useEffect(() => {
     if (!user) return
@@ -681,6 +709,7 @@ export default function Calendar() {
                     const isSelected = selectedDay === ds
                     const isToday = ds === today
                     const sportType = sportDays[ds]
+                    const isPresent = presentielDays.has(ds)
                     return (
                       <div key={di} className="flex flex-col items-center py-1 cursor-pointer" onClick={() => handleDayTap(d)}>
                         <div className={`relative w-8 h-8 flex items-center justify-center rounded-full transition-colors
@@ -702,6 +731,11 @@ export default function Calendar() {
                           <span className={`relative text-[13px] font-medium leading-none ${isSelected ? 'text-white' : 'text-dark'}`}>
                             {d}
                           </span>
+                          {isPresent && (
+                            <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full pointer-events-none"
+                              style={{ background: isSelected ? 'rgba(255,255,255,0.7)' : isCottagecore ? 'rgba(163,98,82,0.5)' : 'rgba(108,99,255,0.45)' }}
+                            />
+                          )}
                         </div>
                         </div>
                     )
@@ -750,7 +784,24 @@ export default function Calendar() {
         {/* Panel événements du jour sélectionné */}
         {selectedDay && (
           <div className="px-4 pt-4 pb-32">
-            <p className="text-[13px] font-semibold text-dark capitalize mb-3">{selectedDayLabel}</p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[13px] font-semibold text-dark capitalize">{selectedDayLabel}</p>
+              <div onClick={() => togglePresentiel(selectedDay)} className="flex items-center gap-1.5 cursor-pointer">
+                <svg width="13" height="13" viewBox="0 0 24 24"
+                  fill={presentielDays.has(selectedDay) ? (isCottagecore ? '#a36252' : 'rgb(var(--color-primary))') : 'none'}
+                  stroke={isCottagecore ? '#a36252' : 'rgb(var(--color-primary))'}
+                  strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+                  style={{ opacity: presentielDays.has(selectedDay) ? 1 : 0.4 }}
+                >
+                  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                  <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                <span className="text-[11px] font-medium"
+                  style={{ color: isCottagecore ? '#a36252' : 'rgb(var(--color-primary))', opacity: presentielDays.has(selectedDay) ? 1 : 0.4 }}>
+                  Présentiel
+                </span>
+              </div>
+            </div>
 
             {selectedEvents.length === 0 && (
               <div className={`bg-white/60 border rounded-[12px] h-[64px] flex flex-col items-center justify-center mt-2 ${isCottagecore ? 'cc-border' : 'border-accent/50'}`}>

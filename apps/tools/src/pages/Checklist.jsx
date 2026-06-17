@@ -124,7 +124,7 @@ export default function Checklist() {
   useEffect(() => {
     if (!user || viewMode !== 'checklist') return
     supabase.from('checklist_items').select('*')
-      .order('position', { ascending: true })
+      .order('created_at', { ascending: true })
       .then(({ data }) => {
         if (data) {
           setChecklistItems(data)

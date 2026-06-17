@@ -362,7 +362,8 @@ export default function Checklist() {
 
   const addCkItemInline = async (group) => {
     if (!ckQuickAddLabel.trim()) return
-    const isShared = groupIsSharedWith(group)
+    const groupHasPartnerItems = checklistItems.some(t => t.group_name === group && t.user_id !== user?.id)
+    const isShared = groupIsSharedWith(group) || groupHasPartnerItems
     const { data } = await supabase.from('checklist_items').insert({
       user_id: user.id, label: ckQuickAddLabel.trim(),
       group_name: group || null, done: false, is_shared: isShared, item_date: todayStr(),
@@ -410,32 +411,39 @@ export default function Checklist() {
     setCkEditingId(null)
   }
 
-  const renderCkGrouped = (items, isPartner = false) => {
-    const seed = isPartner ? {} : Object.fromEntries(ckGroups.map(g => [g, []]))
+  const renderCkGrouped = (items) => {
+    // Fusionner tous les items (propres + partenaire) dans un seul grouped par group_name
+    const seed = Object.fromEntries(ckGroups.map(g => [g, []]))
     const grouped = items.reduce((acc, item) => {
       const key = item.group_name ?? ''
       if (!acc[key]) acc[key] = []
       acc[key].push(item)
       return acc
     }, seed)
-    const keys = Object.keys(grouped).sort((a, b) => {
-      if (a === '') return -1; if (b === '') return 1; return a.localeCompare(b)
-    })
+    const keys = Object.keys(grouped)
+      .filter(g => {
+        const onlyPartner = grouped[g].length > 0 && grouped[g].every(t => t.user_id !== user?.id)
+        return !(onlyPartner && ckHiddenPartnerGroups.includes(g))
+      })
+      .sort((a, b) => { if (a === '') return -1; if (b === '') return 1; return a.localeCompare(b) })
+
     return keys.map((group, i) => {
       const groupIsShared = groupIsSharedWith(group)
+      const isOwnGroup = grouped[group].some(t => t.user_id === user?.id) || ckGroups.includes(group)
+      const hasPartnerItems = grouped[group].some(t => t.user_id !== user?.id)
+      const isHideable = hasPartnerItems && !isOwnGroup
       return (
-      <div key={`${isPartner ? 'p' : 'o'}-${group}`} className={`flex flex-col gap-2 ${i > 0 ? 'pt-3 border-t border-[rgba(115,102,148,0.15)]' : 'mt-4'}`}>
+      <div key={`g-${group}`} className={`flex flex-col gap-2 ${i > 0 ? 'pt-3 border-t border-[rgba(115,102,148,0.15)]' : 'mt-4'}`}>
         {group && (
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <p className="text-[12px] font-semibold text-primary uppercase tracking-wider truncate">{group}</p>
-              {isPartner && partnerName && (
+              {hasPartnerItems && partnerName && (
                 <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-[#fef3c7] text-[#d97706] shrink-0">{partnerName}</span>
               )}
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              {/* Coches séparées — visible si partagé */}
-              {(groupIsShared || isPartner) && (
+              {(groupIsShared || hasPartnerItems) && (
                 <button onClick={() => toggleSeparateChecks(group)}
                   style={{ minWidth: 0, minHeight: 0 }}
                   title={ckSeparateChecks[group] ? 'Désactiver les coches séparées' : 'Activer les coches séparées'}
@@ -449,8 +457,7 @@ export default function Checklist() {
                   </svg>
                 </button>
               )}
-              {/* Masquer — partenaire uniquement */}
-              {isPartner && (
+              {isHideable && (
                 <button onClick={() => setCkHidePartnerGroup(group)}
                   title="Ne plus voir ce groupe"
                   className="flex items-center text-muted/40 hover:text-red-400 transition-colors">
@@ -459,8 +466,7 @@ export default function Checklist() {
                   </svg>
                 </button>
               )}
-              {/* Owner : partage, réinit, supprimer */}
-              {!isPartner && (<>
+              {isOwnGroup && (<>
                 <button onClick={() => { setCkManageShareGroup(group); setCkManageSelected(groupSharedUsers(group)); setCkShareSearch(''); setCkShareResults([]) }}
                   style={{ minWidth: 0, minHeight: 0 }}
                   title="Gérer le partage"
@@ -495,9 +501,10 @@ export default function Checklist() {
         )}
         <ul className="flex flex-col gap-2">
           {grouped[group].map((item, itemIdx) => {
-            const separateMode = ckSeparateChecks[group] && (groupIsSharedWith(group) || isPartner)
-            const myDone = isPartner ? item.done_shared : item.done
-            const theirDone = isPartner ? item.done : item.done_shared
+            const isMyItem = item.user_id === user?.id
+            const separateMode = ckSeparateChecks[group] && (groupIsShared || hasPartnerItems)
+            const myDone = isMyItem ? item.done : item.done_shared
+            const theirDone = isMyItem ? item.done_shared : item.done
             const itemVisuallyDone = separateMode && !item.is_linked ? myDone : item.done
             return (
             <li key={item.id} className={`border rounded-[8px] px-2 py-[6px] flex items-center gap-2 relative ${itemVisuallyDone ? 'bg-[#f0eef5]/80 border-[rgba(115,102,148,0.2)]' : `bg-white/70 ${isCottagecore ? 'cc-border' : 'border-white/85'}`}`}>
@@ -517,7 +524,6 @@ export default function Checklist() {
               {separateMode ? (
                 <div className="flex items-end gap-[3px] shrink-0">
                   {item.is_linked ? (
-                    /* Coche liée — une seule coche pour les deux */
                     <div className="flex flex-col items-center gap-[2px]">
                       <button onClick={() => toggleCkItemLinked(item.id, item.done, item.done_shared)}
                         style={{ minWidth: 0, minHeight: 0, width: 20, height: 20 }}
@@ -528,30 +534,28 @@ export default function Checklist() {
                     </div>
                   ) : (
                     <>
-                      {/* Ma coche */}
                       <div className="flex flex-col items-center gap-[2px]">
-                        <button onClick={() => isPartner ? toggleCkItemShared(item.id, item.done_shared) : toggleCkItem(item.id, item.done)}
+                        <button onClick={() => isMyItem ? toggleCkItem(item.id, item.done) : toggleCkItemShared(item.id, item.done_shared)}
                           style={{ minWidth: 0, minHeight: 0, width: 20, height: 20 }}
                           className={`rounded-[3px] border-2 flex items-center justify-center ${myDone ? 'border-primary bg-primary' : 'border-primary'}`}>
                           {myDone && <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                         </button>
                         <span className="text-[8px] text-primary font-semibold leading-none">Moi</span>
                       </div>
-                      {/* Coche partenaire */}
                       <div className="flex flex-col items-center gap-[2px]">
                         <div style={{ width: 20, height: 20 }}
                           className={`rounded-[3px] border-2 flex items-center justify-center ${theirDone ? 'border-[#d97706] bg-[#d97706]' : 'border-[#d97706]/50'}`}>
                           {theirDone && <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                         </div>
                         <span className="text-[8px] text-[#d97706] font-semibold leading-none truncate max-w-[28px]">
-                          {isPartner ? 'Eux' : (groupSharedUsers(group)[0]?.name?.split(' ')[0] ?? '…')}
+                          {isMyItem ? (groupSharedUsers(group)[0]?.name?.split(' ')[0] ?? partnerName?.split(' ')[0] ?? '…') : 'Eux'}
                         </span>
                       </div>
                     </>
                   )}
                 </div>
               ) : (
-                <button onClick={() => isPartner ? toggleCkItemShared(item.id, item.done_shared) : toggleCkItem(item.id, item.done)}
+                <button onClick={() => isMyItem ? toggleCkItem(item.id, item.done) : toggleCkItemShared(item.id, item.done_shared)}
                   style={{ minWidth: 0, minHeight: 0, width: 24, height: 24 }}
                   className={`rounded-[3px] border-2 flex items-center justify-center shrink-0 ${item.done ? 'border-muted bg-muted' : 'border-primary'}`}>
                   {item.done && <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
@@ -564,8 +568,8 @@ export default function Checklist() {
                   onBlur={() => saveCkItemLabel(item.id)}
                   className="flex-1 bg-transparent text-[12px] font-bold text-black outline-none min-w-0"/>
               ) : (
-                <span onClick={() => { if (!itemVisuallyDone) { setCkEditingId(item.id); setCkEditLabel(item.label) } }}
-                  className={`flex-1 text-[12px] font-bold leading-tight ${itemVisuallyDone ? 'line-through text-[#9992a8]' : 'text-black cursor-text'}`}>
+                <span onClick={() => { if (!itemVisuallyDone && isMyItem) { setCkEditingId(item.id); setCkEditLabel(item.label) } }}
+                  className={`flex-1 text-[12px] font-bold leading-tight ${itemVisuallyDone ? 'line-through text-[#9992a8]' : `text-black ${isMyItem ? 'cursor-text' : ''}`}`}>
                   {item.label}
                 </span>
               )}
@@ -580,7 +584,7 @@ export default function Checklist() {
                   </svg>
                 </button>
               )}
-              {!isPartner && (
+              {isMyItem && (
                 <button onClick={() => deleteCkItem(item.id)}
                   style={{ minWidth: 0, minHeight: 0 }}
                   className="w-6 h-6 flex items-center justify-center shrink-0">
@@ -985,11 +989,9 @@ export default function Checklist() {
                 </div>
               )}
               {(() => {
-                const ownCkItems = checklistItems.filter(t => t.user_id === user?.id)
-                const partnerCkItems = checklistItems.filter(t => t.user_id !== user?.id && !ckHiddenPartnerGroups.includes(t.group_name))
+                const allCkItems = checklistItems
                 return <>
-                  {renderCkGrouped(ownCkItems)}
-                  {partnerCkItems.length > 0 && renderCkGrouped(partnerCkItems, true)}
+                  {renderCkGrouped(allCkItems)}
                   {ckHiddenPartnerGroups.length > 0 && (
                     <div className="mt-4 pt-3 border-t border-[rgba(115,102,148,0.15)]">
                       <p className="text-[11px] font-semibold text-muted/60 uppercase tracking-wider px-1 mb-2">

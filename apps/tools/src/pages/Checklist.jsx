@@ -549,8 +549,8 @@ export default function Checklist() {
                       </div>
                     </>
                   )}
-                  {/* Icône chaîne — lier/délier, uniquement pour l'owner */}
-                  {!isPartner && (
+                  {/* Icône chaîne — lier/délier */}
+                  {(
                     <button onClick={() => toggleCkLinked(item.id, item.is_linked)}
                       title={item.is_linked ? 'Délier la coche' : 'Lier la coche (coche les deux)'}
                       className={`mb-[1px] transition-colors ${item.is_linked ? 'text-primary' : 'text-muted/30 hover:text-muted'}`}

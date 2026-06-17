@@ -592,8 +592,8 @@ export default function Checklist() {
             </li>
           )})}
 
-          {/* Ajout à la volée — uniquement pour ses propres groupes */}
-          {!isPartner && (ckQuickAddGroup === group ? (
+          {/* Ajout à la volée */}
+          {(ckQuickAddGroup === group ? (
             <li className="border border-dashed border-primary/30 rounded-[8px] px-2 py-[6px] flex items-center gap-2 bg-white/40">
               <div style={{ width: 24, height: 24 }} className="shrink-0 rounded-[3px] border-2 border-primary/30"/>
               <input autoFocus type="text" value={ckQuickAddLabel}

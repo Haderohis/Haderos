@@ -61,6 +61,10 @@ export default function Checklist() {
   const [ckQuickAddLabel, setCkQuickAddLabel] = useState('')
   const [ckDeleteGroup, setCkDeleteGroup] = useState(null)
   const [ckResetGroup, setCkResetGroup] = useState(null)
+  const [ckHidePartnerGroup, setCkHidePartnerGroup] = useState(null)
+  const [ckHiddenPartnerGroups, setCkHiddenPartnerGroups] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('ck_hidden_partner_groups') || '[]') } catch { return [] }
+  })
   const [ckEditingId, setCkEditingId] = useState(null)
   const [ckEditLabel, setCkEditLabel] = useState('')
   const [ckToast, setCkToast] = useState(null)
@@ -331,6 +335,12 @@ export default function Checklist() {
     setCkSeparateChecks(next)
     localStorage.setItem('ck_separate_checks', JSON.stringify(next))
   }
+  const hidePartnerGroup = (group) => {
+    const next = [...ckHiddenPartnerGroups, group]
+    setCkHiddenPartnerGroups(next)
+    localStorage.setItem('ck_hidden_partner_groups', JSON.stringify(next))
+    setCkHidePartnerGroup(null)
+  }
   const addCkGroup = (name) => {
     if (name && !ckGroups.includes(name)) saveCkGroups([...ckGroups, name])
   }
@@ -413,6 +423,16 @@ export default function Checklist() {
               )}
             </div>
             <div className="flex items-center gap-2 shrink-0">
+              {/* Masquer le groupe partagé — visible pour le partenaire uniquement */}
+              {isPartner && (
+                <button onClick={() => setCkHidePartnerGroup(group)}
+                  title="Ne plus voir ce groupe"
+                  className="flex items-center text-muted/40 hover:text-red-400 transition-colors">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M3 3l18 18M10.5 10.5A3 3 0 0013.5 13.5M6.3 6.3C4.3 7.7 2.8 9.7 2 12c1.7 4.4 6 7.5 10 7.5 1.7 0 3.4-.5 4.8-1.3M9 5.1C9.9 4.9 11 4.5 12 4.5c4 0 8.3 3.1 10 7.5-.6 1.5-1.5 2.9-2.6 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              )}
               {/* Coches séparées — visible pour tous */}
               {(groupIsShared || isPartner) && (
                 <button onClick={() => toggleSeparateChecks(group)}
@@ -935,7 +955,7 @@ export default function Checklist() {
               )}
               {(() => {
                 const ownCkItems = checklistItems.filter(t => t.user_id === user?.id)
-                const partnerCkItems = checklistItems.filter(t => t.user_id !== user?.id)
+                const partnerCkItems = checklistItems.filter(t => t.user_id !== user?.id && !ckHiddenPartnerGroups.includes(t.group_name))
                 return <>
                   {renderCkGrouped(ownCkItems)}
                   {partnerCkItems.length > 0 && renderCkGrouped(partnerCkItems, true)}
@@ -1098,6 +1118,24 @@ export default function Checklist() {
               }}
               className="flex-1 h-12 rounded-[12px] bg-[#6c63ff] text-[14px] font-semibold text-white">
               Réinitialiser
+            </button>
+          </div>
+        </BottomSheet>
+      )}
+
+      {/* Modal masquer groupe partenaire */}
+      {ckHidePartnerGroup !== null && (
+        <BottomSheet onClose={() => setCkHidePartnerGroup(null)}>
+          <p className="text-[17px] font-semibold text-dark">Ne plus voir ce groupe ?</p>
+          <p className="text-[13px] text-muted -mt-2">Le groupe « {ckHidePartnerGroup} » ne t'apparaîtra plus. Il reste intact pour {partnerName ?? 'ton partenaire'}.</p>
+          <div className="flex gap-3">
+            <button onClick={() => setCkHidePartnerGroup(null)}
+              className="flex-1 h-12 rounded-[12px] border border-muted/30 text-[14px] font-semibold text-muted">
+              Annuler
+            </button>
+            <button onClick={() => hidePartnerGroup(ckHidePartnerGroup)}
+              className="flex-1 h-12 rounded-[12px] bg-[#6c63ff] text-[14px] font-semibold text-white">
+              Masquer
             </button>
           </div>
         </BottomSheet>

@@ -435,7 +435,7 @@ export default function Checklist() {
       return (
       <div key={`g-${group}`} className={`flex flex-col gap-2 ${i > 0 ? 'pt-3 border-t border-[rgba(115,102,148,0.15)]' : 'mt-4'}`}>
         {group && (
-          <div className="flex items-center justify-between pl-1 pr-0">
+          <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <p className="text-[12px] font-semibold text-primary uppercase tracking-wider truncate">{group}</p>
               {hasPartnerItems && partnerName && (
@@ -443,29 +443,6 @@ export default function Checklist() {
               )}
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              {(groupIsShared || hasPartnerItems) && (
-                <button onClick={() => toggleSeparateChecks(group)}
-                  style={{ minWidth: 0, minHeight: 0 }}
-                  title={ckSeparateChecks[group] ? 'Désactiver les coches séparées' : 'Activer les coches séparées'}
-                  className={`flex items-center transition-colors ${ckSeparateChecks[group] ? 'text-primary' : 'text-muted/40 hover:text-muted'}`}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <rect x="3" y="4" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="2"/>
-                    <path d="M7 8l1.5 1.5L11 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                    <rect x="13" y="4" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="2"/>
-                    <rect x="3" y="14" width="8" height="6" rx="1.5" stroke="currentColor" strokeWidth="2" strokeDasharray="2 2"/>
-                    <rect x="13" y="14" width="8" height="6" rx="1.5" stroke="currentColor" strokeWidth="2" strokeDasharray="2 2"/>
-                  </svg>
-                </button>
-              )}
-              {isHideable && (
-                <button onClick={() => setCkHidePartnerGroup(group)}
-                  title="Ne plus voir ce groupe"
-                  className="flex items-center text-muted/40 hover:text-red-400 transition-colors">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                    <path d="M3 3l18 18M10.5 10.5A3 3 0 0013.5 13.5M6.3 6.3C4.3 7.7 2.8 9.7 2 12c1.7 4.4 6 7.5 10 7.5 1.7 0 3.4-.5 4.8-1.3M9 5.1C9.9 4.9 11 4.5 12 4.5c4 0 8.3 3.1 10 7.5-.6 1.5-1.5 2.9-2.6 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-              )}
               {isOwnGroup && (<>
                 <button onClick={() => { setCkManageShareGroup(group); setCkManageSelected(groupSharedUsers(group)); setCkShareSearch(''); setCkShareResults([]) }}
                   style={{ minWidth: 0, minHeight: 0 }}
@@ -496,6 +473,30 @@ export default function Checklist() {
                   Supprimer le groupe
                 </button>
               </>)}
+              {(groupIsShared || hasPartnerItems) && (
+                <button onClick={() => toggleSeparateChecks(group)}
+                  style={{ minWidth: 0, minHeight: 0 }}
+                  title={ckSeparateChecks[group] ? 'Désactiver les coches séparées' : 'Activer les coches séparées'}
+                  className={`flex items-center transition-colors ${ckSeparateChecks[group] ? 'text-primary' : 'text-muted/40 hover:text-muted'}`}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <rect x="3" y="4" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M7 8l1.5 1.5L11 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    <rect x="13" y="4" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="2"/>
+                    <rect x="3" y="14" width="8" height="6" rx="1.5" stroke="currentColor" strokeWidth="2" strokeDasharray="2 2"/>
+                    <rect x="13" y="14" width="8" height="6" rx="1.5" stroke="currentColor" strokeWidth="2" strokeDasharray="2 2"/>
+                  </svg>
+                </button>
+              )}
+              {isHideable && (
+                <button onClick={() => setCkHidePartnerGroup(group)}
+                  style={{ minWidth: 0, minHeight: 0 }}
+                  title="Ne plus voir ce groupe"
+                  className="flex items-center text-muted/40 hover:text-red-400 transition-colors">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                    <path d="M3 3l18 18M10.5 10.5A3 3 0 0013.5 13.5M6.3 6.3C4.3 7.7 2.8 9.7 2 12c1.7 4.4 6 7.5 10 7.5 1.7 0 3.4-.5 4.8-1.3M9 5.1C9.9 4.9 11 4.5 12 4.5c4 0 8.3 3.1 10 7.5-.6 1.5-1.5 2.9-2.6 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
         )}

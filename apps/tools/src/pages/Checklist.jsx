@@ -61,6 +61,8 @@ export default function Checklist() {
   const [ckQuickAddLabel, setCkQuickAddLabel] = useState('')
   const [ckDeleteGroup, setCkDeleteGroup] = useState(null)
   const [ckResetGroup, setCkResetGroup] = useState(null)
+  const [ckEditingId, setCkEditingId] = useState(null)
+  const [ckEditLabel, setCkEditLabel] = useState('')
   const [ckGroups, setCkGroups] = useState(() => {
     try { return JSON.parse(localStorage.getItem('ck_groups') || '[]') } catch { return [] }
   })
@@ -355,6 +357,14 @@ export default function Checklist() {
     setChecklistItems(prev => prev.filter(t => t.id !== id))
     await supabase.from('checklist_items').delete().eq('id', id)
   }
+  const saveCkItemLabel = async (id) => {
+    const label = ckEditLabel.trim()
+    if (label) {
+      setChecklistItems(prev => prev.map(t => t.id === id ? { ...t, label } : t))
+      await supabase.from('checklist_items').update({ label }).eq('id', id)
+    }
+    setCkEditingId(null)
+  }
 
   const renderCkGrouped = (items, isPartner = false) => {
     const seed = isPartner ? {} : Object.fromEntries(ckGroups.map(g => [g, []]))
@@ -441,7 +451,18 @@ export default function Checklist() {
                   </svg>
                 )}
               </button>
-              <span className={`flex-1 text-[12px] font-bold leading-tight ${item.done ? 'line-through text-[#9992a8]' : 'text-black'}`}>{item.label}</span>
+              {ckEditingId === item.id ? (
+                <input autoFocus type="text" value={ckEditLabel}
+                  onChange={e => setCkEditLabel(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') saveCkItemLabel(item.id); if (e.key === 'Escape') setCkEditingId(null) }}
+                  onBlur={() => saveCkItemLabel(item.id)}
+                  className="flex-1 bg-transparent text-[12px] font-bold text-black outline-none min-w-0"/>
+              ) : (
+                <span onClick={() => { if (!item.done) { setCkEditingId(item.id); setCkEditLabel(item.label) } }}
+                  className={`flex-1 text-[12px] font-bold leading-tight ${item.done ? 'line-through text-[#9992a8]' : 'text-black cursor-text'}`}>
+                  {item.label}
+                </span>
+              )}
               <button onClick={() => deleteCkItem(item.id)}
                 style={{ minWidth: 0, minHeight: 0 }}
                 className="w-6 h-6 flex items-center justify-center shrink-0">

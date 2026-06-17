@@ -573,7 +573,7 @@ export default function Checklist() {
                   onBlur={() => saveCkItemLabel(item.id)}
                   className="flex-1 bg-transparent text-[12px] font-bold text-black outline-none min-w-0"/>
               ) : (
-                <span onClick={() => { if (!itemVisuallyDone && isMyItem) { setCkEditingId(item.id); setCkEditLabel(item.label) } }}
+                <span onClick={() => { if (!itemVisuallyDone) { setCkEditingId(item.id); setCkEditLabel(item.label) } }}
                   className={`flex-1 text-[12px] font-bold leading-tight ${itemVisuallyDone ? 'line-through text-[#9992a8]' : `text-black ${isMyItem ? 'cursor-text' : ''}`}`}>
                   {item.label}
                 </span>

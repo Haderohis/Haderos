@@ -63,6 +63,8 @@ export default function Checklist() {
   const [ckResetGroup, setCkResetGroup] = useState(null)
   const [ckEditingId, setCkEditingId] = useState(null)
   const [ckEditLabel, setCkEditLabel] = useState('')
+  const [ckToast, setCkToast] = useState(null)
+  const ckToastRef = useRef(null)
   const [ckGroups, setCkGroups] = useState(() => {
     try { return JSON.parse(localStorage.getItem('ck_groups') || '[]') } catch { return [] }
   })
@@ -358,12 +360,19 @@ export default function Checklist() {
     if (data) { setChecklistItems(prev => [...prev, data]); addCkGroup(group) }
     setCkQuickAddLabel('')
   }
+  const showCkToast = (msg) => {
+    if (ckToastRef.current) clearTimeout(ckToastRef.current)
+    setCkToast(msg)
+    ckToastRef.current = setTimeout(() => setCkToast(null), 2000)
+  }
   const toggleCkItem = async (id, done) => {
     setChecklistItems(prev => prev.map(t => t.id === id ? { ...t, done: !done } : t))
+    showCkToast(!done ? 'Tâche cochée ✓' : 'Tâche décochée')
     await supabase.from('checklist_items').update({ done: !done }).eq('id', id)
   }
   const toggleCkItemShared = async (id, doneShared) => {
     setChecklistItems(prev => prev.map(t => t.id === id ? { ...t, done_shared: !doneShared } : t))
+    showCkToast(!doneShared ? 'Tâche cochée ✓' : 'Tâche décochée')
     await supabase.from('checklist_items').update({ done_shared: !doneShared }).eq('id', id)
   }
   const deleteCkItem = async (id) => {
@@ -374,6 +383,7 @@ export default function Checklist() {
     const label = ckEditLabel.trim()
     if (label) {
       setChecklistItems(prev => prev.map(t => t.id === id ? { ...t, label } : t))
+      showCkToast('Tâche modifiée')
       await supabase.from('checklist_items').update({ label }).eq('id', id)
     }
     setCkEditingId(null)
@@ -1075,6 +1085,13 @@ export default function Checklist() {
           </div>
         </BottomSheet>
       )}
+
+      {/* Toast checklist */}
+      <div className={`fixed top-4 right-4 z-[100] transition-all duration-200 ${ckToast ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
+        <div className="bg-dark/85 backdrop-blur-sm text-white text-[12px] font-medium px-3 py-2 rounded-[10px] shadow-lg">
+          {ckToast}
+        </div>
+      </div>
 
       {ckDeleteGroup !== null && (
         <BottomSheet onClose={() => setCkDeleteGroup(null)}>

@@ -385,6 +385,17 @@ export default function Checklist() {
     showCkToast(!doneShared ? 'Tâche cochée ✓' : 'Tâche décochée')
     await supabase.from('checklist_items').update({ done_shared: !doneShared }).eq('id', id)
   }
+  const toggleCkLinked = async (id, isLinked) => {
+    setChecklistItems(prev => prev.map(t => t.id === id ? { ...t, is_linked: !isLinked } : t))
+    await supabase.from('checklist_items').update({ is_linked: !isLinked }).eq('id', id)
+  }
+  const toggleCkItemLinked = async (id, done, doneShared) => {
+    // Coche liée : met les deux à la même valeur (si l'un est décoché, on coche les deux)
+    const newVal = !(done && doneShared)
+    setChecklistItems(prev => prev.map(t => t.id === id ? { ...t, done: newVal, done_shared: newVal } : t))
+    showCkToast(newVal ? 'Tâche cochée ✓' : 'Tâche décochée')
+    await supabase.from('checklist_items').update({ done: newVal, done_shared: newVal }).eq('id', id)
+  }
   const deleteCkItem = async (id) => {
     setChecklistItems(prev => prev.filter(t => t.id !== id))
     await supabase.from('checklist_items').delete().eq('id', id)
@@ -488,11 +499,10 @@ export default function Checklist() {
         )}
         <ul className="flex flex-col gap-2">
           {grouped[group].map((item, itemIdx) => {
-            const separateMode = ckSeparateChecks[group] && groupIsSharedWith(group)
-            // En mode séparé : ma coche = done (si own) ou done_shared (si partner's item vu par moi)
+            const separateMode = ckSeparateChecks[group] && (groupIsSharedWith(group) || isPartner)
             const myDone = isPartner ? item.done_shared : item.done
             const theirDone = isPartner ? item.done : item.done_shared
-            const itemVisuallyDone = separateMode ? myDone : item.done
+            const itemVisuallyDone = separateMode && !item.is_linked ? myDone : item.done
             return (
             <li key={item.id} className={`border rounded-[8px] px-2 py-[6px] flex items-center gap-2 relative ${itemVisuallyDone ? 'bg-[#f0eef5]/80 border-[rgba(115,102,148,0.2)]' : `bg-white/70 ${isCottagecore ? 'cc-border' : 'border-white/85'}`}`}>
               {isCottagecore && (() => {
@@ -509,29 +519,55 @@ export default function Checklist() {
                 return              <><Flower    width={15} rotate={-25} style={{...s, right:5,    top:-7 }} /><Mushroom  width={14} rotate={35}  style={{...s, left:'40%', bottom:-8}} /><LeafBig   width={13} rotate={-60} style={{...s, left:4,    bottom:-7}} /></>
               })()}
               {separateMode ? (
-                <div className="flex gap-1 shrink-0">
-                  {/* Ma coche */}
-                  <div className="flex flex-col items-center gap-[2px]">
-                    <button onClick={() => isPartner ? toggleCkItemShared(item.id, item.done_shared) : toggleCkItem(item.id, item.done)}
-                      style={{ minWidth: 0, minHeight: 0, width: 20, height: 20 }}
-                      className={`rounded-[3px] border-2 flex items-center justify-center ${myDone ? 'border-primary bg-primary' : 'border-primary'}`}>
-                      {myDone && <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                    </button>
-                    <span className="text-[8px] text-primary font-semibold leading-none">Moi</span>
-                  </div>
-                  {/* Coche partenaire */}
-                  <div className="flex flex-col items-center gap-[2px]">
-                    <div style={{ width: 20, height: 20 }}
-                      className={`rounded-[3px] border-2 flex items-center justify-center ${theirDone ? 'border-[#d97706] bg-[#d97706]' : 'border-[#d97706]/50'}`}>
-                      {theirDone && <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                <div className="flex items-end gap-[3px] shrink-0">
+                  {item.is_linked ? (
+                    /* Coche liée — une seule coche pour les deux */
+                    <div className="flex flex-col items-center gap-[2px]">
+                      <button onClick={() => toggleCkItemLinked(item.id, item.done, item.done_shared)}
+                        style={{ minWidth: 0, minHeight: 0, width: 20, height: 20 }}
+                        className={`rounded-[3px] border-2 flex items-center justify-center ${item.done && item.done_shared ? 'border-primary bg-primary' : 'border-primary'}`}>
+                        {item.done && item.done_shared && <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                      </button>
+                      <span className="text-[8px] text-primary font-semibold leading-none">Lié</span>
                     </div>
-                    <span className="text-[8px] text-[#d97706] font-semibold leading-none truncate max-w-[28px]">
-                      {groupSharedUsers(group)[0]?.name?.split(' ')[0] ?? '…'}
-                    </span>
-                  </div>
+                  ) : (
+                    <>
+                      {/* Ma coche */}
+                      <div className="flex flex-col items-center gap-[2px]">
+                        <button onClick={() => isPartner ? toggleCkItemShared(item.id, item.done_shared) : toggleCkItem(item.id, item.done)}
+                          style={{ minWidth: 0, minHeight: 0, width: 20, height: 20 }}
+                          className={`rounded-[3px] border-2 flex items-center justify-center ${myDone ? 'border-primary bg-primary' : 'border-primary'}`}>
+                          {myDone && <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                        </button>
+                        <span className="text-[8px] text-primary font-semibold leading-none">Moi</span>
+                      </div>
+                      {/* Coche partenaire */}
+                      <div className="flex flex-col items-center gap-[2px]">
+                        <div style={{ width: 20, height: 20 }}
+                          className={`rounded-[3px] border-2 flex items-center justify-center ${theirDone ? 'border-[#d97706] bg-[#d97706]' : 'border-[#d97706]/50'}`}>
+                          {theirDone && <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                        </div>
+                        <span className="text-[8px] text-[#d97706] font-semibold leading-none truncate max-w-[28px]">
+                          {isPartner ? 'Eux' : (groupSharedUsers(group)[0]?.name?.split(' ')[0] ?? '…')}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  {/* Icône chaîne — lier/délier, uniquement pour l'owner */}
+                  {!isPartner && (
+                    <button onClick={() => toggleCkLinked(item.id, item.is_linked)}
+                      title={item.is_linked ? 'Délier la coche' : 'Lier la coche (coche les deux)'}
+                      className={`mb-[1px] transition-colors ${item.is_linked ? 'text-primary' : 'text-muted/30 hover:text-muted'}`}
+                      style={{ minWidth: 0, minHeight: 0 }}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+                        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                  )}
                 </div>
               ) : (
-                <button onClick={() => toggleCkItem(item.id, item.done)}
+                <button onClick={() => isPartner ? toggleCkItemShared(item.id, item.done_shared) : toggleCkItem(item.id, item.done)}
                   style={{ minWidth: 0, minHeight: 0, width: 24, height: 24 }}
                   className={`rounded-[3px] border-2 flex items-center justify-center shrink-0 ${item.done ? 'border-muted bg-muted' : 'border-primary'}`}>
                   {item.done && <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}

@@ -470,8 +470,8 @@ export default function Sport() {
             const session = weekSessions.find(s => s.session_date === dateStr)
             const exoTypes = session?.sport_exercises ?? []
             const hasSession = exoTypes.length > 0
-            const cardioCount = exoTypes.filter(e => e.type === 'cardio').length
-            const sessionType = hasSession ? (cardioCount > exoTypes.length / 2 ? 'cardio' : 'strength') : null
+            const hasCardio = exoTypes.some(e => e.type === 'cardio')
+            const sessionType = hasSession ? (hasCardio ? 'cardio' : 'strength') : null
             const isFuture = dateStr > TODAY
             return (
               <button

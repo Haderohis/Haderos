@@ -434,17 +434,7 @@ export default function Checklist() {
               )}
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              {/* Masquer le groupe partagé — visible pour le partenaire uniquement */}
-              {isPartner && (
-                <button onClick={() => setCkHidePartnerGroup(group)}
-                  title="Ne plus voir ce groupe"
-                  className="flex items-center text-muted/40 hover:text-red-400 transition-colors">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path d="M3 3l18 18M10.5 10.5A3 3 0 0013.5 13.5M6.3 6.3C4.3 7.7 2.8 9.7 2 12c1.7 4.4 6 7.5 10 7.5 1.7 0 3.4-.5 4.8-1.3M9 5.1C9.9 4.9 11 4.5 12 4.5c4 0 8.3 3.1 10 7.5-.6 1.5-1.5 2.9-2.6 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-              )}
-              {/* Coches séparées — visible pour tous */}
+              {/* Coches séparées — visible si partagé */}
               {(groupIsShared || isPartner) && (
                 <button onClick={() => toggleSeparateChecks(group)}
                   style={{ minWidth: 0, minHeight: 0 }}
@@ -459,10 +449,18 @@ export default function Checklist() {
                   </svg>
                 </button>
               )}
-            </div>
-            {!isPartner && (
-              <div className="flex items-center gap-2 shrink-0">
-                {/* Partage */}
+              {/* Masquer — partenaire uniquement */}
+              {isPartner && (
+                <button onClick={() => setCkHidePartnerGroup(group)}
+                  title="Ne plus voir ce groupe"
+                  className="flex items-center text-muted/40 hover:text-red-400 transition-colors">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                    <path d="M3 3l18 18M10.5 10.5A3 3 0 0013.5 13.5M6.3 6.3C4.3 7.7 2.8 9.7 2 12c1.7 4.4 6 7.5 10 7.5 1.7 0 3.4-.5 4.8-1.3M9 5.1C9.9 4.9 11 4.5 12 4.5c4 0 8.3 3.1 10 7.5-.6 1.5-1.5 2.9-2.6 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              )}
+              {/* Owner : partage, réinit, supprimer */}
+              {!isPartner && (<>
                 <button onClick={() => { setCkManageShareGroup(group); setCkManageSelected(groupSharedUsers(group)); setCkShareSearch(''); setCkShareResults([]) }}
                   style={{ minWidth: 0, minHeight: 0 }}
                   title="Gérer le partage"
@@ -474,7 +472,6 @@ export default function Checklist() {
                     <path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" stroke="currentColor" strokeWidth="2"/>
                   </svg>
                 </button>
-                {/* Réinitialiser groupe */}
                 <button onClick={() => setCkResetGroup(group)}
                   disabled={!grouped[group].some(t => t.done)}
                   style={{ minWidth: 0, minHeight: 0 }}
@@ -484,17 +481,16 @@ export default function Checklist() {
                     <path d="M3 3v5h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
-                {/* Supprimer groupe */}
                 <button onClick={() => setCkDeleteGroup(group)}
-              style={{ minWidth: 0, minHeight: 0 }}
-              className="flex items-center gap-1 text-[11px] text-muted/60 hover:text-red-400 transition-colors">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              Supprimer le groupe
-            </button>
-          </div>
-            )}
+                  style={{ minWidth: 0, minHeight: 0 }}
+                  className="flex items-center gap-1 text-[11px] text-muted/60 hover:text-red-400 transition-colors">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                    <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Supprimer le groupe
+                </button>
+              </>)}
+            </div>
           </div>
         )}
         <ul className="flex flex-col gap-2">
@@ -995,6 +991,27 @@ export default function Checklist() {
                 return <>
                   {renderCkGrouped(ownCkItems)}
                   {partnerCkItems.length > 0 && renderCkGrouped(partnerCkItems, true)}
+                  {ckHiddenPartnerGroups.length > 0 && (
+                    <div className="mt-4 pt-3 border-t border-[rgba(115,102,148,0.15)]">
+                      <p className="text-[11px] font-semibold text-muted/60 uppercase tracking-wider px-1 mb-2">
+                        Groupes masqués ({ckHiddenPartnerGroups.length})
+                      </p>
+                      <div className="flex flex-col gap-1">
+                        {ckHiddenPartnerGroups.map(g => (
+                          <div key={g} className="flex items-center justify-between px-2 py-2 rounded-[8px] bg-white/50 border border-white/70">
+                            <span className="text-[12px] font-semibold text-muted/70">{g}</span>
+                            <button onClick={() => {
+                              const next = ckHiddenPartnerGroups.filter(x => x !== g)
+                              setCkHiddenPartnerGroups(next)
+                              localStorage.setItem('ck_hidden_partner_groups', JSON.stringify(next))
+                            }} className="text-[11px] font-medium text-primary">
+                              Réafficher
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </>
               })()}
               <div className="pb-2"/>

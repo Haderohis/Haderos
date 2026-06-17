@@ -368,7 +368,10 @@ export default function Checklist() {
       user_id: user.id, label: ckQuickAddLabel.trim(),
       group_name: group || null, done: false, is_shared: isShared, item_date: todayStr(),
     }).select().single()
-    if (data) { setChecklistItems(prev => [...prev, data]); addCkGroup(group) }
+    if (data) {
+      setChecklistItems(prev => [...prev, data])
+      if (!groupHasPartnerItems) addCkGroup(group)
+    }
     setCkQuickAddLabel('')
   }
   const showCkToast = (msg) => {

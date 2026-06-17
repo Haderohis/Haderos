@@ -435,7 +435,7 @@ export default function Checklist() {
       return (
       <div key={`g-${group}`} className={`flex flex-col gap-2 ${i > 0 ? 'pt-3 border-t border-[rgba(115,102,148,0.15)]' : 'mt-4'}`}>
         {group && (
-          <div className="flex items-center justify-between px-1">
+          <div className="flex items-center justify-between pl-1 pr-0">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <p className="text-[12px] font-semibold text-primary uppercase tracking-wider truncate">{group}</p>
               {hasPartnerItems && partnerName && (

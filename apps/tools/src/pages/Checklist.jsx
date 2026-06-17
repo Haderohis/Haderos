@@ -412,6 +412,23 @@ export default function Checklist() {
                 <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-[#fef3c7] text-[#d97706] shrink-0">{partnerName}</span>
               )}
             </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {/* Coches séparées — visible pour tous */}
+              {(groupIsShared || isPartner) && (
+                <button onClick={() => toggleSeparateChecks(group)}
+                  style={{ minWidth: 0, minHeight: 0 }}
+                  title={ckSeparateChecks[group] ? 'Désactiver les coches séparées' : 'Activer les coches séparées'}
+                  className={`flex items-center transition-colors ${ckSeparateChecks[group] ? 'text-primary' : 'text-muted/40 hover:text-muted'}`}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <rect x="3" y="4" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M7 8l1.5 1.5L11 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    <rect x="13" y="4" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="2"/>
+                    <rect x="3" y="14" width="8" height="6" rx="1.5" stroke="currentColor" strokeWidth="2" strokeDasharray="2 2"/>
+                    <rect x="13" y="14" width="8" height="6" rx="1.5" stroke="currentColor" strokeWidth="2" strokeDasharray="2 2"/>
+                  </svg>
+                </button>
+              )}
+            </div>
             {!isPartner && (
               <div className="flex items-center gap-2 shrink-0">
                 {/* Partage */}
@@ -1088,7 +1105,7 @@ export default function Checklist() {
 
       {/* Toast checklist */}
       <div className={`fixed top-4 right-4 z-[100] transition-all duration-200 ${ckToast ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
-        <div className="bg-dark/85 backdrop-blur-sm text-white text-[12px] font-medium px-3 py-2 rounded-[10px] shadow-lg">
+        <div className="bg-primary backdrop-blur-sm text-white text-[12px] font-medium px-3 py-2 rounded-[10px] shadow-lg">
           {ckToast}
         </div>
       </div>

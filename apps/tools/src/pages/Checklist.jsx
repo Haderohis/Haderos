@@ -549,18 +549,6 @@ export default function Checklist() {
                       </div>
                     </>
                   )}
-                  {/* Icône chaîne — lier/délier */}
-                  {(
-                    <button onClick={() => toggleCkLinked(item.id, item.is_linked)}
-                      title={item.is_linked ? 'Délier la coche' : 'Lier la coche (coche les deux)'}
-                      className={`mb-[1px] transition-colors ${item.is_linked ? 'text-primary' : 'text-muted/30 hover:text-muted'}`}
-                      style={{ minWidth: 0, minHeight: 0 }}>
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
-                        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
-                  )}
                 </div>
               ) : (
                 <button onClick={() => isPartner ? toggleCkItemShared(item.id, item.done_shared) : toggleCkItem(item.id, item.done)}
@@ -580,6 +568,17 @@ export default function Checklist() {
                   className={`flex-1 text-[12px] font-bold leading-tight ${itemVisuallyDone ? 'line-through text-[#9992a8]' : 'text-black cursor-text'}`}>
                   {item.label}
                 </span>
+              )}
+              {separateMode && (
+                <button onClick={() => toggleCkLinked(item.id, item.is_linked)}
+                  title={item.is_linked ? 'Délier la coche' : 'Lier la coche (coche les deux)'}
+                  className={`flex items-center justify-center w-6 h-6 shrink-0 transition-colors ${item.is_linked ? 'text-primary' : 'text-muted/30 hover:text-muted'}`}
+                  style={{ minWidth: 0, minHeight: 0 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                    <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
               )}
               {!isPartner && (
                 <button onClick={() => deleteCkItem(item.id)}

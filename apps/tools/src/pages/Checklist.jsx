@@ -493,7 +493,11 @@ export default function Checklist() {
                   title="Ne plus voir ce groupe"
                   className="flex items-center text-muted/40 hover:text-red-400 transition-colors">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                    <path d="M3 3l18 18M10.5 10.5A3 3 0 0013.5 13.5M6.3 6.3C4.3 7.7 2.8 9.7 2 12c1.7 4.4 6 7.5 10 7.5 1.7 0 3.4-.5 4.8-1.3M9 5.1C9.9 4.9 11 4.5 12 4.5c4 0 8.3 3.1 10 7.5-.6 1.5-1.5 2.9-2.6 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M3 3l18 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                    <circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="1.8"/>
+                    <circle cx="6" cy="12" r="3" stroke="currentColor" strokeWidth="1.8"/>
+                    <circle cx="18" cy="19" r="3" stroke="currentColor" strokeWidth="1.8"/>
+                    <path d="M8.59 13.51l3.5 2.04M15.41 6.51l-3.5 2.04" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
                   </svg>
                 </button>
               )}

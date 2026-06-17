@@ -411,8 +411,8 @@ export default function Checklist() {
     setCkEditingId(null)
   }
 
-  const renderCkGrouped = (items, isPartner = false) => {
-    const seed = isPartner ? {} : Object.fromEntries(ckGroups.map(g => [g, []]))
+  const renderCkGrouped = (items) => {
+    const seed = Object.fromEntries(ckGroups.map(g => [g, []]))
     const grouped = items.reduce((acc, item) => {
       const key = item.group_name ?? ''
       if (!acc[key]) acc[key] = []
@@ -420,13 +420,14 @@ export default function Checklist() {
       return acc
     }, seed)
     const keys = Object.keys(grouped)
+      .filter(g => !ckHiddenPartnerGroups.includes(g) || ckGroups.includes(g))
       .sort((a, b) => { if (a === '') return -1; if (b === '') return 1; return a.localeCompare(b) })
 
     return keys.map((group, i) => {
       const groupIsShared = groupIsSharedWith(group)
-      const isOwnGroup = !isPartner
-      const hasPartnerItems = isPartner
-      const isHideable = isPartner
+      const isOwnGroup = ckGroups.includes(group)
+      const hasPartnerItems = grouped[group].some(t => t.user_id !== user?.id)
+      const isHideable = !isOwnGroup && hasPartnerItems
       return (
       <div key={`g-${group}`} className={`flex flex-col gap-2 ${i > 0 ? 'pt-3 border-t border-[rgba(115,102,148,0.15)]' : 'mt-4'}`}>
         {group && (
@@ -496,7 +497,7 @@ export default function Checklist() {
         )}
         <ul className="flex flex-col gap-2">
           {grouped[group].map((item, itemIdx) => {
-            const isMyItem = !isPartner
+            const isMyItem = item.user_id === user?.id
             const separateMode = ckSeparateChecks[group] && (groupIsShared || hasPartnerItems)
             const myDone = isMyItem ? item.done : item.done_shared
             const theirDone = isMyItem ? item.done_shared : item.done
@@ -984,11 +985,8 @@ export default function Checklist() {
                 </div>
               )}
               {(() => {
-                const ownCkItems = checklistItems.filter(t => t.user_id === user?.id)
-                const partnerCkItems = checklistItems.filter(t => t.user_id !== user?.id && !ckHiddenPartnerGroups.includes(t.group_name))
                 return <>
-                  {renderCkGrouped(ownCkItems)}
-                  {partnerCkItems.length > 0 && renderCkGrouped(partnerCkItems, true)}
+                  {renderCkGrouped(checklistItems)}
                   {ckHiddenPartnerGroups.length > 0 && (
                     <div className="mt-4 pt-3 border-t border-[rgba(115,102,148,0.15)]">
                       <p className="text-[11px] font-semibold text-muted/60 uppercase tracking-wider px-1 mb-2">

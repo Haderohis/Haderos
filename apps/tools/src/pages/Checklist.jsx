@@ -128,7 +128,8 @@ export default function Checklist() {
       .then(({ data }) => {
         if (data) {
           setChecklistItems(data)
-          const dbGroups = [...new Set(data.filter(t => t.user_id === user.id && t.group_name).map(t => t.group_name))]
+          const partnerGroupNames = new Set(data.filter(t => t.user_id !== user.id && t.group_name).map(t => t.group_name))
+          const dbGroups = [...new Set(data.filter(t => t.user_id === user.id && t.group_name && !partnerGroupNames.has(t.group_name)).map(t => t.group_name))]
           const stored = JSON.parse(localStorage.getItem('ck_groups') || '[]')
           const merged = [...new Set([...stored, ...dbGroups])]
           setCkGroups(merged)

@@ -70,6 +70,9 @@ supabase/
 ├── sport_migration.sql                 # Tables sport_sessions, sport_exercises, sport_sets + RLS
 ├── sport_add_muscle.sql                # ALTER sport_exercises ADD COLUMN muscle text
 ├── checklist_items_migration.sql       # Table checklist_items (mode Checklist de /checklist)
+├── checklist_items_share.sql           # ALTER: ajoute is_shared + RLS shared_select/update
+├── checklist_separate_checks.sql       # ALTER: ajoute done_shared boolean DEFAULT false
+├── checklist_linked_items.sql          # ALTER: ajoute is_linked boolean DEFAULT false + update RLS
 ├── calendar_migration.sql              # Tables calendar_shares + calendar_events + RLS
 ├── calendar_add_end_date.sql           # ALTER calendar_events ADD COLUMN end_date date NULL
 ├── calendar_shared_read_fix.sql        # Recrée policy shared_read sans filtre is_shared
@@ -85,11 +88,14 @@ supabase/
 `id` · `label` · `group_name` · `tags` (JSON) · `due_date` · `done` · `completed_at` · `position` · `jira_url` · `figma_url`
 
 ### `checklist_items`
-`id` · `user_id` · `label` · `group_name` · `done` (bool) · `is_shared` (bool, default false) · `item_date` (date, stocké mais non filtré) · `position` (int) · `created_at`
-RLS : `checklist_own_all` (CRUD par `user_id`) · `checklist_shared_select` (SELECT si `is_shared=true` et `collection_shares` accepté) · `checklist_shared_update` (UPDATE idem)
+`id` · `user_id` · `label` · `group_name` · `done` (bool) · `done_shared` (bool, default false) · `is_shared` (bool, default false) · `is_linked` (bool, default false) · `item_date` (date) · `position` (int) · `created_at`
+- `done` = coche du créateur de l'item ; `done_shared` = coche de l'autre personne
+- `is_linked` = si true, cocher l'item met `done` ET `done_shared` à la même valeur
+RLS : `checklist_own_all` (CRUD par `user_id`) · `checklist_shared_select` (SELECT si `is_shared=true` et `collection_shares` accepté) · `checklist_shared_update` (UPDATE idem, couvre `done_shared` + `is_linked`)
 - Tâches persistantes sans filtre de date — supprimées uniquement manuellement
-- Groupes gérés côté client dans `localStorage('ck_groups')` et `localStorage('ck_group_shares')`
+- Groupes gérés côté client dans `localStorage('ck_groups')` — existent même vides
 - Suppression de groupe possible même avec des tâches non cochées
+- Migrations : `checklist_items_share.sql` · `checklist_separate_checks.sql` · `checklist_linked_items.sql`
 
 ### `expenses`
 `id` · `amount` · `description` · `payer_id` · `debtor_id` · `created_by` · `expense_date` (date) · `tags` (text[]) · `created_at`
@@ -255,21 +261,41 @@ Switch compact pleine largeur (`h-8`, `bg-soft`, `rounded-[8px]`) persisté dans
 - Empty state : "Aucun groupe" si `ckGroups.length === 0` et pas d'items
 
 ### Actions sur les groupes (header de groupe)
-- **Icône partage** → ouvre BottomSheet "Gérer le partage" avec recherche de profils + chips
-- **Icône réinitialiser** → modal de confirmation → supprime toutes les tâches, groupe reste vide
-- **Icône supprimer** → modal de confirmation → supprime le groupe et toutes ses tâches
+Tous les boutons sont dans un seul `div` flex à droite. Les actions disponibles dépendent du rôle :
+- **Owner du groupe** (`ckGroups.includes(group)`) : icône partage · icône réinitialiser · icône supprimer groupe
+- **Visiteur d'un groupe partagé** : aucun de ces boutons
+- **Tous** (si groupe partagé) : icône coches séparées · icône départager (share barré)
 
-### Création de groupe (`showCkModal`)
-- Champ nom du groupe (requis)
-- Champ de recherche "Partager avec" : recherche profils par nom, sélection → chips avec ×
-- `ckForm` : `{ group: '', sharedWith: [{ id, name }] }`
+Un groupe est considéré "own" uniquement s'il est dans `ckGroups` (localStorage) — même si l'utilisateur a des items dedans après avoir rejoint un groupe partagé.
+
+### Inline edit de tâche
+- Cliquer sur le texte d'une tâche non cochée → input inline avec `ckEditingId` / `ckEditLabel`
+- Entrée ou blur → `saveCkItemLabel()` → UPDATE label en DB + toast "Tâche modifiée"
+- Seuls les items créés par l'utilisateur courant sont éditables
+
+### Toast notifications
+- `ckToast` state + `ckToastRef` (setTimeout 2000ms)
+- `showCkToast(msg)` appelé sur toggle coche et édition label
+- Affiché `fixed top-4 right-4`, `bg-primary text-white`, disparaît automatiquement
 
 ### Partage checklist
 - `ckGroupShares` : `{ groupName: [{ id, name }] }` — persisté dans `localStorage('ck_group_shares')`
 - `is_shared = true` sur les items si le groupe a des utilisateurs dans `ckGroupShares`
-- RLS : policy `checklist_own_all` (CRUD par `user_id`) + `checklist_shared_select/update` (via `collection_shares` accepté)
-- Migration : `supabase/checklist_items_share.sql`
-- Items partenaires affichés en lecture seule avec badge amber du prénom
+- Le partenaire peut ajouter des items dans un groupe partagé — ses items ont son propre `user_id`
+- Quand le partenaire ajoute à un groupe partagé, `addCkGroup` n'est PAS appelé (évite de lui donner les droits de gestion)
+- `ck_hidden_partner_groups` (localStorage) : liste des groupes partagés masqués par le partenaire — bouton "Réafficher" disponible en bas de liste
+
+### Coches séparées
+- `ckSeparateChecks` : `{ groupName: boolean }` — persisté dans `localStorage('ck_separate_checks')` sur chaque appareil
+- Activé via icône dans le header de groupe (visible si `groupIsShared || hasPartnerItems`)
+- En mode séparé : chaque utilisateur a ses propres coches (`done` = créateur item, `done_shared` = autre)
+- Affichage : deux mini-coches colorées (violette "Moi" + amber partenaire) par tâche
+- `is_linked` par tâche : icône chaîne entre texte et bouton supprimer — une seule coche pour les deux
+- Coche liée : `toggleCkItemLinked` met `done` ET `done_shared` à la même valeur
+
+### Création de groupe (`showCkModal`)
+- Champ nom du groupe uniquement (requis)
+- `ckForm` : `{ group: '', sharedWith: [] }`
 
 ### Décorations cottagecore (tâches checklist)
 - 8 patterns, hash = `(parseInt(uuid.slice(-3,-1), 16) + itemIdx * 3) % 8`

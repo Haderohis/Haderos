@@ -70,6 +70,10 @@ export default function Checklist() {
   const [ckGroupShares, setCkGroupShares] = useState(() => {
     try { return JSON.parse(localStorage.getItem('ck_group_shares') || '{}') } catch { return {} }
   })
+  // ckSeparateChecks : { groupName: boolean }
+  const [ckSeparateChecks, setCkSeparateChecks] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('ck_separate_checks') || '{}') } catch { return {} }
+  })
   const [ckManageShareGroup, setCkManageShareGroup] = useState(null)
   const [ckShareSearch, setCkShareSearch] = useState('')
   const [ckShareResults, setCkShareResults] = useState([])
@@ -320,6 +324,11 @@ export default function Checklist() {
     setCkGroupShares(next)
     localStorage.setItem('ck_group_shares', JSON.stringify(next))
   }
+  const toggleSeparateChecks = (group) => {
+    const next = { ...ckSeparateChecks, [group]: !ckSeparateChecks[group] }
+    setCkSeparateChecks(next)
+    localStorage.setItem('ck_separate_checks', JSON.stringify(next))
+  }
   const addCkGroup = (name) => {
     if (name && !ckGroups.includes(name)) saveCkGroups([...ckGroups, name])
   }
@@ -352,6 +361,10 @@ export default function Checklist() {
   const toggleCkItem = async (id, done) => {
     setChecklistItems(prev => prev.map(t => t.id === id ? { ...t, done: !done } : t))
     await supabase.from('checklist_items').update({ done: !done }).eq('id', id)
+  }
+  const toggleCkItemShared = async (id, doneShared) => {
+    setChecklistItems(prev => prev.map(t => t.id === id ? { ...t, done_shared: !doneShared } : t))
+    await supabase.from('checklist_items').update({ done_shared: !doneShared }).eq('id', id)
   }
   const deleteCkItem = async (id) => {
     setChecklistItems(prev => prev.filter(t => t.id !== id))
@@ -427,8 +440,14 @@ export default function Checklist() {
           </div>
         )}
         <ul className="flex flex-col gap-2">
-          {grouped[group].map((item, itemIdx) => (
-            <li key={item.id} className={`border rounded-[8px] px-2 py-[6px] flex items-center gap-2 relative ${item.done ? 'bg-[#f0eef5]/80 border-[rgba(115,102,148,0.2)]' : `bg-white/70 ${isCottagecore ? 'cc-border' : 'border-white/85'}`}`}>
+          {grouped[group].map((item, itemIdx) => {
+            const separateMode = ckSeparateChecks[group] && groupIsSharedWith(group)
+            // En mode séparé : ma coche = done (si own) ou done_shared (si partner's item vu par moi)
+            const myDone = isPartner ? item.done_shared : item.done
+            const theirDone = isPartner ? item.done : item.done_shared
+            const itemVisuallyDone = separateMode ? myDone : item.done
+            return (
+            <li key={item.id} className={`border rounded-[8px] px-2 py-[6px] flex items-center gap-2 relative ${itemVisuallyDone ? 'bg-[#f0eef5]/80 border-[rgba(115,102,148,0.2)]' : `bg-white/70 ${isCottagecore ? 'cc-border' : 'border-white/85'}`}`}>
               {isCottagecore && (() => {
                 const base = parseInt(String(item.id).replace(/-/g,'').slice(-3,-1), 16)
                 const d = (base + itemIdx * 3) % 8
@@ -442,15 +461,35 @@ export default function Checklist() {
                 if (d===6) return <><LeafSmall width={15} rotate={80}  style={{...s, right:3,    bottom:-7}} /><LeafBig   width={14} rotate={-40} style={{...s, left:'50%', top:-8 }} /><Flower    width={12} rotate={10}  style={{...s, left:0,    top:-6 }} /></>
                 return              <><Flower    width={15} rotate={-25} style={{...s, right:5,    top:-7 }} /><Mushroom  width={14} rotate={35}  style={{...s, left:'40%', bottom:-8}} /><LeafBig   width={13} rotate={-60} style={{...s, left:4,    bottom:-7}} /></>
               })()}
-              <button onClick={() => toggleCkItem(item.id, item.done)}
-                style={{ minWidth: 0, minHeight: 0, width: 24, height: 24 }}
-                className={`rounded-[3px] border-2 flex items-center justify-center shrink-0 ${item.done ? 'border-muted bg-muted' : 'border-primary'}`}>
-                {item.done && (
-                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
-                    <path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                )}
-              </button>
+              {separateMode ? (
+                <div className="flex gap-1 shrink-0">
+                  {/* Ma coche */}
+                  <div className="flex flex-col items-center gap-[2px]">
+                    <button onClick={() => isPartner ? toggleCkItemShared(item.id, item.done_shared) : toggleCkItem(item.id, item.done)}
+                      style={{ minWidth: 0, minHeight: 0, width: 20, height: 20 }}
+                      className={`rounded-[3px] border-2 flex items-center justify-center ${myDone ? 'border-primary bg-primary' : 'border-primary'}`}>
+                      {myDone && <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                    </button>
+                    <span className="text-[8px] text-primary font-semibold leading-none">Moi</span>
+                  </div>
+                  {/* Coche partenaire */}
+                  <div className="flex flex-col items-center gap-[2px]">
+                    <div style={{ width: 20, height: 20 }}
+                      className={`rounded-[3px] border-2 flex items-center justify-center ${theirDone ? 'border-[#d97706] bg-[#d97706]' : 'border-[#d97706]/50'}`}>
+                      {theirDone && <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                    </div>
+                    <span className="text-[8px] text-[#d97706] font-semibold leading-none truncate max-w-[28px]">
+                      {groupSharedUsers(group)[0]?.name?.split(' ')[0] ?? '…'}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={() => toggleCkItem(item.id, item.done)}
+                  style={{ minWidth: 0, minHeight: 0, width: 24, height: 24 }}
+                  className={`rounded-[3px] border-2 flex items-center justify-center shrink-0 ${item.done ? 'border-muted bg-muted' : 'border-primary'}`}>
+                  {item.done && <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                </button>
+              )}
               {ckEditingId === item.id ? (
                 <input autoFocus type="text" value={ckEditLabel}
                   onChange={e => setCkEditLabel(e.target.value)}
@@ -458,20 +497,23 @@ export default function Checklist() {
                   onBlur={() => saveCkItemLabel(item.id)}
                   className="flex-1 bg-transparent text-[12px] font-bold text-black outline-none min-w-0"/>
               ) : (
-                <span onClick={() => { if (!item.done) { setCkEditingId(item.id); setCkEditLabel(item.label) } }}
-                  className={`flex-1 text-[12px] font-bold leading-tight ${item.done ? 'line-through text-[#9992a8]' : 'text-black cursor-text'}`}>
+                <span onClick={() => { if (!itemVisuallyDone) { setCkEditingId(item.id); setCkEditLabel(item.label) } }}
+                  className={`flex-1 text-[12px] font-bold leading-tight ${itemVisuallyDone ? 'line-through text-[#9992a8]' : 'text-black cursor-text'}`}>
                   {item.label}
                 </span>
               )}
-              <button onClick={() => deleteCkItem(item.id)}
-                style={{ minWidth: 0, minHeight: 0 }}
-                className="w-6 h-6 flex items-center justify-center shrink-0">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M18 6L6 18M6 6l12 12" stroke="rgb(var(--color-accent))" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-              </button>
+              {!isPartner && (
+                <button onClick={() => deleteCkItem(item.id)}
+                  style={{ minWidth: 0, minHeight: 0 }}
+                  className="w-6 h-6 flex items-center justify-center shrink-0">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M18 6L6 18M6 6l12 12" stroke="rgb(var(--color-accent))" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                </button>
+              )}
             </li>
-          ))}
+          )})}
+
           {/* Ajout à la volée — uniquement pour ses propres groupes */}
           {!isPartner && (ckQuickAddGroup === group ? (
             <li className="border border-dashed border-primary/30 rounded-[8px] px-2 py-[6px] flex items-center gap-2 bg-white/40">
@@ -1154,6 +1196,18 @@ export default function Checklist() {
               </ul>
             )}
           </div>
+          {ckManageSelected.length > 0 && (
+            <div className="flex items-center justify-between gap-3 pt-1 border-t border-soft">
+              <div className="min-w-0">
+                <p className="text-[13px] font-medium text-dark">Coches séparées</p>
+                <p className="text-[11px] text-muted mt-0.5">Chacun a ses propres coches</p>
+              </div>
+              <div onClick={() => toggleSeparateChecks(ckManageShareGroup)}
+                className={`relative w-11 h-6 rounded-full cursor-pointer transition-colors shrink-0 ${ckSeparateChecks[ckManageShareGroup] ? 'bg-primary' : 'bg-[#d5d3dc]'}`}>
+                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${ckSeparateChecks[ckManageShareGroup] ? 'translate-x-5' : 'translate-x-0.5'}`} />
+              </div>
+            </div>
+          )}
           <SubmitButton onClick={async () => {
             await applyGroupShare(ckManageShareGroup, ckManageSelected)
             setCkManageShareGroup(null); setCkShareSearch(''); setCkShareResults([])
